@@ -1,14 +1,13 @@
-import './App.css';
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Home from "./pages/Home/Home";
 
 function App() {
   return (
-    <div className="App">
-  <div className="min-h-screen flex items-center justify-center bg-slate-100">
-        <h1 className="text-4xl font-bold text-emerald-600">
-          ClinicOps Tailwind OK
-        </h1>
-      </div>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
