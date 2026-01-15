@@ -1,8 +1,10 @@
 import React from "react";
 import entryImg from "../../assets/images/entry.jpg";
-import CreateClinic from "../CreateClinic/CreateClinic";
+import ClinicLoginForm from "./ClinicLoginForm";
+
 
 const Entry = () => {
+  
   return (
   <div className="h-screen flex bg-slate-100 overflow-hidden">
       
@@ -17,7 +19,7 @@ const Entry = () => {
 
    <div className="w-full md:w-1/2 min-h-screen flex items-center justify-center bg-white">
         <div className="w-full h-full px-16 py-20 flex flex-col justify-center">
-          <CreateClinic />
+          <ClinicLoginForm />
         </div>
       </div>
     </div>
