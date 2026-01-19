@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import api from "../../api/axios";
 import Notification from "../../components/ui/Notification";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const ClinicLoginForm = () => {
-        const navigate = useNavigate();
+  const navigate = useNavigate();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -30,12 +31,12 @@ const ClinicLoginForm = () => {
       setNotif({
         visible: true,
         type: "success",
-        message: "Login successful 👋",
+        message: "Login successful",
       });
 
       setTimeout(() => {
         navigate("/dashboard");
-      }, 1200)
+      }, 1200);
     } catch (err) {
       setNotif({
         visible: true,
@@ -100,6 +101,17 @@ const ClinicLoginForm = () => {
         >
           {loading ? "Signing in..." : "Login"}
         </button>
+
+        {/* CREATE ACCOUNT LINK */}
+        <p className="text-center text-slate-500 text-sm">
+          Don’t have a clinic account?{" "}
+          <Link
+            to="/"
+            className="font-semibold text-[#81a2c5] hover:underline"
+          >
+            Create one
+          </Link>
+        </p>
       </form>
 
       <p className="text-sm text-slate-400 mt-10">
