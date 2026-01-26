@@ -2,9 +2,11 @@ import React, { useState } from "react";
 import api from "../../api/axios";
 import Notification from "../../components/ui/Notification";
 import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 const ClinicLoginForm = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,7 +28,11 @@ const ClinicLoginForm = () => {
         password,
       });
 
+      // store token
       localStorage.setItem("accessToken", res.data.accessToken);
+
+      // ✅ IMPORTANT: hydrate auth context
+      login(res.data.user);
 
       setNotif({
         visible: true,
@@ -102,7 +108,6 @@ const ClinicLoginForm = () => {
           {loading ? "Signing in..." : "Login"}
         </button>
 
-        {/* CREATE ACCOUNT LINK */}
         <p className="text-center text-slate-500 text-sm">
           Don’t have a clinic account?{" "}
           <Link
