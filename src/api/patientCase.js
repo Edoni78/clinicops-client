@@ -20,27 +20,33 @@ export async function getPatientCase(id) {
 }
 
 /**
- * Nurse: submit vitals (backend expects PascalCase: WeightKg, SystolicPressure, etc.)
- * @param {string} id - case id
+ * Nurse: submit vitals. Backend expects PascalCase (WeightKg, SystolicPressure, etc.).
+ * @param {string} id - case id (GUID)
  * @param {{ weightKg?: number, systolicPressure?: number, diastolicPressure?: number, temperatureC?: number, heartRate?: number }} body
  */
 export async function submitVitals(id, body) {
   const payload = {};
-  if (body.weightKg != null) payload.weightKg = body.weightKg;
-  if (body.systolicPressure != null) payload.systolicPressure = body.systolicPressure;
-  if (body.diastolicPressure != null) payload.diastolicPressure = body.diastolicPressure;
-  if (body.temperatureC != null) payload.temperatureC = body.temperatureC;
-  if (body.heartRate != null) payload.heartRate = body.heartRate;
-  await api.post(`/api/PatientCase/${id}/vitals`, payload);
+  if (body.weightKg != null) payload.WeightKg = body.weightKg;
+  if (body.systolicPressure != null) payload.SystolicPressure = body.systolicPressure;
+  if (body.diastolicPressure != null) payload.DiastolicPressure = body.diastolicPressure;
+  if (body.temperatureC != null) payload.TemperatureC = body.temperatureC;
+  if (body.heartRate != null) payload.HeartRate = body.heartRate;
+  const { data } = await api.post(`/api/PatientCase/${id}/vitals`, payload);
+  return data;
 }
 
 /**
- * Doctor: submit diagnosis and therapy
- * @param {string} id - case id
+ * Doctor: submit diagnosis and therapy. Backend expects PascalCase (Diagnosis, Therapy).
+ * @param {string} id - case id (GUID)
  * @param {{ diagnosis: string, therapy: string }} body
  */
 export async function submitReport(id, body) {
-  await api.post(`/api/PatientCase/${id}/report`, body);
+  const payload = {
+    Diagnosis: body.diagnosis,
+    Therapy: body.therapy,
+  };
+  const { data } = await api.post(`/api/PatientCase/${id}/report`, payload);
+  return data;
 }
 
 /**

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import api from "../../api/axios";
+import { login as apiLogin } from "../../api/auth";
 import Notification from "../../components/ui/Notification";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -18,45 +18,54 @@ const ClinicLoginForm = () => {
     message: "",
   });
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
 
-  try {
-    const res = await api.post("/api/Auth/login", {
-      email,
-      password,
-    });
+    try {
+      const res = await apiLogin(email, password);
+      const token = res.accessToken ?? res.access_token;
+      const user = res.user ?? res.User;
 
-    localStorage.setItem("accessToken", res.data.accessToken);
-
-    login(res.data.user);
-
-    setNotif({
-      visible: true,
-      type: "success",
-      message: "Login successful",
-    });
-
-    setTimeout(() => {
-      if (res.data.user.role === "SuperAdmin") {
-        navigate("/dashboard/applies");
-      } else {
-        navigate("/dashboard");
+      if (!token || !user) {
+        throw new Error("Invalid login response");
       }
-    }, 500);
-  } catch (err) {
-    setNotif({
-      visible: true,
-      type: "error",
-      message:
-        err.response?.data ||
-        "Invalid email or password.",
-    });
-  } finally {
-    setLoading(false);
-  }
-};
+
+      localStorage.setItem("accessToken", token);
+      if (res.expiresAtUtc) {
+        localStorage.setItem("token_expires", res.expiresAtUtc);
+      }
+
+      login(user);
+
+      setNotif({
+        visible: true,
+        type: "success",
+        message: "Login successful",
+      });
+
+      setTimeout(() => {
+        const role = (user.role ?? user.Role ?? "").toString();
+        if (role === "SuperAdmin") {
+          navigate("/dashboard/applies");
+        } else {
+          navigate("/dashboard");
+        }
+      }, 500);
+    } catch (err) {
+      setNotif({
+        visible: true,
+        type: "error",
+        message:
+          err.response?.data?.message ??
+          err.response?.data ??
+          err.message ??
+          "Invalid email or password.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>

@@ -29,10 +29,26 @@ const STATUS_FLOW = {
   Finished: [],
 };
 
+/** Normalize status string to match STATUS_FLOW keys (backend may return enum string). */
+function normalizeCaseStatus(s) {
+  const t = String(s ?? "").trim();
+  const key = t.toLowerCase().replace(/\s+/g, "");
+  const map = {
+    waiting: "Waiting",
+    inprogress: "InProgress",
+    in_progress: "InProgress",
+    inconsultation: "InConsultation",
+    in_consultation: "InConsultation",
+    completed: "Completed",
+    finished: "Finished",
+  };
+  return map[key] ?? (STATUS_FLOW[t] ? t : "Waiting");
+}
+
 export default function CaseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { role } = useAuth();
+  const { role, isAuthenticated } = useAuth();
   const { connection, joinCase, onVitalsUpdated, onReportUpdated, onCaseStatusChanged } =
     useSignalR();
 
@@ -140,15 +156,27 @@ export default function CaseDetail() {
 
   const handleSubmitVitals = async (e) => {
     e.preventDefault();
+    const body = {};
+    if (vitals.weightKg !== "") body.weightKg = Number(vitals.weightKg);
+    if (vitals.systolicPressure !== "") body.systolicPressure = Number(vitals.systolicPressure);
+    if (vitals.diastolicPressure !== "") body.diastolicPressure = Number(vitals.diastolicPressure);
+    if (vitals.temperatureC !== "") body.temperatureC = Number(vitals.temperatureC);
+    if (vitals.heartRate !== "") body.heartRate = Number(vitals.heartRate);
+    if (Object.keys(body).length === 0) {
+      showNotif("error", "Enter at least one vital sign to save.");
+      return;
+    }
     setVitalsSubmitting(true);
     try {
-      const body = {};
-      if (vitals.weightKg !== "") body.weightKg = Number(vitals.weightKg);
-      if (vitals.systolicPressure !== "") body.systolicPressure = Number(vitals.systolicPressure);
-      if (vitals.diastolicPressure !== "") body.diastolicPressure = Number(vitals.diastolicPressure);
-      if (vitals.temperatureC !== "") body.temperatureC = Number(vitals.temperatureC);
-      if (vitals.heartRate !== "") body.heartRate = Number(vitals.heartRate);
-      await submitVitals(id, body);
+      const dto = await submitVitals(id, body);
+      setCaseData((prev) => (prev ? { ...prev, latestVitals: dto } : null));
+      setVitals({
+        weightKg: dto?.WeightKg ?? dto?.weightKg ?? "",
+        systolicPressure: dto?.SystolicPressure ?? dto?.systolicPressure ?? "",
+        diastolicPressure: dto?.DiastolicPressure ?? dto?.diastolicPressure ?? "",
+        temperatureC: dto?.TemperatureC ?? dto?.temperatureC ?? "",
+        heartRate: dto?.HeartRate ?? dto?.heartRate ?? "",
+      });
       showNotif("success", "Vitals saved. Doctor view will update in real time.");
     } catch (e) {
       showNotif(
@@ -196,14 +224,16 @@ export default function CaseDetail() {
     }
   };
 
-  const isNurse = role && role.toLowerCase() === "nurse";
-  const isDoctor = role && role.toLowerCase() === "doctor";
-  const isSuperAdmin = role && role.toLowerCase() === "superadmin";
-  // SuperAdmin can do both nurse and doctor actions for testing
-  const canEditVitals = isNurse || isSuperAdmin;
-  const canEditReportAndStatus = isDoctor || isSuperAdmin;
-  const caseStatus = caseData?.status ?? caseData?.Status;
-  const allowedNextStatuses = caseData ? STATUS_FLOW[caseStatus] || [] : [];
+  const roleStr = role != null ? String(role).toLowerCase() : "";
+  const isNurse = roleStr === "nurse";
+  const isDoctor = roleStr === "doctor";
+  const isSuperAdmin = roleStr === "superadmin";
+  // Backend allows any authenticated user to submit vitals and update status; show UI for all logged-in users
+  const canEditVitals = isAuthenticated;
+  const canEditReportAndStatus = isAuthenticated;
+  const rawStatus = caseData?.status ?? caseData?.Status;
+  const caseStatus = normalizeCaseStatus(rawStatus);
+  const allowedNextStatuses = caseData ? (STATUS_FLOW[caseStatus] || []) : [];
 
   if (loading && !caseData) {
     return (
@@ -337,10 +367,11 @@ export default function CaseDetail() {
                   onClick={() => handleStatusChange(s)}
                   className="px-4 py-2 bg-[#81a2c5] text-white text-sm font-medium rounded-lg hover:bg-[#6b8fa8] disabled:opacity-50 transition-colors"
                 >
+                  {s === "InProgress" && "Move to In Progress"}
                   {s === "InConsultation" && "Start consultation"}
                   {s === "Completed" && "Complete visit"}
                   {s === "Finished" && "End visit"}
-                  {!["InConsultation", "Completed", "Finished"].includes(s) && s}
+                  {!["InProgress", "InConsultation", "Completed", "Finished"].includes(s) && s}
                 </button>
               ))}
             </div>

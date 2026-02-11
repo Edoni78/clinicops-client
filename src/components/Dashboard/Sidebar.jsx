@@ -8,7 +8,9 @@ import {
   FiActivity,
   FiDollarSign,
   FiUserCheck,
+  FiClipboard,
 } from "react-icons/fi";
+import { useAuth } from "../../context/AuthContext";
 
 const menuItems = [
   { label: "Dashboard", icon: FiHome, path: "/dashboard" },
@@ -21,6 +23,14 @@ const menuItems = [
 ];
 
 const Sidebar = () => {
+  const { role } = useAuth();
+  const isSuperAdmin = role && role.toString().toLowerCase() === "superadmin";
+
+  const items = [
+    ...(isSuperAdmin ? [{ label: "Applications", icon: FiClipboard, path: "/dashboard/applies" }] : []),
+    ...menuItems,
+  ];
+
   return (
     <aside className="w-64 bg-white border-r hidden md:flex flex-col">
       <div className="p-6 font-bold text-xl text-[#81a2c5] border-b">
@@ -28,7 +38,7 @@ const Sidebar = () => {
       </div>
 
       <nav className="flex-1 px-4 py-6 space-y-1">
-        {menuItems.map(({ label, icon: Icon, path }) => (
+        {items.map(({ label, icon: Icon, path }) => (
           <NavLink
             key={label}
             to={path}

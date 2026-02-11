@@ -1,9 +1,7 @@
 import React, { useState } from "react";
-import axios from "axios";
+import { applyForClinic } from "../../api/auth";
 import Notification from "../ui/Notification";
 import { Link } from "react-router-dom";
-
-const API_BASE = "http://localhost:5258";
 
 const ClinicApply = () => {
   const [clinicName, setClinicName] = useState("");
@@ -22,11 +20,7 @@ const ClinicApply = () => {
     setLoading(true);
 
     try {
-      await axios.post(`${API_BASE}/api/Auth/apply`, {
-        clinicName,
-        email,
-        password,
-      });
+      await applyForClinic(clinicName, email, password);
 
       setNotif({
         visible: true,
@@ -35,17 +29,19 @@ const ClinicApply = () => {
           "Application submitted successfully. You will be contacted after review.",
       });
 
-      // clear form
       setClinicName("");
       setEmail("");
       setPassword("");
     } catch (err) {
+      const msg =
+        err.response?.data?.message ??
+        (typeof err.response?.data === "string" ? err.response.data : null) ??
+        err.message ??
+        "Failed to submit application. Please try again.";
       setNotif({
         visible: true,
         type: "error",
-        message:
-          err.response?.data ||
-          "Failed to submit application. Please try again.",
+        message: msg,
       });
     } finally {
       setLoading(false);

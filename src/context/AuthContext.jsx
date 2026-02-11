@@ -11,15 +11,27 @@ export const AuthProvider = ({ children }) => {
     const storedUser = localStorage.getItem("user");
 
     if (token && storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        const parsed = JSON.parse(storedUser);
+        // Normalize so role is always available (backend may send Role)
+        if (parsed && !parsed.role && parsed.Role != null) {
+          parsed.role = parsed.Role;
+        }
+        setUser(parsed);
+      } catch {
+        setUser(null);
+      }
     }
 
     setLoading(false);
   }, []);
 
   const login = (userData) => {
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
+    const normalized = userData && typeof userData === "object"
+      ? { ...userData, role: userData.role ?? userData.Role }
+      : userData;
+    setUser(normalized);
+    localStorage.setItem("user", JSON.stringify(normalized));
   };
 
   const logout = () => {
@@ -31,9 +43,9 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{
+        value={{
         user,
-        role: user?.role ?? null, // ✅ KJO NA DUHET
+        role: user?.role ?? user?.Role ?? null,
         isAuthenticated: !!user,
         login,
         logout,
