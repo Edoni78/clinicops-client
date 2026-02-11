@@ -1,13 +1,12 @@
 import React, { useState } from "react";
-import api from "../../api/axios";
-import Notification from "../../components/ui/Notification";
-import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import axios from "axios";
+import Notification from "../ui/Notification";
+import { Link } from "react-router-dom";
 
-const ClinicLoginForm = () => {
-  const navigate = useNavigate();
-  const { login } = useAuth();
+const API_BASE = "http://localhost:5258";
 
+const ClinicApply = () => {
+  const [clinicName, setClinicName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,45 +17,40 @@ const ClinicLoginForm = () => {
     message: "",
   });
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
 
-  try {
-    const res = await api.post("/api/Auth/login", {
-      email,
-      password,
-    });
+    try {
+      await axios.post(`${API_BASE}/api/Auth/apply`, {
+        clinicName,
+        email,
+        password,
+      });
 
-    localStorage.setItem("accessToken", res.data.accessToken);
+      setNotif({
+        visible: true,
+        type: "success",
+        message:
+          "Application submitted successfully. You will be contacted after review.",
+      });
 
-    login(res.data.user);
-
-    setNotif({
-      visible: true,
-      type: "success",
-      message: "Login successful",
-    });
-
-    setTimeout(() => {
-      if (res.data.user.role === "SuperAdmin") {
-        navigate("/dashboard/applies");
-      } else {
-        navigate("/dashboard");
-      }
-    }, 500);
-  } catch (err) {
-    setNotif({
-      visible: true,
-      type: "error",
-      message:
-        err.response?.data ||
-        "Invalid email or password.",
-    });
-  } finally {
-    setLoading(false);
-  }
-};
+      // clear form
+      setClinicName("");
+      setEmail("");
+      setPassword("");
+    } catch (err) {
+      setNotif({
+        visible: true,
+        type: "error",
+        message:
+          err.response?.data ||
+          "Failed to submit application. Please try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -70,17 +64,28 @@ const handleSubmit = async (e) => {
       />
 
       <h1 className="text-4xl font-bold text-[#81a2c5] mb-4">
-        Clinic Login
+        Apply for ClinicOps
       </h1>
 
       <p className="text-slate-500 mb-10 max-w-xl">
-        Sign in to manage your clinic operations.
+        Submit your clinic application. Our team will review it and
+        activate your account once approved.
       </p>
 
       <form
         onSubmit={handleSubmit}
         className="space-y-6 max-w-xl"
       >
+        <input
+          type="text"
+          placeholder="Clinic name"
+          value={clinicName}
+          onChange={(e) => setClinicName(e.target.value)}
+          required
+          className="w-full border border-slate-300 rounded-md px-4 py-3 text-lg
+          focus:outline-none focus:ring-2 focus:ring-[#81a2c5]"
+        />
+
         <input
           type="email"
           placeholder="Admin email"
@@ -107,25 +112,25 @@ const handleSubmit = async (e) => {
           className="w-full bg-[#81a2c5] text-white py-3 rounded-md text-lg font-semibold
           hover:opacity-90 transition disabled:opacity-60"
         >
-          {loading ? "Signing in..." : "Login"}
+          {loading ? "Submitting..." : "Submit Application"}
         </button>
 
         <p className="text-center text-slate-500 text-sm">
-          Don’t have a clinic account?{" "}
+          Already approved?{" "}
           <Link
-            to="/"
+            to="/login"
             className="font-semibold text-[#81a2c5] hover:underline"
           >
-            Create one
+            Log in
           </Link>
         </p>
       </form>
 
       <p className="text-sm text-slate-400 mt-10">
-        Secure • Fast • ClinicOps
+        Secure • Reviewed • ClinicOps
       </p>
     </>
   );
 };
 
-export default ClinicLoginForm;
+export default ClinicApply;

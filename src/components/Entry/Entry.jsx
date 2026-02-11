@@ -1,6 +1,6 @@
 import React from "react";
 import entryImg from "../../assets/images/entry.jpg";
-import CreateClinic from "../CreateClinic/CreateClinic";
+import ClinicApply from "../CreateClinic/ClinicApply";
 
 const Entry = () => {
   return (
@@ -17,7 +17,7 @@ const Entry = () => {
 
    <div className="w-full md:w-1/2 min-h-screen flex items-center justify-center bg-white">
         <div className="w-full h-full px-16 py-20 flex flex-col justify-center">
-          <CreateClinic />
+          <ClinicApply />
         </div>
       </div>
     </div>

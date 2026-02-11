@@ -33,6 +33,7 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider
       value={{
         user,
+        role: user?.role ?? null, // ✅ KJO NA DUHET
         isAuthenticated: !!user,
         login,
         logout,
