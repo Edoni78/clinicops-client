@@ -5,12 +5,12 @@ import { getPatientCases } from "../../../api/patientCase";
 import { useSignalR } from "../../../context/SignalRContext";
 
 const STATUS_OPTIONS = [
-  { value: "", label: "All" },
-  { value: "Waiting", label: "Waiting" },
-  { value: "InProgress", label: "In Progress" },
-  { value: "InConsultation", label: "In Consultation" },
-  { value: "Completed", label: "Completed" },
-  { value: "Finished", label: "Finished" },
+  { value: "", label: "Të gjitha" },
+  { value: "Waiting", label: "Në pritje" },
+  { value: "InProgress", label: "Në progres" },
+  { value: "InConsultation", label: "Në konsultim" },
+  { value: "Completed", label: "Përfunduar" },
+  { value: "Finished", label: "Mbyllur" },
 ];
 
 function formatDate(dateString) {
@@ -77,17 +77,17 @@ export default function Cases() {
         <div>
           <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
             <FiFolder className="text-[#81a2c5]" size={32} />
-            Patient Cases
+            Rastet e pacientëve
           </h1>
           <p className="text-slate-600 mt-1">
-            Queue and case list. Open a case to add vitals or complete the visit.
+            Radha dhe lista e rasteve. Hapni një rast për të shtuar shenja jetësore ose për të përfunduar vizitën.
           </p>
         </div>
         <div className="flex items-center gap-3">
           {connectionState === "Connected" && (
             <span className="flex items-center gap-1.5 text-sm text-emerald-600 bg-emerald-50 px-2 py-1 rounded">
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              Live
+              Direkt
             </span>
           )}
           <button
@@ -97,7 +97,7 @@ export default function Cases() {
             className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 disabled:opacity-50 transition-colors"
           >
             <FiRefreshCw className={loading ? "animate-spin" : ""} size={18} />
-            Refresh
+            Rifresko
           </button>
         </div>
       </div>
@@ -135,7 +135,7 @@ export default function Cases() {
         ) : cases.length === 0 ? (
           <div className="text-center py-16 text-slate-500">
             <FiFolder className="mx-auto mb-4 text-slate-300" size={48} />
-            <p>No cases in this status.</p>
+            <p>Nuk ka raste në këtë status.</p>
           </div>
         ) : (
           <ul className="divide-y divide-slate-100">

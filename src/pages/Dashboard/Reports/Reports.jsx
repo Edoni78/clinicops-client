@@ -8,12 +8,12 @@ import {
   FiRefreshCw,
 } from "react-icons/fi";
 import { getPatientCases, getPatientCase } from "../../../api/patientCase";
-import { downloadCaseReportPdf } from "../../../utils/caseReportPdf";
+import { downloadCaseReportPdfWithClinicHeader } from "../../../utils/caseReportPdf";
 
 const DATE_FILTERS = [
-  { value: "today", label: "Today" },
-  { value: "week", label: "This week" },
-  { value: "all", label: "All time" },
+  { value: "today", label: "Sot" },
+  { value: "week", label: "Këtë javë" },
+  { value: "all", label: "Të gjitha" },
 ];
 
 function formatDate(dateString) {
@@ -92,7 +92,7 @@ export default function Reports() {
     setDownloadingId(caseId);
     try {
       const data = await getPatientCase(caseId);
-      downloadCaseReportPdf(data);
+      await downloadCaseReportPdfWithClinicHeader(data);
     } catch {
       // optional: toast error
     } finally {
@@ -106,10 +106,10 @@ export default function Reports() {
         <div>
           <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
             <FiFileText className="text-[#81a2c5]" size={32} />
-            Reports
+            Raportet
           </h1>
           <p className="text-slate-600 mt-1">
-            Ended visits. View or download medical reports.
+            Vizitat e përfunduara. Shiko ose shkarko raportet mjekësore.
           </p>
         </div>
         <button
@@ -119,13 +119,13 @@ export default function Reports() {
           className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 disabled:opacity-50 transition-colors"
         >
           <FiRefreshCw className={loading ? "animate-spin" : ""} size={18} />
-          Refresh
+          Rifresko
         </button>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-4 border-b border-slate-200 flex flex-wrap items-center gap-3">
-          <span className="text-sm font-medium text-slate-600">Show:</span>
+          <span className="text-sm font-medium text-slate-600">Shfaq:</span>
           {DATE_FILTERS.map((opt) => (
             <button
               key={opt.value}
@@ -141,7 +141,7 @@ export default function Reports() {
             </button>
           ))}
           <span className="text-sm text-slate-500 ml-auto">
-            {filteredReports.length} report{filteredReports.length !== 1 ? "s" : ""}
+            {filteredReports.length} raport{filteredReports.length !== 1 ? "e" : ""}
           </span>
         </div>
 
@@ -161,15 +161,15 @@ export default function Reports() {
           <div className="text-center py-16">
             <FiFileText className="mx-auto text-slate-300 mb-4" size={48} />
             <p className="text-slate-600">
-              {dateFilter === "today" && "No reports ended today."}
-              {dateFilter === "week" && "No reports this week."}
-              {dateFilter === "all" && "No ended visits yet."}
+              {dateFilter === "today" && "Nuk ka raporte të përfunduara sot."}
+              {dateFilter === "week" && "Nuk ka raporte këtë javë."}
+              {dateFilter === "all" && "Ende nuk ka vizita të përfunduara."}
             </p>
             <Link
               to="/dashboard/cases"
               className="inline-block mt-4 text-[#81a2c5] font-medium hover:underline"
             >
-              Go to Cases
+              Shko te Rastet
             </Link>
           </div>
         ) : (
@@ -204,7 +204,7 @@ export default function Reports() {
                       to={`/dashboard/cases/${caseId}`}
                       className="px-4 py-2 text-sm font-medium text-[#81a2c5] hover:bg-[#81a2c5]/10 rounded-lg transition-colors"
                     >
-                      View report
+                      Shiko raportin
                     </Link>
                     <button
                       type="button"

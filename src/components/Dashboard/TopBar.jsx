@@ -8,7 +8,7 @@ const Topbar = () => {
   return (
     <header className="h-16 bg-white border-b flex items-center justify-between px-6">
       <span className="text-slate-600">
-        Welcome 👋{" "}
+        Mirë se vini 👋{" "}
         {clinicName && (
           <span className="font-semibold text-slate-800">
             {clinicName}
@@ -23,7 +23,7 @@ const Topbar = () => {
         }}
         className="text-sm text-red-500"
       >
-        Logout
+        Dilni
       </button>
     </header>
   );

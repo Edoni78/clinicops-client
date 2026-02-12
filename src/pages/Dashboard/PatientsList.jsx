@@ -36,7 +36,7 @@ const PatientsList = () => {
         message:
           err.response?.data?.message ||
           err.response?.data ||
-          "Failed to fetch patients. Please try again.",
+          "Dështoi ngarkimi i pacientëve. Ju lutemi provoni përsëri.",
       });
     } finally {
       setPatientsLoading(false);
@@ -95,10 +95,10 @@ const PatientsList = () => {
           <div>
             <h1 className="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-3">
               <FiUsers className="text-[#81a2c5]" size={32} />
-              Patients
+              Pacientët
             </h1>
             <p className="text-slate-600">
-              View and manage all patient records in your clinic.
+              Shiko dhe menaxho të gjitha të dhënat e pacientëve në klinikën tuaj.
             </p>
           </div>
           <Link
@@ -108,7 +108,7 @@ const PatientsList = () => {
               flex items-center gap-2"
           >
             <FiUserPlus size={18} />
-            Register New Patient
+            Regjistro pacient të ri
           </Link>
         </div>
 
@@ -122,7 +122,7 @@ const PatientsList = () => {
               />
               <input
                 type="text"
-                placeholder="Search by name or phone..."
+                placeholder="Kërko sipas emrit ose telefonit..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg
@@ -139,7 +139,7 @@ const PatientsList = () => {
                 className={patientsLoading ? "animate-spin" : ""}
                 size={18}
               />
-              Refresh
+              Rifresko
             </button>
           </div>
         </div>
@@ -174,8 +174,8 @@ const PatientsList = () => {
               <FiUsers className="mx-auto text-slate-400 mb-4" size={48} />
               <p className="text-slate-600 text-lg">
                 {searchQuery
-                  ? "No patients found matching your search."
-                  : "No patients registered yet."}
+                  ? "Nuk u gjet asnjë pacient që përputhet me kërkimin."
+                  : "Ende nuk ka pacientë të regjistruar."}
               </p>
               {!searchQuery && (
                 <Link
@@ -183,7 +183,7 @@ const PatientsList = () => {
                   className="mt-4 inline-block px-6 py-2 bg-[#81a2c5] text-white rounded-lg hover:bg-[#6b8fa8]
                     transition-colors duration-200"
                 >
-                  Register First Patient
+                  Regjistro pacientin e parë
                 </Link>
               )}
             </div>
@@ -194,22 +194,22 @@ const PatientsList = () => {
                   <thead>
                     <tr className="border-b border-slate-200">
                       <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">
-                        Patient Name
+                        Emri i pacientit
                       </th>
                       <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">
-                        Date of Birth
+                        Data e lindjes
                       </th>
                       <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">
-                        Age
+                        Mosha
                       </th>
                       <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">
-                        Gender
+                        Gjinia
                       </th>
                       <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">
-                        Phone
+                        Telefoni
                       </th>
                       <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">
-                        Notes
+                        Shënime
                       </th>
                     </tr>
                   </thead>
@@ -228,7 +228,7 @@ const PatientsList = () => {
                           {formatDate(patient.dateOfBirth)}
                         </td>
                         <td className="py-4 px-4 text-slate-600">
-                          {calculateAge(patient.dateOfBirth)} years
+                          {calculateAge(patient.dateOfBirth)} vjet
                         </td>
                         <td className="py-4 px-4">
                           <span
@@ -261,8 +261,8 @@ const PatientsList = () => {
               </div>
 
               <div className="mt-4 text-sm text-slate-600">
-                Showing {filteredPatients.length} of {patients.length} patients
-                {searchQuery && ` matching "${searchQuery}"`}
+                Duke shfaqur {filteredPatients.length} nga {patients.length} pacientë
+                {searchQuery && ` që përputhen me "${searchQuery}"`}
               </div>
             </>
           )}

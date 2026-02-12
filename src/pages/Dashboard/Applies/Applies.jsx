@@ -17,10 +17,10 @@ import {
 import { useAuth } from "../../../context/AuthContext";
 
 const STATUS_OPTIONS = [
-  { value: "", label: "All" },
-  { value: "Pending", label: "Pending" },
-  { value: "Approved", label: "Approved" },
-  { value: "Rejected", label: "Rejected" },
+  { value: "", label: "Të gjitha" },
+  { value: "Pending", label: "Në pritje" },
+  { value: "Approved", label: "Aprovuar" },
+  { value: "Rejected", label: "Refuzuar" },
 ];
 
 function formatDate(dateString) {
@@ -64,7 +64,7 @@ export default function Applies() {
       setNotif({
         visible: true,
         type: "error",
-        message: err.response?.data?.message ?? err.response?.data ?? "Failed to load applications.",
+        message: err.response?.data?.message ?? err.response?.data ?? "Dështoi ngarkimi i aplikimeve.",
       });
       setApplications([]);
     } finally {
@@ -101,10 +101,10 @@ export default function Applies() {
     try {
       if (action === "approve") {
         await approveApplication(id, reviewNote);
-        setNotif({ visible: true, type: "success", message: "Application approved. Clinic is now active and can log in." });
+        setNotif({ visible: true, type: "success", message: "Aplikimi u aprova. Klinika është tani aktive dhe mund të identifikohet." });
       } else {
         await rejectApplication(id, reviewNote);
-        setNotif({ visible: true, type: "success", message: "Application rejected." });
+        setNotif({ visible: true, type: "success", message: "Aplikimi u refuzua." });
       }
       closeModal();
       fetchApplications();
@@ -112,7 +112,7 @@ export default function Applies() {
       setNotif({
         visible: true,
         type: "error",
-        message: err.response?.data?.message ?? err.response?.data ?? (action === "approve" ? "Failed to approve." : "Failed to reject."),
+        message: err.response?.data?.message ?? err.response?.data ?? (action === "approve" ? "Dështoi aprobimi." : "Dështoi refuzimi."),
       });
     } finally {
       setActionId(null);
@@ -138,20 +138,20 @@ export default function Applies() {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-semibold text-slate-900">
-              {actionModal.action === "approve" ? "Approve & activate clinic" : "Reject application"}
+              {actionModal.action === "approve" ? "Aprovo dhe aktivizo klinikën" : "Refuzo aplikimin"}
             </h3>
             <p className="text-slate-600 mt-1">
               {actionModal.action === "approve"
-                ? `Approve "${actionModal.clinicName}"? This will create the clinic and allow them to log in.`
-                : `Reject "${actionModal.clinicName}"?`}
+                ? `Aprovo "${actionModal.clinicName}"? Kjo do të krijojë klinikën dhe do t'u lejojë të identifikohen.`
+                : `Refuzo "${actionModal.clinicName}"?`}
             </p>
             <div className="mt-4">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Review note (optional)</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Shënim rishikimi (opsional)</label>
               <textarea
                 value={actionModal.reviewNote}
                 onChange={(e) => setActionModal((m) => ({ ...m, reviewNote: e.target.value }))}
                 rows={3}
-                placeholder="Add a note for records..."
+                placeholder="Shto një shënim për të dhënat..."
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent resize-none"
               />
             </div>
@@ -161,7 +161,7 @@ export default function Applies() {
                 onClick={closeModal}
                 className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium"
               >
-                Cancel
+                Anulo
               </button>
               <button
                 type="button"
@@ -173,7 +173,7 @@ export default function Applies() {
                     : "bg-red-600 hover:bg-red-700"
                 }`}
               >
-                {actionId === actionModal.id ? "Processing…" : actionModal.action === "approve" ? "Approve & activate" : "Reject"}
+                {actionId === actionModal.id ? "Duke përpunuar…" : actionModal.action === "approve" ? "Aprovo dhe aktivizo" : "Refuzo"}
               </button>
             </div>
           </div>
@@ -185,10 +185,10 @@ export default function Applies() {
           <div>
             <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
               <FiFileText className="text-[#81a2c5]" size={32} />
-              Clinic applications
+              Aplikimet e klinikave
             </h1>
             <p className="text-slate-600 mt-1">
-              Review and approve or reject clinic applications.
+              Rishiko dhe aprovo ose refuzo aplikimet e klinikave.
             </p>
           </div>
           <button
@@ -198,7 +198,7 @@ export default function Applies() {
             className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 disabled:opacity-50"
           >
             <FiRefreshCw className={loading ? "animate-spin" : ""} size={18} />
-            Refresh
+            Rifresko
           </button>
         </div>
 
@@ -230,7 +230,7 @@ export default function Applies() {
           ) : applications.length === 0 ? (
             <div className="text-center py-16 text-slate-500">
               <FiFileText className="mx-auto mb-4 text-slate-300" size={48} />
-              <p>No applications in this status.</p>
+              <p>Nuk ka aplikime në këtë status.</p>
             </div>
           ) : (
             <ul className="divide-y divide-slate-100">
@@ -255,11 +255,11 @@ export default function Applies() {
                           {adminEmail}
                         </p>
                         <p className="text-xs text-slate-500 mt-2">
-                          Applied: {formatDate(createdAt)}
-                          {reviewedAt && ` · Reviewed: ${formatDate(reviewedAt)}`}
+                          Aplikuar: {formatDate(createdAt)}
+                          {reviewedAt && ` · Rishikuar: ${formatDate(reviewedAt)}`}
                         </p>
                         {reviewNote && (
-                          <p className="text-sm text-slate-600 mt-2 italic">Note: {reviewNote}</p>
+                          <p className="text-sm text-slate-600 mt-2 italic">Shënim: {reviewNote}</p>
                         )}
                         <span
                           className={`inline-block mt-2 px-2 py-1 text-xs font-medium rounded ${
@@ -282,7 +282,7 @@ export default function Applies() {
                             className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 disabled:opacity-50"
                           >
                             <FiCheck size={18} />
-                            Approve & activate
+                            Aprovo dhe aktivizo
                           </button>
                           <button
                             type="button"
@@ -291,7 +291,7 @@ export default function Applies() {
                             className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:opacity-50"
                           >
                             <FiX size={18} />
-                            Reject
+                            Refuzo
                           </button>
                         </div>
                       )}

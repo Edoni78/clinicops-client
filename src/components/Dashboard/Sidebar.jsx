@@ -9,26 +9,29 @@ import {
   FiDollarSign,
   FiUserCheck,
   FiClipboard,
+  FiBriefcase,
 } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 
 const menuItems = [
-  { label: "Dashboard", icon: FiHome, path: "/dashboard" },
-  { label: "Patients", icon: FiUsers, path: "/dashboard/patients" },
-  { label: "Cases", icon: FiFolder, path: "/dashboard/cases" },
-  { label: "Reports", icon: FiFileText, path: "/dashboard/reports" },
-  { label: "Laboratory", icon: FiActivity, path: "/dashboard/laboratory" },
-  { label: "Payments", icon: FiDollarSign, path: "/dashboard/payments" },
-  { label: "Staff", icon: FiUserCheck, path: "/dashboard/staff" },
+  { label: "Paneli", icon: FiHome, path: "/dashboard" },
+  { label: "Pacientët", icon: FiUsers, path: "/dashboard/patients" },
+  { label: "Rastet", icon: FiFolder, path: "/dashboard/cases" },
+  { label: "Raportet", icon: FiFileText, path: "/dashboard/reports" },
+  { label: "Laboratori", icon: FiActivity, path: "/dashboard/laboratory" },
+  { label: "Pagesat", icon: FiDollarSign, path: "/dashboard/payments" },
+  { label: "Stafi", icon: FiUserCheck, path: "/dashboard/staff" },
 ];
 
 const Sidebar = () => {
-  const { role } = useAuth();
+  const { user, role } = useAuth();
   const isSuperAdmin = role && role.toString().toLowerCase() === "superadmin";
+  const hasClinic = !!(user?.clinicId ?? user?.ClinicId);
 
   const items = [
-    ...(isSuperAdmin ? [{ label: "Applications", icon: FiClipboard, path: "/dashboard/applies" }] : []),
+    ...(isSuperAdmin ? [{ label: "Aplikimet", icon: FiClipboard, path: "/dashboard/applies" }] : []),
     ...menuItems,
+    ...(hasClinic ? [{ label: "Profili i klinikës", icon: FiBriefcase, path: "/dashboard/clinic-profile" }] : []),
   ];
 
   return (

@@ -6,9 +6,9 @@ import { useAuth } from "../../../context/AuthContext";
 import { getClinicId } from "../../../utils/clinicId";
 
 const ROLES = [
-  { value: "Doctor", label: "Doctor" },
-  { value: "Nurse", label: "Nurse" },
-  { value: "LabTechnician", label: "Lab Technician" },
+  { value: "Doctor", label: "Mjek" },
+  { value: "Nurse", label: "Infermier" },
+  { value: "LabTechnician", label: "Teknikian laboratori" },
 ];
 
 function formatDate(dateString) {
@@ -48,7 +48,7 @@ export default function Staff() {
       setNotif({
         visible: true,
         type: "error",
-        message: err.response?.data?.message ?? err.response?.data ?? "Failed to load staff.",
+        message: err.response?.data?.message ?? err.response?.data ?? "Dështoi ngarkimi i stafit.",
       });
       setUsers([]);
     } finally {
@@ -68,14 +68,14 @@ export default function Staff() {
         { email: form.email, password: form.password, role: form.role },
         isSuperAdmin ? getClinicId() : undefined
       );
-      setNotif({ visible: true, type: "success", message: "Staff user created. They can log in with this email and password." });
+      setNotif({ visible: true, type: "success", message: "Përdoruesi i stafit u krijua. Mund të identifikohen me këtë email dhe fjalëkalim." });
       setForm({ email: "", password: "", role: "Nurse" });
       fetchUsers();
     } catch (err) {
       setNotif({
         visible: true,
         type: "error",
-        message: err.response?.data?.message ?? err.response?.data ?? "Failed to create user.",
+        message: err.response?.data?.message ?? err.response?.data ?? "Dështoi krijimi i përdoruesit.",
       });
     } finally {
       setSubmitting(false);
@@ -85,7 +85,7 @@ export default function Staff() {
   if (!canManageStaff) {
     return (
       <div className="max-w-2xl mx-auto">
-        <p className="text-slate-600">You don't have permission to manage staff.</p>
+        <p className="text-slate-600">Nuk keni leje për të menaxhuar stafin.</p>
       </div>
     );
   }
@@ -104,10 +104,10 @@ export default function Staff() {
           <div>
             <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
               <FiUserCheck className="text-[#81a2c5]" size={32} />
-              Staff
+              Stafi
             </h1>
             <p className="text-slate-600 mt-1">
-              Manage clinic users: doctors, nurses, lab technicians.
+              Menaxho përdoruesit e klinikës: mjekët, infermierët, teknikianët e laboratorit.
             </p>
           </div>
           <button
@@ -117,7 +117,7 @@ export default function Staff() {
             className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 disabled:opacity-50"
           >
             <FiRefreshCw className={loading ? "animate-spin" : ""} size={18} />
-            Refresh
+            Rifresko
           </button>
         </div>
 
@@ -125,7 +125,7 @@ export default function Staff() {
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
             <FiUserPlus className="text-[#81a2c5]" size={20} />
-            Add staff member
+            Shto anëtar stafi
           </h2>
           <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
             <div>
@@ -135,12 +135,12 @@ export default function Staff() {
                 value={form.email}
                 onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
                 required
-                placeholder="user@clinic.com"
+                placeholder="perdorues@klinika.com"
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Password *</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Fjalëkalimi *</label>
               <input
                 type="password"
                 value={form.password}
@@ -152,7 +152,7 @@ export default function Staff() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Role *</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Roli *</label>
               <select
                 value={form.role}
                 onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}
@@ -170,7 +170,7 @@ export default function Staff() {
               disabled={submitting}
               className="px-4 py-2 bg-[#81a2c5] text-white font-medium rounded-lg hover:bg-[#6b8fa8] disabled:opacity-50"
             >
-              {submitting ? "Creating…" : "Create user"}
+              {submitting ? "Duke krijuar…" : "Krijo përdoruesin"}
             </button>
           </form>
         </div>
@@ -182,7 +182,7 @@ export default function Staff() {
             onClick={() => setRoleFilter("")}
             className={`px-4 py-2 rounded-lg text-sm font-medium ${!roleFilter ? "bg-[#81a2c5] text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
           >
-            All
+            Të gjitha
           </button>
           {ROLES.map((r) => (
             <button
@@ -208,7 +208,7 @@ export default function Staff() {
           ) : users.length === 0 ? (
             <div className="text-center py-16 text-slate-500">
               <FiUserCheck className="mx-auto mb-4 text-slate-300" size={48} />
-              <p>No staff users yet. Create one above.</p>
+              <p>Ende nuk ka përdorues stafi. Krijo një më sipër.</p>
             </div>
           ) : (
             <ul className="divide-y divide-slate-100">
@@ -236,7 +236,7 @@ export default function Staff() {
                         isActive ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"
                       }`}
                     >
-                      {isActive ? "Active" : "Inactive"}
+                      {isActive ? "Aktiv" : "Joaktiv"}
                     </span>
                   </li>
                 );

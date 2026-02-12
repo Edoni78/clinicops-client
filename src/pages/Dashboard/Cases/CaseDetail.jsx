@@ -10,7 +10,9 @@ import {
   FiDownload,
   FiCalendar,
 } from "react-icons/fi";
-import { downloadCaseReportPdf } from "../../../utils/caseReportPdf";
+import {
+  downloadCaseReportPdfWithClinicHeader,
+} from "../../../utils/caseReportPdf";
 import Notification from "../../../components/ui/Notification";
 import {
   getPatientCase,
@@ -98,7 +100,7 @@ export default function CaseDetail() {
       setNotif({
         visible: true,
         type: "error",
-        message: e.response?.data?.message || e.response?.data || "Failed to load case.",
+        message: e.response?.data?.message || e.response?.data || "Dështoi ngarkimi i rastit.",
       });
     } finally {
       setLoading(false);
@@ -163,7 +165,7 @@ export default function CaseDetail() {
     if (vitals.temperatureC !== "") body.temperatureC = Number(vitals.temperatureC);
     if (vitals.heartRate !== "") body.heartRate = Number(vitals.heartRate);
     if (Object.keys(body).length === 0) {
-      showNotif("error", "Enter at least one vital sign to save.");
+      showNotif("error", "Vendosni të paktën një shenjë jetësore për të ruajtur.");
       return;
     }
     setVitalsSubmitting(true);
@@ -177,11 +179,11 @@ export default function CaseDetail() {
         temperatureC: dto?.TemperatureC ?? dto?.temperatureC ?? "",
         heartRate: dto?.HeartRate ?? dto?.heartRate ?? "",
       });
-      showNotif("success", "Vitals saved. Doctor view will update in real time.");
+      showNotif("success", "Shenjat jetësore u ruajtën. Pamja e mjekut përditësohet në kohë reale.");
     } catch (e) {
       showNotif(
         "error",
-        e.response?.data?.message || e.response?.data || "Failed to save vitals."
+        e.response?.data?.message || e.response?.data || "Dështoi ruajtja e shenjave jetësore."
       );
     } finally {
       setVitalsSubmitting(false);
@@ -191,17 +193,17 @@ export default function CaseDetail() {
   const handleSubmitReport = async (e) => {
     e.preventDefault();
     if (!report.diagnosis.trim() || !report.therapy.trim()) {
-      showNotif("error", "Diagnosis and therapy are required.");
+      showNotif("error", "Diagnoza dhe terapia janë të detyrueshme.");
       return;
     }
     setReportSubmitting(true);
     try {
       await submitReport(id, { diagnosis: report.diagnosis.trim(), therapy: report.therapy.trim() });
-      showNotif("success", "Report saved.");
+      showNotif("success", "Raporti u ruajt.");
     } catch (e) {
       showNotif(
         "error",
-        e.response?.data?.message || e.response?.data || "Failed to save report."
+        e.response?.data?.message || e.response?.data || "Dështoi ruajtja e raportit."
       );
     } finally {
       setReportSubmitting(false);
@@ -213,11 +215,11 @@ export default function CaseDetail() {
     try {
       await updateCaseStatus(id, newStatus);
       setCaseData((prev) => (prev ? { ...prev, status: newStatus } : null));
-      showNotif("success", `Status updated to ${newStatus}.`);
+      showNotif("success", `Statusi u përditësua në ${newStatus}.`);
     } catch (e) {
       showNotif(
         "error",
-        e.response?.data?.message || e.response?.data || "Failed to update status."
+        e.response?.data?.message || e.response?.data || "Dështoi përditësimi i statusit."
       );
     } finally {
       setStatusSubmitting(false);
@@ -260,9 +262,9 @@ export default function CaseDetail() {
           className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6"
         >
           <FiArrowLeft size={18} />
-          Back to cases
-        </button>
-        <p className="text-slate-600">Case not found.</p>
+            Mbrapsht te rastet
+          </button>
+        <p className="text-slate-600">Rasti nuk u gjet.</p>
       </div>
     );
   }
@@ -320,11 +322,11 @@ export default function CaseDetail() {
             className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
           >
             <FiArrowLeft size={18} />
-            Back to cases
+            Mbrapsht te rastet
           </button>
           {isSuperAdmin && (
             <span className="text-xs font-medium text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg">
-              Testing: full edit (Nurse + Doctor)
+              Test: redaktim i plotë (Infermieri + Mjeku)
             </span>
           )}
         </div>
@@ -333,26 +335,26 @@ export default function CaseDetail() {
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
             <FiUser className="text-[#81a2c5]" />
-            Patient
+            Pacienti
           </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-slate-500">Name</p>
+              <p className="text-sm text-slate-500">Emri</p>
               <p className="font-medium text-slate-900">{patientDisplayName}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-500">Gender</p>
+              <p className="text-sm text-slate-500">Gjinia</p>
               <p className="font-medium text-slate-900">{patientGender}</p>
             </div>
             <div>
               <p className="text-sm text-slate-500 flex items-center gap-1">
                 <FiPhone size={12} />
-                Mobile number
+                Numri i telefonit
               </p>
               <p className="font-medium text-slate-900">{patientPhone}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-500">Status</p>
+              <p className="text-sm text-slate-500">Statusi</p>
               <p className="font-medium text-slate-900">{caseData.status ?? caseData.Status}</p>
             </div>
           </div>
@@ -367,10 +369,10 @@ export default function CaseDetail() {
                   onClick={() => handleStatusChange(s)}
                   className="px-4 py-2 bg-[#81a2c5] text-white text-sm font-medium rounded-lg hover:bg-[#6b8fa8] disabled:opacity-50 transition-colors"
                 >
-                  {s === "InProgress" && "Move to In Progress"}
-                  {s === "InConsultation" && "Start consultation"}
-                  {s === "Completed" && "Complete visit"}
-                  {s === "Finished" && "End visit"}
+                  {s === "InProgress" && "Kalo në progres"}
+                  {s === "InConsultation" && "Fillo konsultimin"}
+                  {s === "Completed" && "Përfundo vizitën"}
+                  {s === "Finished" && "Mbyll vizitën"}
                   {!["InProgress", "InConsultation", "Completed", "Finished"].includes(s) && s}
                 </button>
               ))}
@@ -382,9 +384,9 @@ export default function CaseDetail() {
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
             <FiActivity className="text-[#81a2c5]" />
-            Vitals
+            Shenjat jetësore
             {latestVitals && (
-              <span className="text-xs font-normal text-slate-500">(live updates)</span>
+              <span className="text-xs font-normal text-slate-500">(përditësime në kohë reale)</span>
             )}
           </h2>
 
@@ -393,7 +395,7 @@ export default function CaseDetail() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Weight (kg)
+                    Pesha (kg)
                   </label>
                   <input
                     type="number"
@@ -406,7 +408,7 @@ export default function CaseDetail() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Systolic (mmHg)
+                    Sistolike (mmHg)
                   </label>
                   <input
                     type="number"
@@ -420,7 +422,7 @@ export default function CaseDetail() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Diastolic (mmHg)
+                    Diastolike (mmHg)
                   </label>
                   <input
                     type="number"
@@ -434,7 +436,7 @@ export default function CaseDetail() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Temperature (°C)
+                    Temperatura (°C)
                   </label>
                   <input
                     type="number"
@@ -448,7 +450,7 @@ export default function CaseDetail() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Heart rate (bpm)
+                    Rrahjet e zemrës (bpm)
                   </label>
                   <input
                     type="number"
@@ -465,11 +467,11 @@ export default function CaseDetail() {
                 className="flex items-center gap-2 px-5 py-2.5 bg-[#81a2c5] text-white font-medium rounded-lg hover:bg-[#6b8fa8] disabled:opacity-50 transition-colors"
               >
                 {vitalsSubmitting ? (
-                  <span className="animate-pulse">Saving…</span>
+                  <span className="animate-pulse">Duke ruajtur…</span>
                 ) : (
                   <>
                     <FiCheck size={18} />
-                    Save vitals
+                    Ruaj shenjat jetësore
                   </>
                 )}
               </button>
@@ -477,13 +479,13 @@ export default function CaseDetail() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
-                <p className="text-sm text-slate-500">Weight (kg)</p>
+                <p className="text-sm text-slate-500">Pesha (kg)</p>
                 <p className="font-medium text-slate-900">
                   {(latestVitals?.weightKg ?? latestVitals?.WeightKg) != null ? (latestVitals?.weightKg ?? latestVitals?.WeightKg) : "—"}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-slate-500">Blood pressure</p>
+                <p className="text-sm text-slate-500">Presioni i gjakut</p>
                 <p className="font-medium text-slate-900">
                   {(latestVitals?.systolicPressure ?? latestVitals?.SystolicPressure) != null &&
                   (latestVitals?.diastolicPressure ?? latestVitals?.DiastolicPressure) != null
@@ -492,13 +494,13 @@ export default function CaseDetail() {
                 </p>
               </div>
               <div>
-                <p className="text-sm text-slate-500">Temperature (°C)</p>
+                <p className="text-sm text-slate-500">Temperatura (°C)</p>
                 <p className="font-medium text-slate-900">
                   {(latestVitals?.temperatureC ?? latestVitals?.TemperatureC) != null ? (latestVitals?.temperatureC ?? latestVitals?.TemperatureC) : "—"}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-slate-500">Heart rate (bpm)</p>
+                <p className="text-sm text-slate-500">Rrahjet e zemrës (bpm)</p>
                 <p className="font-medium text-slate-900">
                   {(latestVitals?.heartRate ?? latestVitals?.HeartRate) != null ? (latestVitals?.heartRate ?? latestVitals?.HeartRate) : "—"}
                 </p>
@@ -512,15 +514,15 @@ export default function CaseDetail() {
           <div className="bg-gradient-to-r from-[#81a2c5] to-[#6b8fa8] px-6 py-4 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
               <FiFileText size={22} />
-              Medical report
+              Raporti mjekësor
             </h2>
             <button
               type="button"
-              onClick={() => downloadCaseReportPdf(caseData)}
+              onClick={() => void downloadCaseReportPdfWithClinicHeader(caseData)}
               className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white text-sm font-medium rounded-lg transition-colors border border-white/30"
             >
               <FiDownload size={18} />
-              Download PDF
+              Shkarko PDF
             </button>
           </div>
 
@@ -529,15 +531,15 @@ export default function CaseDetail() {
             <section className="border-b border-slate-200">
               <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider px-6 py-3 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
                 <FiUser size={14} />
-                Patient & case
+                Pacienti dhe rasti
               </h3>
               <div className="divide-y divide-slate-200">
                 {[
-                  { label: "Name", value: patientDisplayName },
-                  { label: "Gender", value: patientGender },
-                  { label: "Mobile number", value: patientPhone },
-                  { label: "Date of birth", value: formatDateDisplay(patientDob) },
-                  { label: "Status", value: caseData.status ?? caseData.Status },
+                  { label: "Emri", value: patientDisplayName },
+                  { label: "Gjinia", value: patientGender },
+                  { label: "Numri i telefonit", value: patientPhone },
+                  { label: "Data e lindjes", value: formatDateDisplay(patientDob) },
+                  { label: "Statusi", value: caseData.status ?? caseData.Status },
                 ].map(({ label, value }) => (
                   <div key={label} className="flex flex-wrap items-baseline justify-between gap-4 px-6 py-3">
                     <span className="text-sm text-slate-500">{label}</span>
@@ -551,26 +553,26 @@ export default function CaseDetail() {
             <section className="border-b border-slate-200">
               <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider px-6 py-3 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
                 <FiActivity size={14} />
-                Vital signs
+                Shenjat jetësore
               </h3>
               <div className="divide-y divide-slate-200">
                 {[
                   {
-                    label: "Weight",
+                    label: "Pesha",
                     value: (latestVitals?.weightKg ?? latestVitals?.WeightKg) != null ? `${latestVitals?.weightKg ?? latestVitals?.WeightKg} kg` : "—",
                   },
                   {
-                    label: "Blood pressure",
+                    label: "Presioni i gjakut",
                     value: (latestVitals?.systolicPressure ?? latestVitals?.SystolicPressure) != null && (latestVitals?.diastolicPressure ?? latestVitals?.DiastolicPressure) != null
                       ? `${latestVitals?.systolicPressure ?? latestVitals?.SystolicPressure} / ${latestVitals?.diastolicPressure ?? latestVitals?.DiastolicPressure} mmHg`
                       : "—",
                   },
                   {
-                    label: "Temperature",
+                    label: "Temperatura",
                     value: (latestVitals?.temperatureC ?? latestVitals?.TemperatureC) != null ? `${latestVitals?.temperatureC ?? latestVitals?.TemperatureC} °C` : "—",
                   },
                   {
-                    label: "Heart rate",
+                    label: "Rrahjet e zemrës",
                     value: (latestVitals?.heartRate ?? latestVitals?.HeartRate) != null ? `${latestVitals?.heartRate ?? latestVitals?.HeartRate} bpm` : "—",
                   },
                 ].map(({ label, value }) => (
@@ -586,30 +588,30 @@ export default function CaseDetail() {
             <section>
               <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider px-6 py-3 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
                 <FiFileText size={14} />
-                Clinical notes
+                Shënime klinike
               </h3>
               {canEditReportAndStatus ? (
                 <form onSubmit={handleSubmitReport} className="p-6 space-y-4">
                   <div className="border-b border-slate-200 pb-4">
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Diagnosis *</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Diagnoza *</label>
                     <textarea
                       value={report.diagnosis}
                       onChange={(e) => setReport((p) => ({ ...p, diagnosis: e.target.value }))}
                       rows={3}
                       required
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
-                      placeholder="Enter diagnosis..."
+                      placeholder="Vendosni diagnozën..."
                     />
                   </div>
                   <div className="border-b border-slate-200 pb-4">
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Therapy *</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Terapia *</label>
                     <textarea
                       value={report.therapy}
                       onChange={(e) => setReport((p) => ({ ...p, therapy: e.target.value }))}
                       rows={3}
                       required
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
-                      placeholder="Enter therapy / prescription..."
+                      placeholder="Vendosni terapi / recetë..."
                     />
                   </div>
                   <button
@@ -617,19 +619,19 @@ export default function CaseDetail() {
                     disabled={reportSubmitting}
                     className="flex items-center gap-2 px-5 py-2.5 bg-[#81a2c5] text-white font-medium rounded-lg hover:bg-[#6b8fa8] disabled:opacity-50 transition-colors"
                   >
-                    {reportSubmitting ? <span className="animate-pulse">Saving…</span> : (<><FiCheck size={18} /> Save report</>)}
+                    {reportSubmitting ? <span className="animate-pulse">Duke ruajtur…</span> : (<><FiCheck size={18} /> Ruaj raportin</>)}
                   </button>
                 </form>
               ) : (
                 <div className="divide-y divide-slate-200">
                   <div className="px-6 py-4">
-                    <p className="text-sm text-slate-500 mb-2">Diagnosis</p>
+                    <p className="text-sm text-slate-500 mb-2">Diagnoza</p>
                     <p className="text-slate-900 whitespace-pre-wrap">
                       {medicalReport?.diagnosis ?? medicalReport?.Diagnosis ?? "—"}
                     </p>
                   </div>
                   <div className="px-6 py-4">
-                    <p className="text-sm text-slate-500 mb-2">Therapy</p>
+                    <p className="text-sm text-slate-500 mb-2">Terapia</p>
                     <p className="text-slate-900 whitespace-pre-wrap">
                       {medicalReport?.therapy ?? medicalReport?.Therapy ?? "—"}
                     </p>

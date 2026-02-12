@@ -67,7 +67,7 @@ const Patients = () => {
       setNotif({
         visible: true,
         type: "success",
-        message: "Patient registered successfully!",
+        message: "Pacienti u regjistrua me sukses!",
       });
 
       // Reset form
@@ -80,19 +80,19 @@ const Patients = () => {
         notes: "",
       });
     } catch (err) {
-      let errorMessage = "Failed to register patient. Please try again.";
+      let errorMessage = "Regjistrimi i pacientit dështoi. Ju lutemi provoni përsëri.";
 
       if (err.response?.status === 400) {
         errorMessage =
           err.response?.data?.message ||
           err.response?.data ||
-          "Invalid request. Please check all fields.";
+          "Kërkesë e pavlefshme. Ju lutemi kontrolloni të gjitha fushat.";
       } else if (err.response?.status === 401) {
-        errorMessage = "Authentication failed. Please login again.";
+        errorMessage = "Autentifikimi dështoi. Ju lutemi identifikohu përsëri.";
       } else if (err.response?.status === 403) {
-        errorMessage = "You don't have permission to register patients.";
+        errorMessage = "Nuk keni leje për të regjistruar pacientë.";
       } else if (err.response?.status === 404) {
-        errorMessage = "API endpoint not found. Please check backend configuration.";
+        errorMessage = "Pika e API nuk u gjet. Ju lutemi kontrolloni konfigurimin e serverit.";
       } else if (err.response?.data?.message) {
         errorMessage = err.response.data.message;
       } else if (err.response?.data) {
@@ -127,11 +127,11 @@ const Patients = () => {
           <div>
             <h1 className="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-3">
               <FiUserPlus className="text-[#81a2c5]" size={32} />
-              Register New Patient
+              Regjistro pacient të ri
             </h1>
             <p className="text-slate-600">
-              Add a new patient to the clinic system. Fill in all required
-              information below.
+              Shto një pacient të ri në sistemin e klinikës. Plotësoni të gjitha
+              fushat e kërkuara më poshtë.
             </p>
           </div>
           <Link
@@ -141,7 +141,7 @@ const Patients = () => {
               flex items-center gap-2"
           >
             <FiUsers size={18} />
-            View All Patients
+            Shiko të gjithë pacientët
           </Link>
         </div>
 
@@ -156,7 +156,7 @@ const Patients = () => {
                   htmlFor="firstName"
                   className="block text-sm font-medium text-slate-700 mb-2"
                 >
-                  First Name <span className="text-red-500">*</span>
+                  Emri <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <FiUserPlus
@@ -170,7 +170,7 @@ const Patients = () => {
                     value={formData.firstName}
                     onChange={handleChange}
                     required
-                    placeholder="Enter first name"
+                    placeholder="Vendosni emrin"
                     className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg
                       focus:outline-none focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent
                       transition-all duration-200"
@@ -184,7 +184,7 @@ const Patients = () => {
                   htmlFor="lastName"
                   className="block text-sm font-medium text-slate-700 mb-2"
                 >
-                  Last Name <span className="text-red-500">*</span>
+                  Mbiemri <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <FiUserPlus
@@ -198,7 +198,7 @@ const Patients = () => {
                     value={formData.lastName}
                     onChange={handleChange}
                     required
-                    placeholder="Enter last name"
+                    placeholder="Vendosni mbiemrin"
                     className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg
                       focus:outline-none focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent
                       transition-all duration-200"
@@ -215,7 +215,7 @@ const Patients = () => {
                   htmlFor="dateOfBirth"
                   className="block text-sm font-medium text-slate-700 mb-2"
                 >
-                  Date of Birth <span className="text-red-500">*</span>
+                  Data e lindjes <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <FiCalendar
@@ -243,7 +243,7 @@ const Patients = () => {
                   htmlFor="gender"
                   className="block text-sm font-medium text-slate-700 mb-2"
                 >
-                  Gender <span className="text-red-500">*</span>
+                  Gjinia <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="gender"
@@ -255,10 +255,10 @@ const Patients = () => {
                     focus:outline-none focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent
                     transition-all duration-200 bg-white"
                 >
-                  <option value="">Select gender</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
+                  <option value="">Zgjidhni gjininë</option>
+                  <option value="Male">Mashkull</option>
+                  <option value="Female">Femër</option>
+                  <option value="Other">Tjetër</option>
                 </select>
               </div>
             </div>
@@ -269,7 +269,7 @@ const Patients = () => {
                 htmlFor="phone"
                 className="block text-sm font-medium text-slate-700 mb-2"
               >
-                Phone Number <span className="text-red-500">*</span>
+                Numri i telefonit <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <FiPhone
@@ -297,7 +297,7 @@ const Patients = () => {
                 htmlFor="notes"
                 className="block text-sm font-medium text-slate-700 mb-2"
               >
-                Notes
+                Shënime
               </label>
               <div className="relative">
                 <FiFileText
@@ -310,14 +310,14 @@ const Patients = () => {
                   value={formData.notes}
                   onChange={handleChange}
                   rows={4}
-                  placeholder="Additional notes or information about the patient..."
+                  placeholder="Shënime shtesë ose informacion për pacientin..."
                   className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg
                     focus:outline-none focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent
                     transition-all duration-200 resize-none"
                 />
               </div>
               <p className="mt-1 text-sm text-slate-500">
-                Optional: Add any relevant medical history or notes
+                Opsional: Shtoni historikun mjekësor ose shënime të rëndësishme
               </p>
             </div>
 
@@ -353,12 +353,12 @@ const Patients = () => {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       ></path>
                     </svg>
-                    Registering...
+                    Duke regjistruar...
                   </>
                 ) : (
                   <>
                     <FiUserPlus size={18} />
-                    Register Patient
+                    Regjistro pacientin
                   </>
                 )}
               </button>

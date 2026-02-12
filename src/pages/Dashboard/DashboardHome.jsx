@@ -12,48 +12,48 @@ import {
 const DashboardHome = () => {
   const quickActions = [
     {
-      title: "Register New Patient",
-      description: "Add a new patient to the system",
+      title: "Regjistro pacient të ri",
+      description: "Shto një pacient të ri në sistem",
       icon: FiUserPlus,
       link: "/dashboard/patients",
       color: "bg-blue-500",
       hoverColor: "hover:bg-blue-600",
     },
     {
-      title: "View Patients",
-      description: "Browse and manage patient records",
+      title: "Shiko pacientët",
+      description: "Shiko dhe menaxho të dhënat e pacientëve",
       icon: FiUsers,
       link: "/dashboard/patients-list",
       color: "bg-green-500",
       hoverColor: "hover:bg-green-600",
     },
     {
-      title: "Cases",
-      description: "Manage patient cases and treatments",
+      title: "Rastet",
+      description: "Menaxho rastet dhe trajtimin e pacientëve",
       icon: FiFolder,
       link: "/dashboard/cases",
       color: "bg-purple-500",
       hoverColor: "hover:bg-purple-600",
     },
     {
-      title: "Reports",
-      description: "View and download ended visit reports",
+      title: "Raportet",
+      description: "Shiko dhe shkarko raportet e vizitave të përfunduara",
       icon: FiFileText,
       link: "/dashboard/reports",
       color: "bg-indigo-500",
       hoverColor: "hover:bg-indigo-600",
     },
     {
-      title: "Laboratory",
-      description: "View lab results and tests",
+      title: "Laboratori",
+      description: "Shiko rezultatet dhe testet e laboratorit",
       icon: FiActivity,
       link: "/dashboard/laboratory",
       color: "bg-orange-500",
       hoverColor: "hover:bg-orange-600",
     },
     {
-      title: "Payments",
-      description: "Handle billing and payments",
+      title: "Pagesat",
+      description: "Menaxho faturimin dhe pagesat",
       icon: FiDollarSign,
       link: "/dashboard/payments",
       color: "bg-emerald-500",
@@ -66,10 +66,10 @@ const DashboardHome = () => {
       {/* Welcome Section */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-900 mb-2">
-          Dashboard Overview
+          Përmbledhja e panelit
         </h1>
         <p className="text-slate-600">
-          Welcome to ClinicOps. Manage your clinic operations efficiently.
+          Mirë se vini në ClinicOps. Menaxhoni operacionet e klinikës në mënyrë efikase.
         </p>
       </div>
 
@@ -107,19 +107,19 @@ const DashboardHome = () => {
       <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <h3 className="text-sm font-medium text-slate-600 mb-2">
-            Total Patients
+            Totali i pacientëve
           </h3>
           <p className="text-3xl font-bold text-slate-900">-</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <h3 className="text-sm font-medium text-slate-600 mb-2">
-            Active Cases
+            Rastet aktive
           </h3>
           <p className="text-3xl font-bold text-slate-900">-</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <h3 className="text-sm font-medium text-slate-600 mb-2">
-            Today's Appointments
+            Takimet e sotme
           </h3>
           <p className="text-3xl font-bold text-slate-900">-</p>
         </div>
