@@ -48,9 +48,11 @@ function normalizeCaseStatus(s) {
 }
 
 export default function CaseDetail() {
-  const { id } = useParams();
+  const { id, view } = useParams();
   const navigate = useNavigate();
-  const { role, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const showNurseSection = view !== "doctor";
+  const showDoctorSection = view !== "nurse";
   const { connection, joinCase, onVitalsUpdated, onReportUpdated, onCaseStatusChanged } =
     useSignalR();
 
@@ -226,16 +228,13 @@ export default function CaseDetail() {
     }
   };
 
-  const roleStr = role != null ? String(role).toLowerCase() : "";
-  const isNurse = roleStr === "nurse";
-  const isDoctor = roleStr === "doctor";
-  const isSuperAdmin = roleStr === "superadmin";
-  // Backend allows any authenticated user to submit vitals and update status; show UI for all logged-in users
   const canEditVitals = isAuthenticated;
   const canEditReportAndStatus = isAuthenticated;
   const rawStatus = caseData?.status ?? caseData?.Status;
   const caseStatus = normalizeCaseStatus(rawStatus);
   const allowedNextStatuses = caseData ? (STATUS_FLOW[caseStatus] || []) : [];
+  const nurseNextStatuses = allowedNextStatuses.filter((s) => s === "InProgress" || s === "InConsultation");
+  const doctorNextStatuses = allowedNextStatuses.filter((s) => s === "InConsultation" || s === "Completed" || s === "Finished");
 
   if (loading && !caseData) {
     return (
@@ -324,11 +323,24 @@ export default function CaseDetail() {
             <FiArrowLeft size={18} />
             Mbrapsht te rastet
           </button>
-          {isSuperAdmin && (
-            <span className="text-xs font-medium text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg">
-              Test: redaktim i plotë (Infermieri + Mjeku)
-            </span>
-          )}
+          <div className="flex gap-2">
+            <a
+              href={`/dashboard/cases/${id}/nurse`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-medium px-3 py-1.5 rounded-lg bg-teal-100 text-teal-800 hover:bg-teal-200"
+            >
+              Infermieri (skedë e re)
+            </a>
+            <a
+              href={`/dashboard/cases/${id}/doctor`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-medium px-3 py-1.5 rounded-lg bg-violet-100 text-violet-800 hover:bg-violet-200"
+            >
+              Mjeku (skedë e re)
+            </a>
+          </div>
         </div>
 
         {/* Patient card */}
@@ -358,37 +370,19 @@ export default function CaseDetail() {
               <p className="font-medium text-slate-900">{caseData.status ?? caseData.Status}</p>
             </div>
           </div>
-
-          {canEditReportAndStatus && allowedNextStatuses.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap gap-2">
-              {allowedNextStatuses.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  disabled={statusSubmitting}
-                  onClick={() => handleStatusChange(s)}
-                  className="px-4 py-2 bg-[#81a2c5] text-white text-sm font-medium rounded-lg hover:bg-[#6b8fa8] disabled:opacity-50 transition-colors"
-                >
-                  {s === "InProgress" && "Kalo në progres"}
-                  {s === "InConsultation" && "Fillo konsultimin"}
-                  {s === "Completed" && "Përfundo vizitën"}
-                  {s === "Finished" && "Mbyll vizitën"}
-                  {!["InProgress", "InConsultation", "Completed", "Finished"].includes(s) && s}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
-        {/* Vitals: Nurse can edit, Doctor sees live */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-            <FiActivity className="text-[#81a2c5]" />
-            Shenjat jetësore
-            {latestVitals && (
-              <span className="text-xs font-normal text-slate-500">(përditësime në kohë reale)</span>
-            )}
+        {showNurseSection && (
+        <>
+        {/* Nurse section: vitals + hand-off to doctor */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6 border-l-4 border-l-teal-500">
+          <h2 className="text-lg font-semibold text-slate-900 mb-1 flex items-center gap-2">
+            <FiActivity className="text-teal-600" />
+            Infermieri – Shenjat jetësore dhe radha
           </h2>
+          <p className="text-sm text-slate-500 mb-4">
+            Vendosni shenjat jetësore dhe dërgoni rastin te mjeku kur gati.
+          </p>
 
           {canEditVitals ? (
             <form onSubmit={handleSubmitVitals} className="space-y-4">
@@ -507,10 +501,90 @@ export default function CaseDetail() {
               </div>
             </div>
           )}
-        </div>
 
-        {/* Medical Report – clean card layout */}
-        <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+          {nurseNextStatuses.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <p className="text-sm font-medium text-slate-600 mb-2">Ndrysho statusin (infermieri):</p>
+              <div className="flex flex-wrap gap-2">
+                {nurseNextStatuses.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    disabled={statusSubmitting}
+                    onClick={() => handleStatusChange(s)}
+                    className="px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 disabled:opacity-50 transition-colors"
+                  >
+                    {s === "InProgress" && "Kalo në progres"}
+                    {s === "InConsultation" && "Dërgo te mjeku"}
+                    {!["InProgress", "InConsultation"].includes(s) && s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        </>
+        )}
+
+        {showDoctorSection && (
+        <>
+        {/* Doctor section: live vitals + status + diagnosis & therapy */}
+        <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden mb-6 border-l-4 border-l-violet-500">
+          <div className="p-6 pb-4">
+            <h2 className="text-lg font-semibold text-slate-900 mb-1 flex items-center gap-2">
+              <FiFileText className="text-violet-600" />
+              Mjeku – Konsultimi dhe raporti
+            </h2>
+            <p className="text-sm text-slate-500 mb-4">
+              Shenjat jetësore përditësohen në kohë reale. Vendosni diagnozën dhe terapiën dhe përfundoni vizitën.
+            </p>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 p-3 bg-slate-50 rounded-lg">
+              <div>
+                <p className="text-xs text-slate-500">Pesha</p>
+                <p className="font-medium text-slate-900">{(latestVitals?.weightKg ?? latestVitals?.WeightKg) != null ? `${latestVitals?.weightKg ?? latestVitals?.WeightKg} kg` : "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Presioni</p>
+                <p className="font-medium text-slate-900">
+                  {(latestVitals?.systolicPressure ?? latestVitals?.SystolicPressure) != null && (latestVitals?.diastolicPressure ?? latestVitals?.DiastolicPressure) != null
+                    ? `${latestVitals?.systolicPressure ?? latestVitals?.SystolicPressure}/${latestVitals?.diastolicPressure ?? latestVitals?.DiastolicPressure}`
+                    : "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Temperatura</p>
+                <p className="font-medium text-slate-900">{(latestVitals?.temperatureC ?? latestVitals?.TemperatureC) != null ? `${latestVitals?.temperatureC ?? latestVitals?.TemperatureC} °C` : "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Rrahjet</p>
+                <p className="font-medium text-slate-900">{(latestVitals?.heartRate ?? latestVitals?.HeartRate) != null ? `${latestVitals?.heartRate ?? latestVitals?.HeartRate} bpm` : "—"}</p>
+              </div>
+            </div>
+
+            {doctorNextStatuses.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                <span className="text-sm font-medium text-slate-600 mr-2">Statusi (mjeku):</span>
+                {doctorNextStatuses.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    disabled={statusSubmitting}
+                    onClick={() => handleStatusChange(s)}
+                    className="px-4 py-2 bg-violet-600 text-white text-sm font-medium rounded-lg hover:bg-violet-700 disabled:opacity-50 transition-colors"
+                  >
+                    {s === "InConsultation" && "Fillo konsultimin"}
+                    {s === "Completed" && "Përfundo vizitën"}
+                    {s === "Finished" && "Mbyll vizitën"}
+                    {!["InConsultation", "Completed", "Finished"].includes(s) && s}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+        {/* Medical Report – inside doctor section */}
+        <div className="border-t border-slate-200">
           <div className="bg-gradient-to-r from-[#81a2c5] to-[#6b8fa8] px-6 py-4 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
               <FiFileText size={22} />
@@ -641,6 +715,9 @@ export default function CaseDetail() {
             </section>
           </div>
         </div>
+        </div>
+        </>
+        )}
       </div>
     </>
   );
