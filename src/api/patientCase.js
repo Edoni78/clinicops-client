@@ -36,12 +36,13 @@ export async function submitVitals(id, body) {
 }
 
 /**
- * Doctor: submit diagnosis and therapy. Backend expects PascalCase (Diagnosis, Therapy).
+ * Doctor: submit anamneza, diagnosis and therapy. Backend expects PascalCase (Anamneza, Diagnosis, Therapy).
  * @param {string} id - case id (GUID)
- * @param {{ diagnosis: string, therapy: string }} body
+ * @param {{ anamneza?: string, diagnosis: string, therapy: string }} body
  */
 export async function submitReport(id, body) {
   const payload = {
+    Anamneza: body.anamneza ?? "",
     Diagnosis: body.diagnosis,
     Therapy: body.therapy,
   };
@@ -58,4 +59,25 @@ export async function updateCaseStatus(id, status) {
   await api.patch(`/api/PatientCase/${id}/status`, null, {
     params: { status },
   });
+}
+
+/**
+ * Get case report as PDF from backend.
+ * GET /api/PatientCase/{id}/pdf
+ * Auth: Bearer token (via axios interceptor).
+ * @param {string} id - case id (GUID)
+ * @returns {Promise<{ blob: Blob, filename: string }>}
+ * @throws 404 if case not found or not in your clinic
+ */
+export async function getCaseReportPdf(id) {
+  const { data, headers } = await api.get(`/api/PatientCase/${id}/pdf`, {
+    responseType: "blob",
+  });
+  let filename = `CaseReport_${id}.pdf`;
+  const disposition = headers["content-disposition"];
+  if (disposition) {
+    const match = disposition.match(/filename\*?=(?:UTF-8'')?"?([^";\n]+)"?/i);
+    if (match) filename = match[1].trim().replace(/^"/, "").replace(/"$/, "");
+  }
+  return { blob: data, filename };
 }

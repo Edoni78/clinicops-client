@@ -26,12 +26,14 @@ const menuItems = [
 const Sidebar = () => {
   const { user, role } = useAuth();
   const isSuperAdmin = role && role.toString().toLowerCase() === "superadmin";
+  const isDoctor = role && role.toString().toLowerCase() === "doctor";
   const hasClinic = !!(user?.clinicId ?? user?.ClinicId);
 
   const items = [
     ...(isSuperAdmin ? [{ label: "Aplikimet", icon: FiClipboard, path: "/dashboard/applies" }] : []),
     ...menuItems,
     ...(hasClinic ? [{ label: "Profili i klinikës", icon: FiBriefcase, path: "/dashboard/clinic-profile" }] : []),
+    ...(isDoctor ? [{ label: "Profili i mjekut", icon: FiUserCheck, path: "/dashboard/doctor-profile" }] : []),
   ];
 
   return (

@@ -7,8 +7,9 @@ import {
   FiDownload,
   FiRefreshCw,
 } from "react-icons/fi";
-import { getPatientCases, getPatientCase } from "../../../api/patientCase";
-import { downloadCaseReportPdfWithClinicHeader } from "../../../utils/caseReportPdf";
+import { getPatientCases } from "../../../api/patientCase";
+import { downloadCaseReportPdfFromBackend } from "../../../utils/caseReportPdf";
+import Notification from "../../../components/ui/Notification";
 
 const DATE_FILTERS = [
   { value: "today", label: "Sot" },
@@ -52,6 +53,7 @@ export default function Reports() {
   const [loading, setLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState("today");
   const [downloadingId, setDownloadingId] = useState(null);
+  const [notif, setNotif] = useState({ visible: false, type: "info", message: "" });
 
   const fetchReports = useCallback(async () => {
     setLoading(true);
@@ -91,10 +93,12 @@ export default function Reports() {
   const handleDownloadPdf = async (caseId) => {
     setDownloadingId(caseId);
     try {
-      const data = await getPatientCase(caseId);
-      await downloadCaseReportPdfWithClinicHeader(data);
-    } catch {
-      // optional: toast error
+      await downloadCaseReportPdfFromBackend(caseId);
+    } catch (e) {
+      const msg = e.response?.status === 404
+        ? "Rasti nuk u gjet ose nuk është në klinikën tuaj."
+        : (e.response?.data?.message || e.message || "Dështoi shkarkimi i raportit.");
+      setNotif({ visible: true, type: "error", message: msg });
     } finally {
       setDownloadingId(null);
     }
@@ -102,6 +106,12 @@ export default function Reports() {
 
   return (
     <div className="max-w-6xl mx-auto">
+      <Notification
+        visible={notif.visible}
+        type={notif.type}
+        message={notif.message}
+        onClose={() => setNotif((p) => ({ ...p, visible: false }))}
+      />
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">

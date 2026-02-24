@@ -11,7 +11,7 @@ import {
   FiCalendar,
 } from "react-icons/fi";
 import {
-  downloadCaseReportPdfWithClinicHeader,
+  downloadCaseReportPdfFromBackend,
 } from "../../../utils/caseReportPdf";
 import Notification from "../../../components/ui/Notification";
 import {
@@ -71,7 +71,7 @@ export default function CaseDetail() {
   const [vitalsSubmitting, setVitalsSubmitting] = useState(false);
 
   // Doctor: report form
-  const [report, setReport] = useState({ diagnosis: "", therapy: "" });
+  const [report, setReport] = useState({ anamneza: "", diagnosis: "", therapy: "" });
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [statusSubmitting, setStatusSubmitting] = useState(false);
 
@@ -94,6 +94,7 @@ export default function CaseDetail() {
       const r = data?.medicalReport ?? data?.MedicalReport;
       if (r) {
         setReport({
+          anamneza: r.anamneza ?? r.Anamneza ?? "",
           diagnosis: r.diagnosis ?? r.Diagnosis ?? "",
           therapy: r.therapy ?? r.Therapy ?? "",
         });
@@ -137,6 +138,7 @@ export default function CaseDetail() {
         const r = reportDto || {};
         setCaseData((prev) => (prev ? { ...prev, medicalReport: r } : null));
         setReport((prev) => ({
+          anamneza: r.anamneza ?? r.Anamneza ?? prev.anamneza,
           diagnosis: r.diagnosis ?? r.Diagnosis ?? prev.diagnosis,
           therapy: r.therapy ?? r.Therapy ?? prev.therapy,
         }));
@@ -200,7 +202,11 @@ export default function CaseDetail() {
     }
     setReportSubmitting(true);
     try {
-      await submitReport(id, { diagnosis: report.diagnosis.trim(), therapy: report.therapy.trim() });
+      await submitReport(id, {
+        anamneza: (report.anamneza || "").trim(),
+        diagnosis: report.diagnosis.trim(),
+        therapy: report.therapy.trim(),
+      });
       showNotif("success", "Raporti u ruajt.");
     } catch (e) {
       showNotif(
@@ -592,7 +598,17 @@ export default function CaseDetail() {
             </h2>
             <button
               type="button"
-              onClick={() => void downloadCaseReportPdfWithClinicHeader(caseData)}
+              onClick={async () => {
+                try {
+                  await downloadCaseReportPdfFromBackend(id);
+                  showNotif("success", "Raporti u shkarkua.");
+                } catch (e) {
+                  const msg = e.response?.status === 404
+                    ? "Rasti nuk u gjet ose nuk është në klinikën tuaj."
+                    : (e.response?.data?.message || e.message || "Dështoi shkarkimi i raportit.");
+                  showNotif("error", msg);
+                }
+              }}
               className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white text-sm font-medium rounded-lg transition-colors border border-white/30"
             >
               <FiDownload size={18} />
@@ -667,6 +683,16 @@ export default function CaseDetail() {
               {canEditReportAndStatus ? (
                 <form onSubmit={handleSubmitReport} className="p-6 space-y-4">
                   <div className="border-b border-slate-200 pb-4">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Anamneza</label>
+                    <textarea
+                      value={report.anamneza}
+                      onChange={(e) => setReport((p) => ({ ...p, anamneza: e.target.value }))}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
+                      placeholder="Historia e sëmundjes, anamneza..."
+                    />
+                  </div>
+                  <div className="border-b border-slate-200 pb-4">
                     <label className="block text-sm font-medium text-slate-700 mb-2">Diagnoza *</label>
                     <textarea
                       value={report.diagnosis}
@@ -698,6 +724,12 @@ export default function CaseDetail() {
                 </form>
               ) : (
                 <div className="divide-y divide-slate-200">
+                  <div className="px-6 py-4">
+                    <p className="text-sm text-slate-500 mb-2">Anamneza</p>
+                    <p className="text-slate-900 whitespace-pre-wrap">
+                      {medicalReport?.anamneza ?? medicalReport?.Anamneza ?? "—"}
+                    </p>
+                  </div>
                   <div className="px-6 py-4">
                     <p className="text-sm text-slate-500 mb-2">Diagnoza</p>
                     <p className="text-slate-900 whitespace-pre-wrap">

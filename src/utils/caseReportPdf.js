@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf";
+import { getCaseReportPdf } from "../api/patientCase";
 
 // Colors (R, G, B) for jsPDF
 const colors = {
@@ -101,6 +102,7 @@ function getReportData(caseData, clinicHeader = {}, doctorInfo = {}) {
       weight: weight != null ? String(weight) : "—",
       height: height != null ? String(height) : "—",
     },
+    anamneza: r?.anamneza ?? r?.Anamneza ?? "",
     diagnosis: r?.diagnosis ?? r?.Diagnosis ?? "—",
     therapy: r?.therapy ?? r?.Therapy ?? "—",
     notes: r?.notes ?? r?.Notes ?? "",
@@ -285,6 +287,9 @@ export function downloadCaseReportPdf(caseData, clinicHeader = null, doctorInfo 
   drawHeader(doc, data, margin, pageWidth, yRef);
   drawPatientCard(doc, data, margin, pageWidth, yRef);
   drawVitalsCard(doc, data, margin, pageWidth, yRef);
+  if (data.anamneza) {
+    drawTextBox(doc, "Anamneza", data.anamneza, margin, pageWidth, yRef, colors.teal600);
+  }
   drawTextBox(doc, "Diagnoza", data.diagnosis, margin, pageWidth, yRef, colors.emerald600);
   drawTextBox(doc, "Terapia", data.therapy, margin, pageWidth, yRef, colors.violet600);
   if (data.notes) {
@@ -298,7 +303,7 @@ export function downloadCaseReportPdf(caseData, clinicHeader = null, doctorInfo 
 }
 
 /**
- * Download case report PDF with clinic header from API.
+ * Download case report PDF with clinic header from API (client-generated fallback).
  */
 export async function downloadCaseReportPdfWithClinicHeader(caseData, doctorInfo = null) {
   const { getClinicProfile, getLogoAsBase64 } = await import("../api/clinic");
@@ -315,4 +320,22 @@ export async function downloadCaseReportPdfWithClinicHeader(caseData, doctorInfo
     clinicHeader = { name, address, phone, email, nui, logoBase64 };
   } catch (_) {}
   downloadCaseReportPdf(caseData, clinicHeader, doctorInfo);
+}
+
+/**
+ * Download case report PDF from backend (GET /api/PatientCase/{id}/pdf).
+ * Uses filename from Content-Disposition when present.
+ * @param {string} caseId - case id (GUID)
+ * @throws On 404 (case not found / not in your clinic) or network errors
+ */
+export async function downloadCaseReportPdfFromBackend(caseId) {
+  const { blob, filename } = await getCaseReportPdf(caseId);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
