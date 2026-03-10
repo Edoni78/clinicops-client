@@ -18,6 +18,10 @@ api.interceptors.request.use(
       const cleanToken = token.startsWith("Bearer ") ? token.substring(7) : token;
       config.headers.Authorization = `Bearer ${cleanToken}`;
     }
+    // Let the browser set Content-Type (with boundary) for FormData; otherwise 415
+    if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+    }
     return config;
   },
   (error) => {

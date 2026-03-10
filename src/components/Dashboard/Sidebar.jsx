@@ -10,6 +10,7 @@ import {
   FiUserCheck,
   FiClipboard,
   FiBriefcase,
+  FiPackage,
 } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 
@@ -19,6 +20,7 @@ const menuItems = [
   { label: "Rastet", icon: FiFolder, path: "/dashboard/cases" },
   { label: "Raportet", icon: FiFileText, path: "/dashboard/reports" },
   { label: "Laboratori", icon: FiActivity, path: "/dashboard/laboratory" },
+  { label: "Shërbimet", icon: FiPackage, path: "/dashboard/services" },
   { label: "Pagesat", icon: FiDollarSign, path: "/dashboard/payments" },
   { label: "Stafi", icon: FiUserCheck, path: "/dashboard/staff" },
 ];

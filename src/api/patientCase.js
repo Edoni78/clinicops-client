@@ -81,3 +81,54 @@ export async function getCaseReportPdf(id) {
   }
   return { blob: data, filename };
 }
+
+/**
+ * List lab results for a case.
+ * GET /api/PatientCase/{id}/labresults
+ * @param {string} caseId - patient case GUID
+ * @returns {Promise<Array<{ id, patientCaseId, fileName, downloadUrl, contentType, uploadedAt, uploadedById }>>}
+ */
+export async function getLabResults(caseId) {
+  const { data } = await api.get(`/api/PatientCase/${caseId}/labresults`);
+  return Array.isArray(data) ? data : [];
+}
+
+/**
+ * Upload a lab result PDF for a case.
+ * POST /api/PatientCase/{id}/labresults (multipart/form-data, field "file")
+ * @param {string} caseId - patient case GUID
+ * @param {File} file - PDF file
+ * @returns {Promise<LabResultDto>}
+ */
+export async function uploadLabResult(caseId, file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const { data } = await api.post(`/api/PatientCase/${caseId}/labresults`, formData);
+  return data;
+}
+
+/**
+ * Download a single lab result PDF. Uses downloadUrl from list (relative path).
+ * GET {baseUrl}{downloadUrl} with auth.
+ * @param {string} downloadUrl - e.g. /api/PatientCase/{caseId}/labresults/{labId}/file
+ * @param {string} [filename] - suggested filename for save
+ */
+export async function downloadLabResultFile(downloadUrl, filename) {
+  if (!downloadUrl) return;
+  const path = downloadUrl.startsWith("/") ? downloadUrl : "/" + downloadUrl;
+  const { data, headers } = await api.get(path, { responseType: "blob" });
+  let name = filename || "lab-result.pdf";
+  const disposition = headers["content-disposition"];
+  if (disposition) {
+    const m = disposition.match(/filename\*?=(?:UTF-8'')?"?([^";\n]+)"?/i);
+    if (m) name = m[1].trim().replace(/^"/, "").replace(/"$/, "");
+  }
+  const url = URL.createObjectURL(data);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
