@@ -39,6 +39,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("token_expires");
     localStorage.removeItem("user");
+    localStorage.removeItem("clinicops_active_panel");
   };
 
   return (

@@ -10,7 +10,9 @@ import {
 import Notification from "../../../components/ui/Notification";
 import { listServices, createService, updateService, deleteService } from "../../../api/service";
 import { useAuth } from "../../../context/AuthContext";
+import { useDashboardPanel, PANEL_SUPERADMIN } from "../../../context/DashboardPanelContext";
 import { getClinicId } from "../../../utils/clinicId";
+import { Navigate } from "react-router-dom";
 
 const NAME_MAX = 300;
 const PRICE_MIN = 0;
@@ -37,6 +39,7 @@ function validateForm(name, price) {
 export default function Services() {
   const { user, role } = useAuth();
   const isSuperAdmin = role && role.toString().toLowerCase() === "superadmin";
+  const { activePanel, requiresPanel } = useDashboardPanel();
   const clinicIdParam = isSuperAdmin ? getClinicId() : undefined;
   const hasClinic = !!(user?.clinicId ?? user?.ClinicId) || isSuperAdmin;
 
@@ -153,6 +156,10 @@ export default function Services() {
       setDeleteSubmitting(false);
     }
   };
+
+  if (requiresPanel && activePanel !== PANEL_SUPERADMIN) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   if (!hasClinic) {
     return (

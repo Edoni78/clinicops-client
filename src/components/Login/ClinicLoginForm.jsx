@@ -45,12 +45,7 @@ const ClinicLoginForm = () => {
       });
 
       setTimeout(() => {
-        const role = (user.role ?? user.Role ?? "").toString();
-        if (role === "SuperAdmin") {
-          navigate("/dashboard/applies");
-        } else {
-          navigate("/dashboard");
-        }
+        navigate("/dashboard");
       }, 500);
     } catch (err) {
       setNotif({
@@ -78,12 +73,19 @@ const ClinicLoginForm = () => {
         }
       />
 
+      <Link
+        to="/"
+        className="inline-block text-sm font-semibold text-slate-500 hover:text-[#81a2c5] mb-6"
+      >
+        ← Faqe kryesore
+      </Link>
+
       <h1 className="text-4xl font-bold text-[#81a2c5] mb-4">
-        Clinic Login
+        Hyr në iKlinika
       </h1>
 
       <p className="text-slate-500 mb-10 max-w-xl">
-        Sign in to manage your clinic operations.
+        Identifikohuni për të menaxhuar klinikën, pacientët dhe stafin.
       </p>
 
       <form
@@ -120,18 +122,18 @@ const ClinicLoginForm = () => {
         </button>
 
         <p className="text-center text-slate-500 text-sm">
-          Don’t have a clinic account?{" "}
+          Nuk keni llogari klinike?{" "}
           <Link
-            to="/"
+            to="/apply"
             className="font-semibold text-[#81a2c5] hover:underline"
           >
-            Create one
+            Aplikoni këtu
           </Link>
         </p>
       </form>
 
       <p className="text-sm text-slate-400 mt-10">
-        Secure • Fast • ClinicOps
+        I sigurt • I shpejtë • iKlinika
       </p>
     </>
   );

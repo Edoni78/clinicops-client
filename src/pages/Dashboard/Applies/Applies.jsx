@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import {
   FiFileText,
   FiCheck,
@@ -15,6 +15,7 @@ import {
   rejectApplication,
 } from "../../../api/clinicApplication";
 import { useAuth } from "../../../context/AuthContext";
+import { useDashboardPanel, PANEL_SUPERADMIN } from "../../../context/DashboardPanelContext";
 
 const STATUS_OPTIONS = [
   { value: "", label: "Të gjitha" },
@@ -54,6 +55,7 @@ export default function Applies() {
   const [actionModal, setActionModal] = useState(null);
 
   const isSuperAdmin = role && role.toString().toLowerCase() === "superadmin";
+  const { activePanel } = useDashboardPanel();
 
   const fetchApplications = useCallback(async () => {
     setLoading(true);
@@ -120,6 +122,9 @@ export default function Applies() {
   };
 
   if (!isSuperAdmin) return null;
+  if (isSuperAdmin && activePanel !== PANEL_SUPERADMIN) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return (
     <>

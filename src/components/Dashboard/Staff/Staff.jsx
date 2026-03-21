@@ -3,7 +3,9 @@ import { FiUserCheck, FiUserPlus, FiMail, FiRefreshCw } from "react-icons/fi";
 import Notification from "../../ui/Notification";
 import { listClinicUsers, createClinicUser } from "../../../api/clinicUser";
 import { useAuth } from "../../../context/AuthContext";
+import { useDashboardPanel, PANEL_SUPERADMIN } from "../../../context/DashboardPanelContext";
 import { getClinicId } from "../../../utils/clinicId";
+import { Navigate } from "react-router-dom";
 
 const ROLES = [
   { value: "Doctor", label: "Mjek" },
@@ -34,7 +36,9 @@ export default function Staff() {
 
   const isClinicAdmin = role && role.toString().toLowerCase() === "clinicadmin";
   const isSuperAdmin = role && role.toString().toLowerCase() === "superadmin";
+  const { activePanel } = useDashboardPanel();
   const canManageStaff = isClinicAdmin || isSuperAdmin;
+  const superAdminInCorrectPanel = !isSuperAdmin || activePanel === PANEL_SUPERADMIN;
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -88,6 +92,10 @@ export default function Staff() {
         <p className="text-slate-600">Nuk keni leje për të menaxhuar stafin.</p>
       </div>
     );
+  }
+
+  if (isSuperAdmin && !superAdminInCorrectPanel) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return (

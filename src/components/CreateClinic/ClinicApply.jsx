@@ -60,12 +60,12 @@ const ClinicApply = () => {
       />
 
       <h1 className="text-4xl font-bold text-[#81a2c5] mb-4">
-        Apply for ClinicOps
+        Aplikoni për iKlinika
       </h1>
 
       <p className="text-slate-500 mb-10 max-w-xl">
-        Submit your clinic application. Our team will review it and
-        activate your account once approved.
+        Plotësoni aplikimin për klinikën tuaj. Ekipi ynë e shqyrton dhe aktivizon llogarinë pasi të
+        aprovohet.
       </p>
 
       <form
@@ -112,18 +112,18 @@ const ClinicApply = () => {
         </button>
 
         <p className="text-center text-slate-500 text-sm">
-          Already approved?{" "}
+          Tashmë i aprovuar?{" "}
           <Link
             to="/login"
             className="font-semibold text-[#81a2c5] hover:underline"
           >
-            Log in
+            Hyr në sistem
           </Link>
         </p>
       </form>
 
       <p className="text-sm text-slate-400 mt-10">
-        Secure • Reviewed • ClinicOps
+        I sigurt • I shqyrtuar • iKlinika
       </p>
     </>
   );

@@ -69,7 +69,7 @@ const DashboardHome = () => {
           Përmbledhja e panelit
         </h1>
         <p className="text-slate-600">
-          Mirë se vini në ClinicOps. Menaxhoni operacionet e klinikës në mënyrë efikase.
+          Mirë se vini në iKlinika. Menaxhoni operacionet e klinikës në mënyrë efikase.
         </p>
       </div>
 

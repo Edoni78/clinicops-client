@@ -1,8 +1,11 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home/Home";
+import ApplyPage from "./pages/Apply/ApplyPage";
 import ClinicLogin from "./components/Login/ClinicLogin";
 import DashboardLayout from "./components/Dashboard/DashboardLayout";
 import ProtectedRoute from "./routes/ProtectedRoute";
+import { DashboardPanelProvider } from "./context/DashboardPanelContext";
+import PanelSelection from "./pages/Dashboard/PanelSelection";
 import Patients from "./pages/Dashboard/Patients";
 import PatientsList from "./pages/Dashboard/PatientsList";
 import DashboardHome from "./pages/Dashboard/DashboardHome";
@@ -22,6 +25,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/apply" element={<ApplyPage />} />
         <Route path="/login" element={<ClinicLogin />} />
 
         {/* PROTECTED DASHBOARD */}
@@ -29,10 +33,13 @@ function App() {
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <DashboardLayout />
+              <DashboardPanelProvider>
+                <DashboardLayout />
+              </DashboardPanelProvider>
             </ProtectedRoute>
           }
         >
+          <Route path="panel" element={<PanelSelection />} />
           <Route index element={<DashboardHome />} />
           <Route path="patients" element={<Patients />} />
           <Route path="patients-list" element={<PatientsList />} />
