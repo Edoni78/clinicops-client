@@ -8,8 +8,12 @@ import {
   FiDollarSign,
   FiUserPlus,
 } from "react-icons/fi";
+import { useAuth } from "../../context/AuthContext";
+import { CLINIC_MODE_SOLO_DOCTOR } from "../../utils/clinicMode";
 
 const DashboardHome = () => {
+  const { clinicMode } = useAuth();
+  const isSoloDoctorClinic = clinicMode === CLINIC_MODE_SOLO_DOCTOR;
   const quickActions = [
     {
       title: "Regjistro pacient të ri",
@@ -60,6 +64,9 @@ const DashboardHome = () => {
       hoverColor: "hover:bg-emerald-600",
     },
   ];
+  const visibleQuickActions = isSoloDoctorClinic
+    ? quickActions.filter((a) => a.link !== "/dashboard/laboratory")
+    : quickActions;
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -75,7 +82,7 @@ const DashboardHome = () => {
 
       {/* Quick Actions Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {quickActions.map((action) => {
+        {visibleQuickActions.map((action) => {
           const Icon = action.icon;
           return (
             <Link

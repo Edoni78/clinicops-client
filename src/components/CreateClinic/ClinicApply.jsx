@@ -2,11 +2,16 @@ import React, { useState } from "react";
 import { applyForClinic } from "../../api/auth";
 import Notification from "../ui/Notification";
 import { Link } from "react-router-dom";
+import {
+  CLINIC_MODE_SOLO_DOCTOR,
+  CLINIC_MODE_FULL_TEAM,
+} from "../../utils/clinicMode";
 
 const ClinicApply = () => {
   const [clinicName, setClinicName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [clinicMode, setClinicMode] = useState(CLINIC_MODE_FULL_TEAM);
   const [loading, setLoading] = useState(false);
 
   const [notif, setNotif] = useState({
@@ -20,7 +25,7 @@ const ClinicApply = () => {
     setLoading(true);
 
     try {
-      await applyForClinic(clinicName, email, password);
+      await applyForClinic(clinicName, email, password, clinicMode);
 
       setNotif({
         visible: true,
@@ -32,6 +37,7 @@ const ClinicApply = () => {
       setClinicName("");
       setEmail("");
       setPassword("");
+      setClinicMode(CLINIC_MODE_FULL_TEAM);
     } catch (err) {
       const msg =
         err.response?.data?.message ??
@@ -101,6 +107,26 @@ const ClinicApply = () => {
           className="w-full border border-slate-300 rounded-md px-4 py-3 text-lg
           focus:outline-none focus:ring-2 focus:ring-[#81a2c5]"
         />
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Lloji i klinikës *
+          </label>
+          <select
+            value={clinicMode}
+            onChange={(e) => setClinicMode(e.target.value)}
+            required
+            className="w-full border border-slate-300 rounded-md px-4 py-3 text-base bg-white
+            focus:outline-none focus:ring-2 focus:ring-[#81a2c5]"
+          >
+            <option value={CLINIC_MODE_FULL_TEAM}>
+              FullTeam - me infermier dhe laborator
+            </option>
+            <option value={CLINIC_MODE_SOLO_DOCTOR}>
+              SoloDoctor - vetëm mjek (pa infermier, pa laborator)
+            </option>
+          </select>
+        </div>
 
         <button
           type="submit"

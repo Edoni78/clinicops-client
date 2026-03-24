@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import {
   FiDroplet,
   FiFolder,
@@ -13,6 +13,8 @@ import {
 } from "react-icons/fi";
 import { getPatientCases, getLabResults, uploadLabResult, downloadLabResultFile } from "../../api/patientCase";
 import Notification from "../../components/ui/Notification";
+import { useAuth } from "../../context/AuthContext";
+import { CLINIC_MODE_SOLO_DOCTOR } from "../../utils/clinicMode";
 
 const STATUS_LABELS = {
   Waiting: "Në pritje",
@@ -65,6 +67,8 @@ const DATE_FILTER_TODAY = "today";
 const DATE_FILTER_YESTERDAY = "yesterday";
 
 export default function Laboratory() {
+  const { clinicMode } = useAuth();
+  const isSoloDoctorClinic = clinicMode === CLINIC_MODE_SOLO_DOCTOR;
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [labsByCaseId, setLabsByCaseId] = useState({});
@@ -154,6 +158,10 @@ export default function Laboratory() {
     }
     return cases;
   })();
+
+  if (isSoloDoctorClinic) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return (
     <div className="max-w-5xl mx-auto">

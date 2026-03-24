@@ -6,6 +6,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { useDashboardPanel, PANEL_SUPERADMIN } from "../../../context/DashboardPanelContext";
 import { getClinicId } from "../../../utils/clinicId";
 import { Navigate } from "react-router-dom";
+import { CLINIC_MODE_SOLO_DOCTOR } from "../../../utils/clinicMode";
 
 const ROLES = [
   { value: "Doctor", label: "Mjek" },
@@ -26,12 +27,12 @@ function formatDate(dateString) {
 }
 
 export default function Staff() {
-  const { role } = useAuth();
+  const { role, clinicMode } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [roleFilter, setRoleFilter] = useState("");
   const [notif, setNotif] = useState({ visible: false, type: "info", message: "" });
-  const [form, setForm] = useState({ email: "", password: "", role: "Nurse" });
+  const [form, setForm] = useState({ email: "", password: "", role: "Doctor" });
   const [submitting, setSubmitting] = useState(false);
 
   const isClinicAdmin = role && role.toString().toLowerCase() === "clinicadmin";
@@ -39,6 +40,16 @@ export default function Staff() {
   const { activePanel } = useDashboardPanel();
   const canManageStaff = isClinicAdmin || isSuperAdmin;
   const superAdminInCorrectPanel = !isSuperAdmin || activePanel === PANEL_SUPERADMIN;
+  const roleOptions =
+    clinicMode === CLINIC_MODE_SOLO_DOCTOR
+      ? ROLES.filter((r) => r.value === "Doctor")
+      : ROLES;
+
+  useEffect(() => {
+    if (!roleOptions.some((r) => r.value === form.role)) {
+      setForm((p) => ({ ...p, role: roleOptions[0]?.value || "Doctor" }));
+    }
+  }, [roleOptions, form.role]);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -73,7 +84,7 @@ export default function Staff() {
         isSuperAdmin ? getClinicId() : undefined
       );
       setNotif({ visible: true, type: "success", message: "Përdoruesi i stafit u krijua. Mund të identifikohen me këtë email dhe fjalëkalim." });
-      setForm({ email: "", password: "", role: "Nurse" });
+      setForm({ email: "", password: "", role: roleOptions[0]?.value || "Doctor" });
       fetchUsers();
     } catch (err) {
       setNotif({
@@ -166,7 +177,7 @@ export default function Staff() {
                 onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent bg-white"
               >
-                {ROLES.map((r) => (
+                {roleOptions.map((r) => (
                   <option key={r.value} value={r.value}>
                     {r.label}
                   </option>
@@ -192,7 +203,7 @@ export default function Staff() {
           >
             Të gjitha
           </button>
-          {ROLES.map((r) => (
+          {roleOptions.map((r) => (
             <button
               key={r.value}
               type="button"

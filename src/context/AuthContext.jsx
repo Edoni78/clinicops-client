@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { getClinicModeFromUser } from "../utils/clinicMode";
 
 const AuthContext = createContext(null);
 
@@ -47,6 +48,7 @@ export const AuthProvider = ({ children }) => {
         value={{
         user,
         role: user?.role ?? user?.Role ?? null,
+        clinicMode: getClinicModeFromUser(user),
         isAuthenticated: !!user,
         login,
         logout,

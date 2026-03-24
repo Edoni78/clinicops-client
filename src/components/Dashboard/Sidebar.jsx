@@ -19,6 +19,7 @@ import {
   PANEL_DOCTOR,
   PANEL_SUPERADMIN,
 } from "../../context/DashboardPanelContext";
+import { CLINIC_MODE_SOLO_DOCTOR } from "../../utils/clinicMode";
 
 const menuItems = [
   { label: "Paneli", icon: FiHome, path: "/dashboard" },
@@ -38,17 +39,21 @@ const patientsListItem = {
 };
 
 const Sidebar = () => {
-  const { user, role } = useAuth();
+  const { user, role, clinicMode } = useAuth();
   const { requiresPanel, activePanel } = useDashboardPanel();
   const isSuperAdmin = role && role.toString().toLowerCase() === "superadmin";
   const isDoctor = role && role.toString().toLowerCase() === "doctor";
   const hasClinic = !!(user?.clinicId ?? user?.ClinicId);
+  const isSoloDoctorClinic = clinicMode === CLINIC_MODE_SOLO_DOCTOR;
 
   const items = useMemo(() => {
     if (!requiresPanel) {
+      const baseMenu = isSoloDoctorClinic
+        ? menuItems.filter((i) => i.path !== "/dashboard/laboratory")
+        : menuItems;
       const base = [
         ...(isSuperAdmin ? [{ label: "Aplikimet", icon: FiClipboard, path: "/dashboard/applies" }] : []),
-        ...menuItems,
+        ...baseMenu,
         ...(hasClinic ? [{ label: "Profili i klinikës", icon: FiBriefcase, path: "/dashboard/clinic-profile" }] : []),
         ...(isDoctor ? [{ label: "Profili i mjekut", icon: FiUserCheck, path: "/dashboard/doctor-profile" }] : []),
       ];
@@ -63,7 +68,7 @@ const Sidebar = () => {
         { label: "Pacientët", icon: FiUsers, path: "/dashboard/patients" },
         patientsListItem,
         { label: "Rastet", icon: FiFolder, path: "/dashboard/cases" },
-        { label: "Laboratori", icon: FiActivity, path: "/dashboard/laboratory" },
+        ...(!isSoloDoctorClinic ? [{ label: "Laboratori", icon: FiActivity, path: "/dashboard/laboratory" }] : []),
       ];
     }
 
@@ -73,7 +78,7 @@ const Sidebar = () => {
         { label: "Rastet", icon: FiFolder, path: "/dashboard/cases" },
         { label: "Raportet", icon: FiFileText, path: "/dashboard/reports" },
         ...(isDoctor ? [{ label: "Profili i mjekut", icon: FiUserCheck, path: "/dashboard/doctor-profile" }] : []),
-        { label: "Laboratori", icon: FiActivity, path: "/dashboard/laboratory" },
+        ...(!isSoloDoctorClinic ? [{ label: "Laboratori", icon: FiActivity, path: "/dashboard/laboratory" }] : []),
       ];
     }
 
@@ -85,14 +90,14 @@ const Sidebar = () => {
         patientsListItem,
         { label: "Rastet", icon: FiFolder, path: "/dashboard/cases" },
         { label: "Raportet", icon: FiFileText, path: "/dashboard/reports" },
-        { label: "Laboratori", icon: FiActivity, path: "/dashboard/laboratory" },
+        ...(!isSoloDoctorClinic ? [{ label: "Laboratori", icon: FiActivity, path: "/dashboard/laboratory" }] : []),
         { label: "Shërbimet", icon: FiPackage, path: "/dashboard/services" },
         { label: "Stafi", icon: FiUserCheck, path: "/dashboard/staff" },
       ];
     }
 
     return [];
-  }, [requiresPanel, activePanel, isSuperAdmin, isDoctor, hasClinic]);
+  }, [requiresPanel, activePanel, isSuperAdmin, isDoctor, hasClinic, isSoloDoctorClinic]);
 
   return (
     <aside className="w-64 bg-white border-r hidden md:flex flex-col">

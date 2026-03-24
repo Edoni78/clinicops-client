@@ -27,6 +27,7 @@ import {
 } from "../../../api/patientCase";
 import { useAuth } from "../../../context/AuthContext";
 import { useSignalR } from "../../../context/SignalRContext";
+import { CLINIC_MODE_SOLO_DOCTOR } from "../../../utils/clinicMode";
 
 const STATUS_FLOW = {
   Waiting: ["InProgress"],
@@ -55,10 +56,11 @@ function normalizeCaseStatus(s) {
 export default function CaseDetail() {
   const { id, view } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated, role } = useAuth();
+  const { isAuthenticated, role, clinicMode } = useAuth();
   const currentRole = String(role || "").toLowerCase();
   const isDoctor = currentRole === "doctor";
-  const showNurseSection = !isDoctor && view !== "doctor";
+  const isSoloDoctorClinic = clinicMode === CLINIC_MODE_SOLO_DOCTOR;
+  const showNurseSection = !isSoloDoctorClinic && !isDoctor && view !== "doctor";
   const showDoctorSection = view !== "nurse";
   const { connection, joinCase, onVitalsUpdated, onReportUpdated, onCaseStatusChanged } =
     useSignalR();
@@ -127,6 +129,11 @@ export default function CaseDetail() {
   }, [fetchCase]);
 
   useEffect(() => {
+    if (isSoloDoctorClinic) {
+      setLabResults([]);
+      setLabResultsLoading(false);
+      return;
+    }
     if (!id) return;
     let cancelled = false;
     setLabResultsLoading(true);
@@ -141,7 +148,7 @@ export default function CaseDetail() {
         if (!cancelled) setLabResultsLoading(false);
       });
     return () => { cancelled = true; };
-  }, [id]);
+  }, [id, isSoloDoctorClinic]);
 
   // Join SignalR room for this case and subscribe to events
   useEffect(() => {
@@ -236,7 +243,36 @@ export default function CaseDetail() {
         diagnosis: report.diagnosis.trim(),
         therapy: report.therapy.trim(),
       });
-      showNotif("success", "Raporti u ruajt.");
+      if (isSoloDoctorClinic) {
+        // SoloDoctor workflow: close the case immediately after report save.
+        // Try direct finish first; if backend enforces step flow, advance in sequence.
+        let finished = false;
+        try {
+          await updateCaseStatus(id, "Finished");
+          finished = true;
+        } catch {
+          const fallbackFlow = ["InProgress", "InConsultation", "Completed", "Finished"];
+          for (const next of fallbackFlow) {
+            try {
+              await updateCaseStatus(id, next);
+            } catch {
+              // Continue trying remaining steps.
+            }
+          }
+          const latest = await getPatientCase(id);
+          const latestStatus = normalizeCaseStatus(latest?.status ?? latest?.Status);
+          finished = latestStatus === "Finished";
+        }
+
+        if (finished) {
+          setCaseData((prev) => (prev ? { ...prev, status: "Finished" } : prev));
+          showNotif("success", "Raporti u ruajt dhe rasti u mbyll automatikisht (SoloDoctor).");
+        } else {
+          showNotif("success", "Raporti u ruajt.");
+        }
+      } else {
+        showNotif("success", "Raporti u ruajt.");
+      }
     } catch (e) {
       showNotif(
         "error",
@@ -552,10 +588,13 @@ export default function CaseDetail() {
               <FiFileText className="text-[#81a2c5]" />
               Mjeku – Konsultimi dhe raporti
             </h2>
-            <p className="text-sm text-slate-500 mb-4">
-              Shenjat jetësore përditësohen në kohë reale. Vendosni diagnozën dhe terapiën dhe përfundoni vizitën.
-            </p>
+          <p className="text-sm text-slate-500 mb-4">
+            {isSoloDoctorClinic
+              ? "Vendosni diagnozën dhe terapiën dhe përfundoni vizitën."
+              : "Shenjat jetësore përditësohen në kohë reale. Vendosni diagnozën dhe terapiën dhe përfundoni vizitën."}
+          </p>
 
+            {!isSoloDoctorClinic && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5 p-4 bg-slate-50 rounded-xl border border-slate-200">
               <div>
                 <p className="text-xs text-slate-500">Pesha</p>
@@ -578,6 +617,7 @@ export default function CaseDetail() {
                 <p className="font-medium text-slate-900">{(latestVitals?.heartRate ?? latestVitals?.HeartRate) != null ? `${latestVitals?.heartRate ?? latestVitals?.HeartRate} bpm` : "—"}</p>
               </div>
             </div>
+            )}
 
             {doctorNextStatuses.length > 0 && (
               <div className="flex flex-wrap gap-2">
@@ -651,6 +691,7 @@ export default function CaseDetail() {
             </section>
 
             {/* Vitals – lined rows */}
+            {!isSoloDoctorClinic && (
             <section className="border-b border-slate-200">
               <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider px-6 py-3 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
                 <FiActivity size={14} />
@@ -684,6 +725,7 @@ export default function CaseDetail() {
                 ))}
               </div>
             </section>
+            )}
 
             {/* Diagnosis & therapy – lined */}
             <section>
@@ -763,6 +805,7 @@ export default function CaseDetail() {
         )}
 
         {/* Lab results – list + upload (any role that can view the case) */}
+        {!isSoloDoctorClinic && (
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-7 mb-7">
           <h2 className="text-lg font-semibold text-slate-900 mb-1 flex items-center gap-2">
             <FiDroplet className="text-amber-600" />
@@ -844,6 +887,7 @@ export default function CaseDetail() {
             </ul>
           )}
         </div>
+        )}
 
       </div>
     </>
