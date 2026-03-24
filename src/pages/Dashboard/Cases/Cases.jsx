@@ -33,8 +33,8 @@ function statusBadgeClass(status) {
   const map = {
     Waiting: "bg-amber-100 text-amber-800",
     InProgress: "bg-blue-100 text-blue-800",
-    InConsultation: "bg-violet-100 text-violet-800",
-    Completed: "bg-emerald-100 text-emerald-800",
+    InConsultation: "bg-sky-100 text-sky-800",
+    Completed: "bg-indigo-100 text-indigo-800",
     Finished: "bg-slate-100 text-slate-700",
   };
   return map[status] || "bg-gray-100 text-gray-800";
@@ -95,7 +95,7 @@ export default function Cases() {
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-            <span className="p-2 rounded-xl bg-gradient-to-br from-[#81a2c5] to-[#6b8fa8] text-white shadow-lg">
+            <span className="p-2 rounded-xl bg-slate-900 text-white shadow-lg">
               <FiFolder size={28} />
             </span>
             Rastet e pacientëve
@@ -106,8 +106,8 @@ export default function Cases() {
         </div>
         <div className="flex items-center gap-3 flex-shrink-0">
           {connectionState === "Connected" && (
-            <span className="flex items-center gap-1.5 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg font-medium">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="flex items-center gap-1.5 text-sm text-sky-700 bg-sky-50 border border-sky-200 px-3 py-1.5 rounded-lg font-medium">
+              <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
               Direkt
             </span>
           )}
@@ -123,7 +123,7 @@ export default function Cases() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <svg
@@ -149,7 +149,7 @@ export default function Cases() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50">
+                <tr className="border-b border-slate-200 bg-slate-50/80">
                   <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
                     Pacienti
                   </th>
@@ -170,7 +170,7 @@ export default function Cases() {
                   const status = c.status ?? c.Status;
                   const createdAt = c.createdAt ?? c.CreatedAt;
                   return (
-                    <tr key={caseId} className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors">
+                    <tr key={caseId} className="border-b border-slate-100/90 hover:bg-slate-50 transition-colors">
                       <td className="py-3 px-4">
                         <Link to={`/dashboard/cases/${caseId}`} className="font-medium text-slate-900 hover:text-[#81a2c5]">
                           {firstName} {lastName}
@@ -183,7 +183,7 @@ export default function Cases() {
                         </span>
                       </td>
                       <td className="py-3 px-4">
-                        <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${statusBadgeClass(status)}`}>
+                        <span className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full border border-current/10 ${statusBadgeClass(status)}`}>
                           {getStatusLabel(status)}
                         </span>
                       </td>

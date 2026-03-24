@@ -22,6 +22,8 @@ import {
   FiCalendar,
 } from "react-icons/fi";
 import entryImg from "../../assets/images/entry.jpg";
+// Logo navigimi — zëvendësoni skedarin (p.sh. logo.png) dhe/ose ndryshoni rrugën e importit
+import navLogo from "../../assets/images/logo3.png";
 
 const features = [
   {
@@ -226,8 +228,13 @@ export default function Home() {
       {/* Nav */}
       <header className="relative z-20 border-b border-slate-200/80 bg-white/70 backdrop-blur-xl sticky top-0">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 sm:h-18 flex items-center justify-between gap-4">
-          <Link to="/" className="flex items-center gap-2 group">
-            <span className="text-xl sm:text-2xl font-bold tracking-tight bg-gradient-to-r from-slate-800 to-[#5a7a94] bg-clip-text text-transparent">
+          <Link to="/" className="flex items-center group">
+            <img
+              src={navLogo}
+              alt="iKlinika"
+              className="h-12 sm:h-14 lg:h-16 w-auto max-h-16 object-contain object-left group-hover:opacity-90 transition-opacity"
+            />
+            <span className="text-xl sm:text-2xl font-bold tracking-tight text-[#8db2c6]">
               iKlinika
             </span>
           </Link>

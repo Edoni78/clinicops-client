@@ -8,7 +8,6 @@ import {
   FiUser,
   FiPhone,
   FiDownload,
-  FiCalendar,
   FiUpload,
   FiFile,
   FiDroplet,
@@ -56,8 +55,10 @@ function normalizeCaseStatus(s) {
 export default function CaseDetail() {
   const { id, view } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
-  const showNurseSection = view !== "doctor";
+  const { isAuthenticated, role } = useAuth();
+  const currentRole = String(role || "").toLowerCase();
+  const isDoctor = currentRole === "doctor";
+  const showNurseSection = !isDoctor && view !== "doctor";
   const showDoctorSection = view !== "nurse";
   const { connection, joinCase, onVitalsUpdated, onReportUpdated, onCaseStatusChanged } =
     useSignalR();
@@ -347,43 +348,25 @@ export default function CaseDetail() {
         onClose={() => setNotif((prev) => ({ ...prev, visible: false }))}
       />
 
-      <div className="max-w-4xl mx-auto">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
           <button
             type="button"
             onClick={() => navigate("/dashboard/cases")}
-            className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
+            className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors px-3 py-2 rounded-lg hover:bg-white border border-transparent hover:border-slate-200"
           >
             <FiArrowLeft size={18} />
             Mbrapsht te rastet
           </button>
-          <div className="flex gap-2">
-            <a
-              href={`/dashboard/cases/${id}/nurse`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm font-medium px-3 py-1.5 rounded-lg bg-teal-100 text-teal-800 hover:bg-teal-200"
-            >
-              Infermieri (skedë e re)
-            </a>
-            <a
-              href={`/dashboard/cases/${id}/doctor`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm font-medium px-3 py-1.5 rounded-lg bg-violet-100 text-violet-800 hover:bg-violet-200"
-            >
-              Mjeku (skedë e re)
-            </a>
-          </div>
         </div>
 
         {/* Patient card */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-7 mb-7">
           <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
             <FiUser className="text-[#81a2c5]" />
             Pacienti
           </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             <div>
               <p className="text-sm text-slate-500">Emri</p>
               <p className="font-medium text-slate-900">{patientDisplayName}</p>
@@ -409,9 +392,9 @@ export default function CaseDetail() {
         {showNurseSection && (
         <>
         {/* Nurse section: vitals + hand-off to doctor */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6 border-l-4 border-l-teal-500">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-7 mb-7">
           <h2 className="text-lg font-semibold text-slate-900 mb-1 flex items-center gap-2">
-            <FiActivity className="text-teal-600" />
+            <FiActivity className="text-[#81a2c5]" />
             Infermieri – Shenjat jetësore dhe radha
           </h2>
           <p className="text-sm text-slate-500 mb-4">
@@ -419,7 +402,7 @@ export default function CaseDetail() {
           </p>
 
           {canEditVitals ? (
-            <form onSubmit={handleSubmitVitals} className="space-y-4">
+            <form onSubmit={handleSubmitVitals} className="space-y-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -431,7 +414,7 @@ export default function CaseDetail() {
                     min="0"
                     value={vitals.weightKg}
                     onChange={(e) => setVitals((p) => ({ ...p, weightKg: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -445,7 +428,7 @@ export default function CaseDetail() {
                     onChange={(e) =>
                       setVitals((p) => ({ ...p, systolicPressure: e.target.value }))
                     }
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -459,7 +442,7 @@ export default function CaseDetail() {
                     onChange={(e) =>
                       setVitals((p) => ({ ...p, diastolicPressure: e.target.value }))
                     }
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -473,7 +456,7 @@ export default function CaseDetail() {
                     onChange={(e) =>
                       setVitals((p) => ({ ...p, temperatureC: e.target.value }))
                     }
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -485,14 +468,14 @@ export default function CaseDetail() {
                     min="0"
                     value={vitals.heartRate}
                     onChange={(e) => setVitals((p) => ({ ...p, heartRate: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
                   />
                 </div>
               </div>
               <button
                 type="submit"
                 disabled={vitalsSubmitting}
-                className="flex items-center gap-2 px-5 py-2.5 bg-[#81a2c5] text-white font-medium rounded-lg hover:bg-[#6b8fa8] disabled:opacity-50 transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#81a2c5] text-white font-semibold rounded-xl hover:bg-[#6b8fa8] disabled:opacity-50 transition-colors shadow-sm"
               >
                 {vitalsSubmitting ? (
                   <span className="animate-pulse">Duke ruajtur…</span>
@@ -537,7 +520,7 @@ export default function CaseDetail() {
           )}
 
           {nurseNextStatuses.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-slate-100">
+            <div className="mt-5 pt-5 border-t border-slate-200">
               <p className="text-sm font-medium text-slate-600 mb-2">Ndrysho statusin (infermieri):</p>
               <div className="flex flex-wrap gap-2">
                 {nurseNextStatuses.map((s) => (
@@ -546,7 +529,7 @@ export default function CaseDetail() {
                     type="button"
                     disabled={statusSubmitting}
                     onClick={() => handleStatusChange(s)}
-                    className="px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 disabled:opacity-50 transition-colors"
+                    className="px-4 py-2 bg-[#81a2c5] text-white text-sm font-semibold rounded-xl hover:bg-[#6b8fa8] disabled:opacity-50 transition-colors shadow-sm"
                   >
                     {s === "InProgress" && "Kalo në progres"}
                     {s === "InConsultation" && "Dërgo te mjeku"}
@@ -563,17 +546,17 @@ export default function CaseDetail() {
         {showDoctorSection && (
         <>
         {/* Doctor section: live vitals + status + diagnosis & therapy */}
-        <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden mb-6 border-l-4 border-l-violet-500">
-          <div className="p-6 pb-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-7">
+          <div className="p-7 pb-5">
             <h2 className="text-lg font-semibold text-slate-900 mb-1 flex items-center gap-2">
-              <FiFileText className="text-violet-600" />
+              <FiFileText className="text-[#81a2c5]" />
               Mjeku – Konsultimi dhe raporti
             </h2>
             <p className="text-sm text-slate-500 mb-4">
               Shenjat jetësore përditësohen në kohë reale. Vendosni diagnozën dhe terapiën dhe përfundoni vizitën.
             </p>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 p-3 bg-slate-50 rounded-lg">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5 p-4 bg-slate-50 rounded-xl border border-slate-200">
               <div>
                 <p className="text-xs text-slate-500">Pesha</p>
                 <p className="font-medium text-slate-900">{(latestVitals?.weightKg ?? latestVitals?.WeightKg) != null ? `${latestVitals?.weightKg ?? latestVitals?.WeightKg} kg` : "—"}</p>
@@ -605,7 +588,7 @@ export default function CaseDetail() {
                     type="button"
                     disabled={statusSubmitting}
                     onClick={() => handleStatusChange(s)}
-                    className="px-4 py-2 bg-violet-600 text-white text-sm font-medium rounded-lg hover:bg-violet-700 disabled:opacity-50 transition-colors"
+                    className="px-4 py-2 bg-[#81a2c5] text-white text-sm font-semibold rounded-xl hover:bg-[#6b8fa8] disabled:opacity-50 transition-colors shadow-sm"
                   >
                     {s === "InConsultation" && "Fillo konsultimin"}
                     {s === "Completed" && "Përfundo vizitën"}
@@ -619,7 +602,7 @@ export default function CaseDetail() {
 
         {/* Medical Report – inside doctor section */}
         <div className="border-t border-slate-200">
-          <div className="bg-gradient-to-r from-[#81a2c5] to-[#6b8fa8] px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="bg-slate-900 px-7 py-4 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
               <FiFileText size={22} />
               Raporti mjekësor
@@ -637,7 +620,7 @@ export default function CaseDetail() {
                   showNotif("error", msg);
                 }
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white text-sm font-medium rounded-lg transition-colors border border-white/30"
+              className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-sm font-semibold rounded-xl transition-colors border border-white/20"
             >
               <FiDownload size={18} />
               Shkarko PDF
@@ -709,14 +692,14 @@ export default function CaseDetail() {
                 Shënime klinike
               </h3>
               {canEditReportAndStatus ? (
-                <form onSubmit={handleSubmitReport} className="p-6 space-y-4">
+                <form onSubmit={handleSubmitReport} className="p-7 space-y-5">
                   <div className="border-b border-slate-200 pb-4">
                     <label className="block text-sm font-medium text-slate-700 mb-2">Anamneza</label>
                     <textarea
                       value={report.anamneza}
                       onChange={(e) => setReport((p) => ({ ...p, anamneza: e.target.value }))}
                       rows={3}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
+                      className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
                       placeholder="Historia e sëmundjes, anamneza..."
                     />
                   </div>
@@ -727,7 +710,7 @@ export default function CaseDetail() {
                       onChange={(e) => setReport((p) => ({ ...p, diagnosis: e.target.value }))}
                       rows={3}
                       required
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
+                      className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
                       placeholder="Vendosni diagnozën..."
                     />
                   </div>
@@ -738,14 +721,14 @@ export default function CaseDetail() {
                       onChange={(e) => setReport((p) => ({ ...p, therapy: e.target.value }))}
                       rows={3}
                       required
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
+                      className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
                       placeholder="Vendosni terapi / recetë..."
                     />
                   </div>
                   <button
                     type="submit"
                     disabled={reportSubmitting}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-[#81a2c5] text-white font-medium rounded-lg hover:bg-[#6b8fa8] disabled:opacity-50 transition-colors"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#81a2c5] text-white font-semibold rounded-xl hover:bg-[#6b8fa8] disabled:opacity-50 transition-colors shadow-sm"
                   >
                     {reportSubmitting ? <span className="animate-pulse">Duke ruajtur…</span> : (<><FiCheck size={18} /> Ruaj raportin</>)}
                   </button>
@@ -780,7 +763,7 @@ export default function CaseDetail() {
         )}
 
         {/* Lab results – list + upload (any role that can view the case) */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6 border-l-4 border-l-amber-500">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-7 mb-7">
           <h2 className="text-lg font-semibold text-slate-900 mb-1 flex items-center gap-2">
             <FiDroplet className="text-amber-600" />
             Rezultatet e laboratorit
@@ -790,7 +773,7 @@ export default function CaseDetail() {
           </p>
 
           <div className="flex flex-wrap items-center gap-3 mb-4">
-            <label className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg cursor-pointer transition-colors">
+            <label className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl cursor-pointer transition-colors border border-slate-200">
               <FiUpload size={18} />
               Zgjidh PDF
               <input
@@ -851,7 +834,7 @@ export default function CaseDetail() {
                         lab.fileName ?? lab.FileName ?? "lab-result.pdf"
                       )
                     }
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-amber-700 bg-amber-100 hover:bg-amber-200 rounded-lg transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors border border-slate-200"
                   >
                     <FiDownload size={16} />
                     Shkarko
