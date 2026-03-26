@@ -226,7 +226,7 @@ export default function Home() {
       </div>
 
       {/* Nav */}
-      <header className="relative z-20 border-b border-slate-200/80 bg-white/70 backdrop-blur-xl sticky top-0">
+      <header className="relative z-20 border-b border-slate-200/80 bg-white/70 backdrop-blur-xl sticky top-0 py-2">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 sm:h-18 flex items-center justify-between gap-4">
           <Link to="/" className="flex items-center group">
             <img

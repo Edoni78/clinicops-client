@@ -3,6 +3,19 @@ import api from "./axios";
 
 const baseURL = (process.env.REACT_APP_API_BASE_URL || "").replace(/\/$/, "");
 
+function normalizeApiPath(url) {
+  if (!url) return null;
+  if (/^https?:\/\//i.test(url)) {
+    try {
+      const parsed = new URL(url);
+      return `${parsed.pathname}${parsed.search || ""}`;
+    } catch {
+      return null;
+    }
+  }
+  return url.startsWith("/") ? url : `/${url}`;
+}
+
 /**
  * Get doctor profile. Only for users with role Doctor (403 otherwise).
  * GET /api/DoctorProfile/profile
@@ -65,6 +78,7 @@ export async function uploadDoctorStamp(file) {
  */
 export function getDoctorImageFullUrl(url) {
   if (!url) return null;
+  if (/^https?:\/\//i.test(url)) return url;
   return baseURL + (url.startsWith("/") ? url : "/" + url);
 }
 
@@ -76,7 +90,8 @@ export function getDoctorImageFullUrl(url) {
  */
 export async function getDoctorImageAsBase64(imagePath) {
   if (!imagePath) return null;
-  const path = imagePath.startsWith("/") ? imagePath : "/" + imagePath;
+  const path = normalizeApiPath(imagePath);
+  if (!path) return null;
   try {
     const { data } = await api.get(path, { responseType: "blob" });
     if (!data || !(data instanceof Blob)) return null;

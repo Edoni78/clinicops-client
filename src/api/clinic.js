@@ -1,6 +1,19 @@
 import axios from "axios";
 import api from "./axios";
 
+function normalizeApiPath(url) {
+  if (!url) return null;
+  if (/^https?:\/\//i.test(url)) {
+    try {
+      const parsed = new URL(url);
+      return `${parsed.pathname}${parsed.search || ""}`;
+    } catch {
+      return null;
+    }
+  }
+  return url.startsWith("/") ? url : `/${url}`;
+}
+
 /**
  * Get the logged-in clinic's profile (only for clinic users; SuperAdmin gets 400).
  * GET /api/Clinic/profile
@@ -50,6 +63,7 @@ export async function uploadClinicLogo(file) {
  */
 export function getLogoFullUrl(logoUrl) {
   if (!logoUrl) return null;
+  if (/^https?:\/\//i.test(logoUrl)) return logoUrl;
   const base = (process.env.REACT_APP_API_BASE_URL || "").replace(/\/$/, "");
   return base + (logoUrl.startsWith("/") ? logoUrl : "/" + logoUrl);
 }
@@ -62,7 +76,8 @@ export function getLogoFullUrl(logoUrl) {
  */
 export async function getLogoAsBase64(logoUrl) {
   if (!logoUrl) return null;
-  const path = logoUrl.startsWith("/") ? logoUrl : "/" + logoUrl;
+  const path = normalizeApiPath(logoUrl);
+  if (!path) return null;
   try {
     const { data } = await api.get(path, { responseType: "blob" });
     if (!data || !(data instanceof Blob)) return null;

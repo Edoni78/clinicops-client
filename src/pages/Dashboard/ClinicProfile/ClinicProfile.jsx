@@ -190,6 +190,13 @@ export default function ClinicProfile() {
                 />
               </div>
               <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Adresa</label>
+                <input
+                  type="text"
+                  value={form.address}
+                  onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))}
+                  maxLength={300}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
                   placeholder="Adresa / vendndodhja"
                 />
               </div>

@@ -95,9 +95,13 @@ export default function Reports() {
     try {
       await downloadCaseReportPdfFromBackend(caseId);
     } catch (e) {
-      const msg = e.response?.status === 404
-        ? "Rasti nuk u gjet ose nuk është në klinikën tuaj."
-        : (e.response?.data?.message || e.message || "Dështoi shkarkimi i raportit.");
+      const msg =
+        e.response?.status === 404
+          ? "Rasti nuk u gjet ose nuk është në klinikën tuaj."
+          : e.response?.data?.message ||
+            e.response?.data ||
+            e.message ||
+            "Dështoi shkarkimi i raportit.";
       setNotif({ visible: true, type: "error", message: msg });
     } finally {
       setDownloadingId(null);
