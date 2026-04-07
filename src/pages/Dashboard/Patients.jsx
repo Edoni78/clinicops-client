@@ -3,9 +3,10 @@ import api from "../../api/axios";
 import Notification from "../../components/ui/Notification";
 import { getJwtPayload } from "../../utils/jwt";
 import { FiUserPlus, FiCalendar, FiPhone, FiFileText, FiUsers } from "react-icons/fi";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Patients = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -64,13 +65,7 @@ const Patients = () => {
 
       await api.post("/api/Patient/register", requestData);
 
-      setNotif({
-        visible: true,
-        type: "success",
-        message: "Pacienti u regjistrua me sukses!",
-      });
-
-      // Reset form
+      // Reset form before leaving so a back navigation shows a clean form
       setFormData({
         firstName: "",
         lastName: "",
@@ -79,6 +74,8 @@ const Patients = () => {
         phone: "",
         notes: "",
       });
+
+      navigate("/dashboard/cases");
     } catch (err) {
       let errorMessage = "Regjistrimi i pacientit dështoi. Ju lutemi provoni përsëri.";
 

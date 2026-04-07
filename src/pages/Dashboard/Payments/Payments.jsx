@@ -1,17 +1,16 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
-  FiFileText,
+  FiDollarSign,
   FiClock,
   FiCalendar,
-  FiDownload,
   FiRefreshCw,
   FiX,
   FiSearch,
+  FiPieChart,
+  FiLayers,
 } from "react-icons/fi";
 import { getPatientCases } from "../../../api/patientCase";
-import { downloadCaseReportPdfFromBackend } from "../../../utils/caseReportPdf";
-import Notification from "../../../components/ui/Notification";
 import {
   isSameDay,
   isYesterday,
@@ -74,31 +73,38 @@ function formatDate(dateString) {
   }
 }
 
-function formatServicePrice(raw) {
+function toPriceNumber(raw) {
   if (raw == null || raw === "") return null;
   const n = typeof raw === "number" ? raw : Number(raw);
   if (Number.isNaN(n)) return null;
-  return `${n.toFixed(2)} EUR`;
+  return n;
+}
+
+function formatEUR(n) {
+  if (n == null || Number.isNaN(n)) return "—";
+  return `${Number(n).toFixed(2)} EUR`;
+}
+
+function getServiceDisplay(c) {
+  const s = c.serviceName ?? c.ServiceName;
+  return s && String(s).trim() ? String(s).trim() : "";
 }
 
 const selectDateClassName =
   "px-2.5 py-2 rounded-lg border border-slate-200 text-sm text-slate-800 bg-white focus:ring-2 focus:ring-[#81a2c5]/40 focus:border-[#81a2c5] outline-none min-w-[4.5rem]";
 
-export default function Reports() {
-  const [reports, setReports] = useState([]);
+export default function Payments() {
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  /** all | Completed | Finished — completed-visit type */
-  const [reportStatusTab, setReportStatusTab] = useState("all");
-  const [dateFilter, setDateFilter] = useState("today");
+  const [statusTab, setStatusTab] = useState("all");
+  const [dateFilter, setDateFilter] = useState("week");
   const [nameSearch, setNameSearch] = useState("");
-  /** Day / month / year chosen in en-GB order (DD → MM → YYYY). */
+  const [serviceFilter, setServiceFilter] = useState("");
   const [dateParts, setDateParts] = useState({ day: "", month: "", year: "" });
   const searchDate = useMemo(
     () => toYmdFromParts(dateParts.day, dateParts.month, dateParts.year),
     [dateParts.day, dateParts.month, dateParts.year]
   );
-  const [downloadingId, setDownloadingId] = useState(null);
-  const [notif, setNotif] = useState({ visible: false, type: "info", message: "" });
 
   const setDatePart = (key, raw) => {
     setDateParts((prev) => {
@@ -106,7 +112,7 @@ export default function Reports() {
       if ((key === "month" || key === "year") && next.day && next.month) {
         const mi = parseInt(next.month, 10);
         if (mi >= 1 && mi <= 12) {
-          const yi = next.year ? parseInt(next.year, 10) : 2004; // leap year until real year chosen
+          const yi = next.year ? parseInt(next.year, 10) : 2004;
           const maxD = new Date(yi, mi, 0).getDate();
           const d0 = parseInt(next.day, 10);
           if (d0 > maxD) next.day = String(maxD);
@@ -131,7 +137,7 @@ export default function Reports() {
   })();
   const dayOptions = useMemo(() => Array.from({ length: maxDayInMonth }, (_, i) => i + 1), [maxDayInMonth]);
 
-  const fetchReports = useCallback(async () => {
+  const fetchPaidCases = useCallback(async () => {
     setLoading(true);
     try {
       const [finished, completed] = await Promise.all([
@@ -147,25 +153,43 @@ export default function Reports() {
         const id = c.id ?? c.Id;
         if (id && !byId.has(id)) byId.set(id, c);
       });
-      setReports(Array.from(byId.values()));
+      setItems(Array.from(byId.values()));
     } catch {
-      setReports([]);
+      setItems([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchReports();
-  }, [fetchReports]);
+    fetchPaidCases();
+  }, [fetchPaidCases]);
 
-  const filteredReports = useMemo(() => {
-    return reports.filter((r) => {
+  const serviceOptions = useMemo(() => {
+    const names = new Set();
+    let hasEmpty = false;
+    items.forEach((c) => {
+      const d = getServiceDisplay(c);
+      if (d) names.add(d);
+      else hasEmpty = true;
+    });
+    const list = Array.from(names).sort((a, b) => a.localeCompare(b, "sq"));
+    return { list, hasEmpty };
+  }, [items]);
+
+  const filtered = useMemo(() => {
+    return items.filter((r) => {
       const status = r.status ?? r.Status;
       const sk = normalizeStatusKey(status);
-      if (reportStatusTab === "Completed" && sk !== "completed") return false;
-      if (reportStatusTab === "Finished" && sk !== "finished") return false;
+      if (statusTab === "Completed" && sk !== "completed") return false;
+      if (statusTab === "Finished" && sk !== "finished") return false;
       if (!caseMatchesNameQuery(r, nameSearch)) return false;
+      if (serviceFilter) {
+        const d = getServiceDisplay(r);
+        if (serviceFilter === "__none__") {
+          if (d) return false;
+        } else if (d !== serviceFilter) return false;
+      }
       const updated = r.updatedAt ?? r.UpdatedAt ?? r.createdAt ?? r.CreatedAt;
       if (searchDate) return isSameCalendarDay(updated, searchDate);
       if (dateFilter === "today") return isSameDay(updated, new Date().toISOString());
@@ -173,65 +197,108 @@ export default function Reports() {
       if (dateFilter === "week") return isInThisWeek(updated);
       return true;
     });
-  }, [reports, reportStatusTab, nameSearch, searchDate, dateFilter]);
+  }, [items, statusTab, nameSearch, serviceFilter, searchDate, dateFilter]);
 
-  const handleDownloadPdf = async (caseId) => {
-    setDownloadingId(caseId);
-    try {
-      await downloadCaseReportPdfFromBackend(caseId);
-    } catch (e) {
-      const msg =
-        e.response?.status === 404
-          ? "Rasti nuk u gjet ose nuk është në klinikën tuaj."
-          : e.response?.data?.message ||
-            e.response?.data ||
-            e.message ||
-            "Dështoi shkarkimi i raportit.";
-      setNotif({ visible: true, type: "error", message: msg });
-    } finally {
-      setDownloadingId(null);
-    }
-  };
+  const totals = useMemo(() => {
+    let sum = 0;
+    let priced = 0;
+    let unpriced = 0;
+    let completed = 0;
+    let finished = 0;
+    filtered.forEach((r) => {
+      const status = r.status ?? r.Status;
+      const sk = normalizeStatusKey(status);
+      if (sk === "completed") completed += 1;
+      if (sk === "finished") finished += 1;
+      const n = toPriceNumber(r.servicePrice ?? r.ServicePrice);
+      if (n != null) {
+        sum += n;
+        priced += 1;
+      } else unpriced += 1;
+    });
+    const count = filtered.length;
+    const avg = count > 0 && priced > 0 ? sum / priced : null;
+    return { sum, priced, unpriced, count, completed, finished, avg };
+  }, [filtered]);
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <Notification
-        visible={notif.visible}
-        type={notif.type}
-        message={notif.message}
-        onClose={() => setNotif((p) => ({ ...p, visible: false }))}
-      />
+    <div className="max-w-7xl mx-auto">
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-            <FiFileText className="text-[#81a2c5]" size={32} />
-            Raportet
+            <span className="p-2 rounded-xl bg-emerald-600 text-white shadow-md">
+              <FiDollarSign size={28} />
+            </span>
+            Pagesat
           </h1>
-          <p className="text-slate-600 mt-1">
-            Vizitat e përfunduara. Shiko ose shkarko raportet mjekësore.
+          <p className="text-slate-600 mt-2 text-sm max-w-2xl leading-relaxed">
+            Këtu shfaqen vizitat që konsiderohen të paguara: rastet me status{" "}
+            <strong className="font-semibold text-slate-800">Përfunduar</strong> (nga mjeku) dhe{" "}
+            <strong className="font-semibold text-slate-800">Mbyllur</strong> (nga klinika). Shuma vjen nga çmimi i
+            shërbimit të lidhur me rastin.
           </p>
         </div>
         <button
           type="button"
-          onClick={fetchReports}
+          onClick={fetchPaidCases}
           disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 disabled:opacity-50 transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50 transition-all shadow-sm shrink-0"
         >
           <FiRefreshCw className={loading ? "animate-spin" : ""} size={18} />
           Rifresko
         </button>
       </div>
 
+      {/* Summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">
+            <FiDollarSign className="text-emerald-600" size={14} aria-hidden />
+            Totali (i filtruar)
+          </div>
+          <p className="text-2xl font-bold tabular-nums text-slate-900">{formatEUR(totals.sum)}</p>
+          <p className="text-xs text-slate-500 mt-1">
+            {totals.priced} me çmim{totals.unpriced > 0 ? ` · ${totals.unpriced} pa çmim` : ""}
+          </p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">
+            <FiPieChart className="text-[#81a2c5]" size={14} aria-hidden />
+            Vizita
+          </div>
+          <p className="text-2xl font-bold tabular-nums text-slate-900">{totals.count}</p>
+          <p className="text-xs text-slate-500 mt-1">
+            <span className="text-indigo-700 font-medium">{totals.completed} përfunduar</span>
+            {" · "}
+            <span className="text-slate-600 font-medium">{totals.finished} mbyllur</span>
+          </p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">
+            <FiLayers className="text-amber-600" size={14} aria-hidden />
+            Mesatarja / vizitë me çmim
+          </div>
+          <p className="text-2xl font-bold tabular-nums text-slate-900">{formatEUR(totals.avg)}</p>
+          <p className="text-xs text-slate-500 mt-1">Llogaritet vetëm për rreshtat me shumë të vendosur</p>
+        </div>
+        <div className="rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50/90 to-white p-5 shadow-sm">
+          <p className="text-slate-700 text-sm font-medium leading-snug">
+            Filtrat më poshtë përditësojnë kartat dhe totalet në kohë reale. Për detaje klinike hapni rastin nga
+            kolona e veprimeve.
+          </p>
+        </div>
+      </div>
+
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="px-4 pt-4 pb-2 border-b border-slate-100 flex flex-wrap gap-2">
-          <span className="text-sm font-medium text-slate-600 self-center mr-1">Raporti:</span>
+          <span className="text-sm font-medium text-slate-600 self-center mr-1">Statusi (pagesa):</span>
           {STATUS_TABS.map((tab) => (
             <button
               key={tab.value}
               type="button"
-              onClick={() => setReportStatusTab(tab.value)}
+              onClick={() => setStatusTab(tab.value)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                reportStatusTab === tab.value
+                statusTab === tab.value
                   ? "bg-slate-800 text-white"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
@@ -240,6 +307,7 @@ export default function Reports() {
             </button>
           ))}
         </div>
+
         <div className="p-4 border-b border-slate-200 flex flex-wrap items-center gap-3 gap-y-3">
           <span className="text-sm font-medium text-slate-600">Koha:</span>
           {DATE_FILTERS.map((opt) => (
@@ -259,8 +327,25 @@ export default function Reports() {
               {opt.label}
             </button>
           ))}
-          <span className="hidden sm:inline h-6 w-px bg-slate-200 mx-1 self-center" aria-hidden />
-          <div className="flex flex-wrap items-center gap-2 min-w-[200px] flex-1 sm:flex-initial">
+          <span className="hidden lg:inline h-6 w-px bg-slate-200 mx-1 self-center" aria-hidden />
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-[10rem]">
+            <span className="text-sm text-slate-600 whitespace-nowrap">Shërbimi:</span>
+            <select
+              value={serviceFilter}
+              onChange={(e) => setServiceFilter(e.target.value)}
+              className="px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-800 bg-white focus:ring-2 focus:ring-[#81a2c5]/40 focus:border-[#81a2c5] outline-none min-w-[12rem] max-w-[20rem]"
+            >
+              <option value="">Të gjitha shërbimet</option>
+              {serviceOptions.hasEmpty && <option value="__none__">Pa shërbim të caktuar</option>}
+              {serviceOptions.list.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <span className="hidden lg:inline h-6 w-px bg-slate-200 mx-1 self-center" aria-hidden />
+          <div className="flex flex-wrap items-center gap-2 min-w-[200px] flex-1 lg:flex-initial">
             <FiSearch className="text-slate-400 shrink-0" size={18} aria-hidden />
             <input
               type="search"
@@ -270,7 +355,9 @@ export default function Reports() {
               className="flex-1 min-w-[12rem] px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-[#81a2c5]/40 focus:border-[#81a2c5] outline-none"
             />
           </div>
-          <span className="hidden sm:inline h-6 w-px bg-slate-200 mx-1 self-center" aria-hidden />
+        </div>
+
+        <div className="px-4 pb-4 pt-0 border-b border-slate-200 flex flex-wrap items-center gap-3 gap-y-3">
           <div lang="en-GB" className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-medium text-slate-600 inline-flex items-center gap-1.5">
               <FiCalendar size={16} className="text-[#81a2c5]" aria-hidden />
@@ -328,7 +415,8 @@ export default function Reports() {
             )}
           </div>
           <span className="text-sm text-slate-500 sm:ml-auto basis-full sm:basis-auto">
-            {filteredReports.length} raport{filteredReports.length !== 1 ? "e" : ""}
+            {filtered.length} rresht{filtered.length !== 1 ? "a" : ""} · total filtri:{" "}
+            <span className="font-semibold tabular-nums text-slate-800">{formatEUR(totals.sum)}</span>
           </span>
         </div>
 
@@ -341,33 +429,45 @@ export default function Reports() {
               viewBox="0 0 24 24"
             >
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
             </svg>
           </div>
-        ) : filteredReports.length === 0 ? (
-          <div className="text-center py-16">
-            <FiFileText className="mx-auto text-slate-300 mb-4" size={48} />
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-16 px-6">
+            <FiDollarSign className="mx-auto text-slate-300 mb-4" size={48} />
             <p className="text-slate-600">
-              {nameSearch.trim() && "Nuk u gjet asnjë raport për këtë kërkim."}
-              {!nameSearch.trim() && searchDate && "Nuk ka raporte të përfunduara për këtë datë."}
+              {nameSearch.trim() && "Nuk u gjet asnjë rast për këtë kërkim."}
+              {!nameSearch.trim() && serviceFilter && "Nuk ka raste për këtë shërbim me filtrat e zgjedhur."}
               {!nameSearch.trim() &&
+                !serviceFilter &&
+                searchDate &&
+                "Nuk ka vizita të paguara për këtë datë."}
+              {!nameSearch.trim() &&
+                !serviceFilter &&
                 !searchDate &&
                 dateFilter === "today" &&
-                "Nuk ka raporte të përfunduara sot."}
+                "Nuk ka vizita të paguara sot."}
               {!nameSearch.trim() &&
+                !serviceFilter &&
                 !searchDate &&
                 dateFilter === "yesterday" &&
-                "Nuk ka raporte të përfunduara dje."}
+                "Nuk ka vizita të paguara dje."}
               {!nameSearch.trim() &&
+                !serviceFilter &&
                 !searchDate &&
                 dateFilter === "week" &&
-                "Nuk ka raporte këtë javë."}
+                "Nuk ka vizita të paguara këtë javë."}
               {!nameSearch.trim() &&
+                !serviceFilter &&
                 !searchDate &&
                 dateFilter === "all" &&
-                (reportStatusTab === "all"
-                  ? "Ende nuk ka vizita të përfunduara."
-                  : "Nuk ka raporte për këtë status.")}
+                (items.length === 0
+                  ? "Ende nuk ka raste të përfunduara ose të mbyllura."
+                  : "Nuk ka raste që përputhen me filtrat.")}
             </p>
             <Link
               to="/dashboard/cases"
@@ -393,8 +493,8 @@ export default function Reports() {
                   <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
                     Shërbimi
                   </th>
-                  <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Çmimi
+                  <th className="text-right py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Shuma
                   </th>
                   <th className="text-right py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
                     Veprime
@@ -402,17 +502,14 @@ export default function Reports() {
                 </tr>
               </thead>
               <tbody>
-                {filteredReports.map((r) => {
+                {filtered.map((r) => {
                   const caseId = r.id ?? r.Id;
                   const firstName = r.patientFirstName ?? r.PatientFirstName ?? "";
                   const lastName = r.patientLastName ?? r.PatientLastName ?? "";
                   const status = r.status ?? r.Status;
                   const updated = r.updatedAt ?? r.UpdatedAt ?? r.createdAt ?? r.CreatedAt;
-                  const serviceName = r.serviceName ?? r.ServiceName;
-                  const servicePriceRaw = r.servicePrice ?? r.ServicePrice;
-                  const servicePriceLabel = formatServicePrice(servicePriceRaw);
-                  const serviceDisplay =
-                    serviceName && String(serviceName).trim() ? String(serviceName).trim() : "—";
+                  const serviceLabel = getServiceDisplay(r) || "—";
+                  const priceNum = toPriceNumber(r.servicePrice ?? r.ServicePrice);
                   return (
                     <tr key={caseId} className="border-b border-slate-100/90 hover:bg-slate-50 transition-colors">
                       <td className="py-3 px-4">
@@ -436,43 +533,37 @@ export default function Reports() {
                           {getStatusLabel(status)}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-sm text-slate-700 max-w-[200px] sm:max-w-xs">
-                        <span className="line-clamp-2" title={serviceDisplay !== "—" ? serviceDisplay : undefined}>
-                          {serviceDisplay}
+                      <td className="py-3 px-4 text-sm text-slate-700 max-w-[220px] sm:max-w-xs">
+                        <span className="line-clamp-2" title={serviceLabel !== "—" ? serviceLabel : undefined}>
+                          {serviceLabel}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-sm text-slate-700 whitespace-nowrap tabular-nums">
-                        {servicePriceLabel ?? "—"}
+                      <td className="py-3 px-4 text-sm text-slate-900 text-right whitespace-nowrap tabular-nums font-medium">
+                        {formatEUR(priceNum)}
                       </td>
                       <td className="py-3 px-4 text-right whitespace-nowrap">
-                        <div className="inline-flex flex-wrap items-center justify-end gap-2">
-                          <Link
-                            to={`/dashboard/cases/${caseId}`}
-                            className="px-3 py-1.5 text-sm font-medium text-[#81a2c5] bg-[#81a2c5]/10 rounded-lg hover:bg-[#81a2c5]/20 transition-colors border border-[#81a2c5]/20"
-                          >
-                            Shiko
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={() => handleDownloadPdf(caseId)}
-                            disabled={downloadingId === caseId}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 text-white text-sm font-medium rounded-lg hover:bg-slate-700 disabled:opacity-50 transition-colors"
-                          >
-                            {downloadingId === caseId ? (
-                              <span className="animate-pulse px-1">…</span>
-                            ) : (
-                              <>
-                                <FiDownload size={16} />
-                                PDF
-                              </>
-                            )}
-                          </button>
-                        </div>
+                        <Link
+                          to={`/dashboard/cases/${caseId}`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#81a2c5] bg-[#81a2c5]/10 rounded-lg hover:bg-[#81a2c5]/20 transition-colors border border-[#81a2c5]/20"
+                        >
+                          Hap rastin
+                        </Link>
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
+              <tfoot>
+                <tr className="bg-slate-50/90 border-t-2 border-slate-200">
+                  <td colSpan={4} className="py-3 px-4 text-right text-sm font-semibold text-slate-700">
+                    Totali i shumave ({totals.priced} me çmim)
+                  </td>
+                  <td className="py-3 px-4 text-right text-sm font-bold tabular-nums text-emerald-800">
+                    {formatEUR(totals.sum)}
+                  </td>
+                  <td />
+                </tr>
+              </tfoot>
             </table>
           </div>
         )}

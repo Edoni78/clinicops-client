@@ -62,6 +62,39 @@ export async function updateCaseStatus(id, status) {
 }
 
 /**
+ * Attach a clinic service to a patient case.
+ * Tries common backend shapes to stay compatible across API versions.
+ * @param {string} id - case id
+ * @param {string} serviceId - service id
+ */
+export async function attachServiceToCase(id, serviceId) {
+  const attempts = [
+    () => api.patch(`/api/PatientCase/${id}/service`, null, { params: { serviceId } }),
+    () => api.patch(`/api/PatientCase/${id}/service`, { serviceId }),
+    () => api.patch(`/api/PatientCase/${id}/service`, { ServiceId: serviceId }),
+    () => api.post(`/api/PatientCase/${id}/service`, { serviceId }),
+    () => api.post(`/api/PatientCase/${id}/service`, { ServiceId: serviceId }),
+  ];
+
+  let lastError;
+  for (const call of attempts) {
+    try {
+      const { data } = await call();
+      return data;
+    } catch (err) {
+      const status = err?.response?.status;
+      // 400/404/405 likely indicate endpoint shape mismatch; try next.
+      if (status === 400 || status === 404 || status === 405) {
+        lastError = err;
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastError || new Error("Dështoi lidhja e shërbimit me rastin.");
+}
+
+/**
  * Get case report as PDF from backend.
  * GET /api/PatientCase/{id}/pdf
  * Auth: Bearer token (via axios interceptor).

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   FiUsers,
@@ -7,13 +7,64 @@ import {
   FiActivity,
   FiDollarSign,
   FiUserPlus,
+  FiCalendar,
 } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import { CLINIC_MODE_SOLO_DOCTOR } from "../../utils/clinicMode";
+import api from "../../api/axios";
+import { getPatientCases } from "../../api/patientCase";
+import { isSameDay, isTerminalCaseStatus } from "../../utils/caseListFilters";
+
+function StatFigure({ value, loading }) {
+  if (loading) {
+    return <div className="h-9 w-24 bg-slate-200 rounded-md animate-pulse" aria-hidden />;
+  }
+  if (value === null || value === undefined) {
+    return <p className="text-3xl font-bold text-slate-400">—</p>;
+  }
+  return <p className="text-3xl font-bold text-slate-900 tabular-nums">{value}</p>;
+}
 
 const DashboardHome = () => {
   const { clinicMode } = useAuth();
   const isSoloDoctorClinic = clinicMode === CLINIC_MODE_SOLO_DOCTOR;
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalPatients: null,
+    activeCases: null,
+    todayAppointments: null,
+  });
+
+  const loadDashboardStats = useCallback(async () => {
+    setStatsLoading(true);
+    try {
+      const [patientRes, caseList] = await Promise.all([api.get("/api/Patient"), getPatientCases()]);
+      const patients = Array.isArray(patientRes.data) ? patientRes.data : [];
+      const cases = Array.isArray(caseList) ? caseList : [];
+      const nowIso = new Date().toISOString();
+      let active = 0;
+      let today = 0;
+      cases.forEach((c) => {
+        const status = c.status ?? c.Status;
+        if (!isTerminalCaseStatus(status)) active += 1;
+        const created = c.createdAt ?? c.CreatedAt;
+        if (isSameDay(created, nowIso)) today += 1;
+      });
+      setStats({
+        totalPatients: patients.length,
+        activeCases: active,
+        todayAppointments: today,
+      });
+    } catch {
+      setStats({ totalPatients: null, activeCases: null, todayAppointments: null });
+    } finally {
+      setStatsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDashboardStats();
+  }, [loadDashboardStats]);
   const quickActions = [
     {
       title: "Regjistro pacient të ri",
@@ -80,6 +131,55 @@ const DashboardHome = () => {
         </p>
       </div>
 
+      {/* Live stats */}
+      <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Link
+          to="/dashboard/patients-list"
+          className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:border-[#81a2c5]/40 hover:shadow-md transition-all group"
+        >
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-lg bg-green-500/10 text-green-700 group-hover:bg-green-500/15 transition-colors">
+              <FiUsers size={22} aria-hidden />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-medium text-slate-600 mb-2">Totali i pacientëve</h3>
+              <StatFigure value={stats.totalPatients} loading={statsLoading} />
+              <p className="text-xs text-slate-500 mt-2">Të regjistruar në klinikë</p>
+            </div>
+          </div>
+        </Link>
+        <Link
+          to="/dashboard/cases"
+          className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:border-[#81a2c5]/40 hover:shadow-md transition-all group"
+        >
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-lg bg-purple-500/10 text-purple-700 group-hover:bg-purple-500/15 transition-colors">
+              <FiFolder size={22} aria-hidden />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-medium text-slate-600 mb-2">Rastet aktive</h3>
+              <StatFigure value={stats.activeCases} loading={statsLoading} />
+              <p className="text-xs text-slate-500 mt-2">Jo përfunduar / jo të mbyllura</p>
+            </div>
+          </div>
+        </Link>
+        <Link
+          to="/dashboard/cases"
+          className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:border-[#81a2c5]/40 hover:shadow-md transition-all group"
+        >
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-lg bg-sky-500/10 text-sky-700 group-hover:bg-sky-500/15 transition-colors">
+              <FiCalendar size={22} aria-hidden />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-medium text-slate-600 mb-2">Takimet e sotme</h3>
+              <StatFigure value={stats.todayAppointments} loading={statsLoading} />
+              <p className="text-xs text-slate-500 mt-2">Raste të hapur sot (data e krijimit)</p>
+            </div>
+          </div>
+        </Link>
+      </div>
+
       {/* Quick Actions Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {visibleQuickActions.map((action) => {
@@ -108,28 +208,6 @@ const DashboardHome = () => {
             </Link>
           );
         })}
-      </div>
-
-      {/* Stats Section (Placeholder for future) */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <h3 className="text-sm font-medium text-slate-600 mb-2">
-            Totali i pacientëve
-          </h3>
-          <p className="text-3xl font-bold text-slate-900">-</p>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <h3 className="text-sm font-medium text-slate-600 mb-2">
-            Rastet aktive
-          </h3>
-          <p className="text-3xl font-bold text-slate-900">-</p>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <h3 className="text-sm font-medium text-slate-600 mb-2">
-            Takimet e sotme
-          </h3>
-          <p className="text-3xl font-bold text-slate-900">-</p>
-        </div>
       </div>
     </div>
   );

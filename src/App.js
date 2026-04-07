@@ -17,7 +17,7 @@ import ClinicProfile from "./pages/Dashboard/ClinicProfile/ClinicProfile";
 import DoctorProfile from "./pages/Dashboard/DoctorProfile/DoctorProfile";
 import Laboratory from "./pages/Dashboard/Laboratory";
 import Services from "./pages/Dashboard/Services/Services";
-// import Payments from "./pages/Dashboard/Payments";
+import Payments from "./pages/Dashboard/Payments/Payments";
 import Staff from "./components/Dashboard/Staff/Staff";
 
 function App() {
@@ -52,7 +52,7 @@ function App() {
           <Route path="doctor-profile" element={<DoctorProfile />} />
           <Route path="laboratory" element={<Laboratory />} />
           <Route path="services" element={<Services />} />
-          {/* <Route path="payments" element={<Payments />} /> */}
+          <Route path="payments" element={<Payments />} />
           <Route path="staff" element={<Staff />} />
         </Route>
       </Routes>

@@ -7,10 +7,12 @@ import {
   submitVitals,
   submitReport,
   updateCaseStatus,
+  attachServiceToCase,
   getLabResults,
   uploadLabResult,
   downloadLabResultFile,
 } from "../../../api/patientCase";
+import { listServices } from "../../../api/service";
 import {
   getDoctorProfile,
   getDoctorImageFullUrl,
@@ -62,6 +64,10 @@ export default function CaseDetail() {
   const [labFileInputKey, setLabFileInputKey] = useState(0);
   const [doctorProfile, setDoctorProfile] = useState(null);
   const [doctorProfileLoading, setDoctorProfileLoading] = useState(false);
+  const [services, setServices] = useState([]);
+  const [servicesLoading, setServicesLoading] = useState(false);
+  const [selectedServiceId, setSelectedServiceId] = useState("");
+  const [serviceSubmitting, setServiceSubmitting] = useState(false);
 
   const fetchCase = useCallback(async () => {
     if (!id) return;
@@ -185,6 +191,30 @@ export default function CaseDetail() {
     };
   }, [showDoctorSection]);
 
+  useEffect(() => {
+    const sid = caseData?.serviceId ?? caseData?.ServiceId;
+    if (sid) setSelectedServiceId(String(sid));
+  }, [caseData?.serviceId, caseData?.ServiceId]);
+
+  useEffect(() => {
+    if (!showDoctorSection) return;
+    let cancelled = false;
+    setServicesLoading(true);
+    listServices()
+      .then((list) => {
+        if (!cancelled) setServices(Array.isArray(list) ? list : []);
+      })
+      .catch(() => {
+        if (!cancelled) setServices([]);
+      })
+      .finally(() => {
+        if (!cancelled) setServicesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showDoctorSection]);
+
   const showNotif = (type, message) => {
     setNotif({ visible: true, type, message });
   };
@@ -281,6 +311,10 @@ export default function CaseDetail() {
     try {
       await updateCaseStatus(id, newStatus);
       setCaseData((prev) => (prev ? { ...prev, status: newStatus } : null));
+      if (newStatus === "Completed") {
+        navigate("/dashboard/cases");
+        return;
+      }
       showNotif("success", `Statusi u përditësua në ${newStatus}.`);
     } catch (e) {
       showNotif(
@@ -304,13 +338,43 @@ export default function CaseDetail() {
     }
   };
 
+  const handleAttachService = async () => {
+    const serviceId = String(selectedServiceId || "").trim();
+    if (!serviceId) {
+      showNotif("error", "Zgjidhni një shërbim.");
+      return;
+    }
+    setServiceSubmitting(true);
+    try {
+      await attachServiceToCase(id, serviceId);
+      const selected = services.find((s) => (s.id ?? s.Id) === serviceId);
+      setCaseData((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          serviceId,
+          serviceName: selected?.name ?? selected?.Name ?? prev.serviceName ?? prev.ServiceName ?? "",
+          servicePrice: selected?.price ?? selected?.Price ?? prev.servicePrice ?? prev.ServicePrice ?? null,
+        };
+      });
+      showNotif("success", "Shërbimi u lidh me rastin.");
+    } catch (e) {
+      showNotif(
+        "error",
+        e.response?.data?.message || e.response?.data || "Dështoi lidhja e shërbimit me rastin."
+      );
+    } finally {
+      setServiceSubmitting(false);
+    }
+  };
+
   const canEditVitals = isAuthenticated;
   const canEditReportAndStatus = isAuthenticated;
   const rawStatus = caseData?.status ?? caseData?.Status;
   const caseStatus = normalizeCaseStatus(rawStatus);
   const allowedNextStatuses = caseData ? (STATUS_FLOW[caseStatus] || []) : [];
   const nurseNextStatuses = allowedNextStatuses.filter((s) => s === "InProgress" || s === "InConsultation");
-  const doctorNextStatuses = allowedNextStatuses.filter((s) => s === "InConsultation" || s === "Completed" || s === "Finished");
+  const doctorNextStatuses = allowedNextStatuses.filter((s) => s === "InConsultation" || s === "Completed");
 
   if (loading && !caseData) {
     return (
@@ -371,6 +435,8 @@ export default function CaseDetail() {
   const stampPath = doctorProfile?.stampUrl ?? doctorProfile?.StampUrl;
   const signaturePreviewUrl = getDoctorImageFullUrl(signaturePath);
   const stampPreviewUrl = getDoctorImageFullUrl(stampPath);
+  const attachedServiceName = caseData?.serviceName ?? caseData?.ServiceName ?? "";
+  const attachedServicePrice = caseData?.servicePrice ?? caseData?.ServicePrice;
   const formatDateDisplay = (dateString) => {
     if (!dateString) return "—";
     try {
@@ -449,6 +515,14 @@ export default function CaseDetail() {
             doctorProfileLoading={doctorProfileLoading}
             signaturePreviewUrl={signaturePreviewUrl}
             stampPreviewUrl={stampPreviewUrl}
+            services={services}
+            servicesLoading={servicesLoading}
+            selectedServiceId={selectedServiceId}
+            setSelectedServiceId={setSelectedServiceId}
+            serviceSubmitting={serviceSubmitting}
+            handleAttachService={handleAttachService}
+            attachedServiceName={attachedServiceName}
+            attachedServicePrice={attachedServicePrice}
           />
         )}
 
