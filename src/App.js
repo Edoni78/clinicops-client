@@ -21,6 +21,7 @@ import Payments from "./pages/Dashboard/Payments/Payments";
 import Staff from "./components/Dashboard/Staff/Staff";
 import EMRs from "./pages/Dashboard/EMRs/EMRs";
 import PublicEmrView from "./pages/Public/PublicEmrView";
+import AuditLogs from "./pages/Dashboard/AuditLogs/AuditLogs";
 
 function App() {
   return (
@@ -58,6 +59,7 @@ function App() {
           <Route path="payments" element={<Payments />} />
           <Route path="staff" element={<Staff />} />
           <Route path="emrs" element={<EMRs />} />
+          <Route path="audit-logs" element={<AuditLogs />} />
         </Route>
       </Routes>
     </BrowserRouter>

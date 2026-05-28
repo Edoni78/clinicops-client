@@ -13,6 +13,7 @@ import {
   FiBriefcase,
   FiPackage,
   FiX,
+  FiShield,
 } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import { useDashboardPanel } from "../../context/DashboardPanelContext";
@@ -41,6 +42,7 @@ const MENU_ICONS = {
   payments: FiDollarSign,
   staff: FiUserCheck,
   applies: FiClipboard,
+  auditLogs: FiShield,
   clinicProfile: FiBriefcase,
   doctorProfile: FiUserCheck,
 };

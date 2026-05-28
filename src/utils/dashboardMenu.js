@@ -16,6 +16,11 @@ export const MENU = {
   payments: { key: "payments", label: "Pagesat", path: "/dashboard/payments" },
   staff: { key: "staff", label: "Stafi", path: "/dashboard/staff" },
   applies: { key: "applies", label: "Aplikimet", path: "/dashboard/applies" },
+  auditLogs: {
+    key: "auditLogs",
+    label: "Audit Logs",
+    path: "/dashboard/audit-logs",
+  },
   clinicProfile: {
     key: "clinicProfile",
     label: "Profili i klinikës",
@@ -64,6 +69,7 @@ const CLINIC_ADMIN_MENU = (hasClinic) =>
     MENU.services,
     MENU.payments,
     MENU.staff,
+    MENU.auditLogs,
     hasClinic ? MENU.clinicProfile : null
   );
 
