@@ -65,7 +65,7 @@ const ClinicApply = () => {
         }
       />
 
-      <h1 className="text-4xl font-bold text-[#81a2c5] mb-4">
+      <h1 className="text-4xl font-bold text-clinic-400 mb-4">
         Aplikoni për iKlinika
       </h1>
 
@@ -85,7 +85,7 @@ const ClinicApply = () => {
           onChange={(e) => setClinicName(e.target.value)}
           required
           className="w-full border border-slate-300 rounded-md px-4 py-3 text-lg
-          focus:outline-none focus:ring-2 focus:ring-[#81a2c5]"
+          focus:outline-none focus:ring-2 focus:ring-clinic-400"
         />
 
         <input
@@ -95,7 +95,7 @@ const ClinicApply = () => {
           onChange={(e) => setEmail(e.target.value)}
           required
           className="w-full border border-slate-300 rounded-md px-4 py-3 text-lg
-          focus:outline-none focus:ring-2 focus:ring-[#81a2c5]"
+          focus:outline-none focus:ring-2 focus:ring-clinic-400"
         />
 
         <input
@@ -105,7 +105,7 @@ const ClinicApply = () => {
           onChange={(e) => setPassword(e.target.value)}
           required
           className="w-full border border-slate-300 rounded-md px-4 py-3 text-lg
-          focus:outline-none focus:ring-2 focus:ring-[#81a2c5]"
+          focus:outline-none focus:ring-2 focus:ring-clinic-400"
         />
 
         <div>
@@ -117,7 +117,7 @@ const ClinicApply = () => {
             onChange={(e) => setClinicMode(e.target.value)}
             required
             className="w-full border border-slate-300 rounded-md px-4 py-3 text-base bg-white
-            focus:outline-none focus:ring-2 focus:ring-[#81a2c5]"
+            focus:outline-none focus:ring-2 focus:ring-clinic-400"
           >
             <option value={CLINIC_MODE_FULL_TEAM}>
               FullTeam - me infermier dhe laborator
@@ -131,7 +131,7 @@ const ClinicApply = () => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-[#81a2c5] text-white py-3 rounded-md text-lg font-semibold
+          className="w-full bg-clinic-400 text-white py-3 rounded-md text-lg font-semibold
           hover:opacity-90 transition disabled:opacity-60"
         >
           {loading ? "Submitting..." : "Submit Application"}
@@ -141,7 +141,7 @@ const ClinicApply = () => {
           Tashmë i aprovuar?{" "}
           <Link
             to="/login"
-            className="font-semibold text-[#81a2c5] hover:underline"
+            className="font-semibold text-clinic-400 hover:underline"
           >
             Hyr në sistem
           </Link>

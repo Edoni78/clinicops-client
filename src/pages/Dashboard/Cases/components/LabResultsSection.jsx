@@ -16,17 +16,17 @@ export default function LabResultsSection({
   downloadLabResultFile,
 }) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-7 mb-7">
-      <h2 className="text-lg font-semibold text-slate-900 mb-1 flex items-center gap-2">
-        <FiDroplet className="text-amber-600" />
-        Rezultatet e laboratorit
-      </h2>
-      <p className="text-sm text-slate-500 mb-4">
-        Shtoni PDF të rezultateve të laboratorit. Ato do të përfshihen në raportin e rastit (Shkarko PDF).
-      </p>
+    <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden mb-6">
+      <div className="px-5 py-3 border-b border-slate-200 bg-slate-50/80 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold text-slate-900 uppercase tracking-wide flex items-center gap-2">
+          <FiDroplet className="text-amber-600" size={16} aria-hidden />
+          Laboratori
+        </h2>
+      </div>
 
+      <div className="p-5">
       <div className="flex flex-wrap items-center gap-3 mb-4">
-        <label className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl cursor-pointer transition-colors border border-slate-200">
+        <label className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm font-medium rounded-md cursor-pointer transition-colors">
           <FiUpload size={18} />
           Zgjidh PDF
           <input
@@ -60,7 +60,7 @@ export default function LabResultsSection({
       {labResultsLoading ? (
         <p className="text-sm text-slate-500">Duke ngarkuar rezultatet…</p>
       ) : labResults.length === 0 ? (
-        <p className="text-sm text-slate-500 italic">Nuk ka rezultate laboratori ende. Shtoni një PDF më sipër.</p>
+        <p className="text-sm text-slate-500">Nuk ka skedarë.</p>
       ) : (
         <ul className="space-y-2">
           {labResults.map((lab) => (
@@ -75,6 +75,7 @@ export default function LabResultsSection({
           ))}
         </ul>
       )}
+      </div>
     </div>
   );
 }

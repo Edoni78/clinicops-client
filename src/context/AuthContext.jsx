@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { getClinicModeFromUser } from "../utils/clinicMode";
+import { getRoleFromJwt } from "../utils/jwt";
 
 const AuthContext = createContext(null);
 
@@ -47,7 +48,7 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider
         value={{
         user,
-        role: user?.role ?? user?.Role ?? null,
+        role: user?.role ?? user?.Role ?? getRoleFromJwt() ?? null,
         clinicMode: getClinicModeFromUser(user),
         isAuthenticated: !!user,
         login,

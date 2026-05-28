@@ -40,7 +40,7 @@ export default function DoctorSection(props) {
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-7">
       <div className="p-7 pb-5">
         <h2 className="text-lg font-semibold text-slate-900 mb-1 flex items-center gap-2">
-          <FiFileText className="text-[#81a2c5]" />
+          <FiFileText className="text-clinic-400" />
           Mjeku – Konsultimi dhe raporti
         </h2>
         <p className="text-sm text-slate-500 mb-4">
@@ -62,7 +62,7 @@ export default function DoctorSection(props) {
           <div className="flex flex-wrap gap-2">
             <span className="text-sm font-medium text-slate-600 mr-2">Statusi (mjeku):</span>
             {doctorNextStatuses.map((s) => (
-              <button key={s} type="button" disabled={statusSubmitting} onClick={() => handleStatusChange(s)} className="px-4 py-2 bg-[#81a2c5] text-white text-sm font-semibold rounded-xl hover:bg-[#6b8fa8] disabled:opacity-50 transition-colors shadow-sm">
+              <button key={s} type="button" disabled={statusSubmitting} onClick={() => handleStatusChange(s)} className="px-4 py-2 bg-clinic-400 text-white text-sm font-semibold rounded-xl hover:bg-clinic-500 disabled:opacity-50 transition-colors shadow-sm">
                 {s === "InConsultation" && "Fillo konsultimin"}
                 {s === "Completed" && "Përfundo vizitën"}
                 {s === "Finished" && "Mbyll vizitën"}
@@ -87,10 +87,10 @@ export default function DoctorSection(props) {
 
         {canEditReportAndStatus && (
           <form onSubmit={handleSubmitReport} className="p-5 border-b border-slate-200 bg-slate-50 space-y-3">
-            <div><label className="block text-xs font-medium text-slate-700 mb-1.5">Anamneza</label><textarea value={report.anamneza} onChange={(e) => setReport((p) => ({ ...p, anamneza: e.target.value }))} rows={2} className="w-full px-2.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent" placeholder="Historia e sëmundjes, anamneza..." /></div>
-            <div><label className="block text-xs font-medium text-slate-700 mb-1.5">Diagnoza *</label><textarea value={report.diagnosis} onChange={(e) => setReport((p) => ({ ...p, diagnosis: e.target.value }))} rows={2} required className="w-full px-2.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent" placeholder="Vendosni diagnozën..." /></div>
-            <div><label className="block text-xs font-medium text-slate-700 mb-1.5">Terapia *</label><textarea value={report.therapy} onChange={(e) => setReport((p) => ({ ...p, therapy: e.target.value }))} rows={2} required className="w-full px-2.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent" placeholder="Vendosni terapi / recetë..." /></div>
-            <button type="submit" disabled={reportSubmitting} className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#81a2c5] text-white font-semibold rounded-xl hover:bg-[#6b8fa8] disabled:opacity-50 transition-colors shadow-sm">{reportSubmitting ? <span className="animate-pulse">Duke ruajtur…</span> : <><FiCheck size={18} /> Ruaj raportin</>}</button>
+            <div><label className="block text-xs font-medium text-slate-700 mb-1.5">Anamneza</label><textarea value={report.anamneza} onChange={(e) => setReport((p) => ({ ...p, anamneza: e.target.value }))} rows={2} className="w-full px-2.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-clinic-400 focus:border-transparent" placeholder="Historia e sëmundjes, anamneza..." /></div>
+            <div><label className="block text-xs font-medium text-slate-700 mb-1.5">Diagnoza *</label><textarea value={report.diagnosis} onChange={(e) => setReport((p) => ({ ...p, diagnosis: e.target.value }))} rows={2} required className="w-full px-2.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-clinic-400 focus:border-transparent" placeholder="Vendosni diagnozën..." /></div>
+            <div><label className="block text-xs font-medium text-slate-700 mb-1.5">Terapia *</label><textarea value={report.therapy} onChange={(e) => setReport((p) => ({ ...p, therapy: e.target.value }))} rows={2} required className="w-full px-2.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-clinic-400 focus:border-transparent" placeholder="Vendosni terapi / recetë..." /></div>
+            <button type="submit" disabled={reportSubmitting} className="inline-flex items-center gap-2 px-5 py-2.5 bg-clinic-400 text-white font-semibold rounded-xl hover:bg-clinic-500 disabled:opacity-50 transition-colors shadow-sm">{reportSubmitting ? <span className="animate-pulse">Duke ruajtur…</span> : <><FiCheck size={18} /> Ruaj raportin</>}</button>
           </form>
         )}
 

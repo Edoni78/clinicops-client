@@ -220,7 +220,7 @@ export default function Home() {
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 overflow-x-hidden">
       {/* Decorative background */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-32 -right-32 w-[520px] h-[520px] rounded-full bg-gradient-to-br from-cyan-200/40 via-[#81a2c5]/20 to-transparent blur-3xl" />
+        <div className="absolute -top-32 -right-32 w-[520px] h-[520px] rounded-full bg-gradient-to-br from-cyan-200/40 via-clinic-400/20 to-transparent blur-3xl" />
         <div className="absolute top-1/2 -left-40 w-96 h-96 rounded-full bg-gradient-to-tr from-violet-200/30 to-transparent blur-3xl" />
         <div className="absolute bottom-0 right-1/4 w-80 h-80 rounded-full bg-cyan-100/50 blur-3xl" />
       </div>
@@ -241,19 +241,19 @@ export default function Home() {
           <nav className="flex items-center gap-2 sm:gap-3">
             <a
               href="#funksionalitete"
-              className="hidden md:inline-flex px-3 py-2 text-sm font-semibold text-slate-600 hover:text-[#81a2c5] transition-colors"
+              className="hidden md:inline-flex px-3 py-2 text-sm font-semibold text-slate-600 hover:text-clinic-400 transition-colors"
             >
               Funksionalitete
             </a>
             <a
               href="#cmime"
-              className="hidden md:inline-flex px-3 py-2 text-sm font-semibold text-slate-600 hover:text-[#81a2c5] transition-colors"
+              className="hidden md:inline-flex px-3 py-2 text-sm font-semibold text-slate-600 hover:text-clinic-400 transition-colors"
             >
               Çmimet
             </a>
             <Link
               to="/apply"
-              className="hidden sm:inline-flex px-4 py-2 text-sm font-semibold text-slate-600 hover:text-[#81a2c5] transition-colors"
+              className="hidden sm:inline-flex px-4 py-2 text-sm font-semibold text-slate-600 hover:text-clinic-400 transition-colors"
             >
               Aplikoni
             </Link>
@@ -273,13 +273,13 @@ export default function Home() {
         <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-12 sm:pt-20 pb-16 sm:pb-24">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div>
-              <p className="inline-flex items-center gap-2 text-sm font-semibold text-[#81a2c5] mb-4">
-                <span className="h-px w-8 bg-[#81a2c5]/60" />
+              <p className="inline-flex items-center gap-2 text-sm font-semibold text-clinic-400 mb-4">
+                <span className="h-px w-8 bg-clinic-400/60" />
                 Platformë për klinika
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] font-extrabold text-slate-900 leading-[1.1] tracking-tight mb-6">
                 Menaxhoni klinikën{" "}
-                <span className="bg-gradient-to-r from-[#81a2c5] via-cyan-600 to-teal-600 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-clinic-400 via-cyan-600 to-teal-600 bg-clip-text text-transparent">
                   më thjesht
                 </span>
                 , në një vend.
@@ -292,14 +292,14 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <Link
                   to="/login"
-                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-[#81a2c5] to-[#6b8fa8] text-white text-base font-bold shadow-xl shadow-[#81a2c5]/30 hover:shadow-2xl hover:shadow-[#81a2c5]/35 hover:-translate-y-0.5 transition-all"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-clinic-400 to-clinic-500 text-white text-base font-bold shadow-xl shadow-clinic-400/30 hover:shadow-2xl hover:shadow-clinic-400/35 hover:-translate-y-0.5 transition-all"
                 >
                   Hyr në sistem
                   <FiArrowRight size={20} />
                 </Link>
                 <Link
                   to="/apply"
-                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl border-2 border-slate-200 bg-white text-slate-800 text-base font-bold hover:border-[#81a2c5]/50 hover:bg-slate-50/80 transition-all"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl border-2 border-slate-200 bg-white text-slate-800 text-base font-bold hover:border-clinic-400/50 hover:bg-slate-50/80 transition-all"
                 >
                   Aplikoni për klinikë
                 </Link>
@@ -328,13 +328,7 @@ export default function Home() {
                   <p className="text-lg font-bold">Rrjedhë e qartë, nga vizita te raporti.</p>
                 </div>
               </div>
-              <div className="absolute -bottom-4 -left-2 sm:left-4 max-w-[200px] rounded-2xl bg-white p-4 shadow-xl border border-slate-100 hidden sm:block">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Statusi</p>
-                <p className="text-lg font-bold text-slate-900 mt-1">Në kohë reale</p>
-                <div className="mt-2 h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                  <div className="h-full w-3/4 rounded-full bg-gradient-to-r from-[#81a2c5] to-cyan-400" />
-                </div>
-              </div>
+
             </div>
           </div>
         </section>
@@ -354,7 +348,7 @@ export default function Home() {
               {features.map(({ icon: Icon, title, desc, color }) => (
                 <div
                   key={title}
-                  className="group rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm hover:shadow-lg hover:border-[#81a2c5]/20 hover:-translate-y-1 transition-all duration-300"
+                  className="group rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm hover:shadow-lg hover:border-clinic-400/20 hover:-translate-y-1 transition-all duration-300"
                 >
                   <div className={`inline-flex p-3 rounded-xl ${color} mb-4`}>
                     <Icon size={24} />
@@ -371,7 +365,7 @@ export default function Home() {
         <section className="py-16 sm:py-24 bg-gradient-to-b from-slate-50 to-white border-y border-slate-200/60">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <div className="max-w-3xl mb-12 sm:mb-16">
-              <p className="text-sm font-bold text-[#81a2c5] uppercase tracking-wider mb-2">Rrjedha e punës</p>
+              <p className="text-sm font-bold text-clinic-400 uppercase tracking-wider mb-2">Rrjedha e punës</p>
               <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">
                 Nga vizita te raporti i plotë PDF
               </h2>
@@ -386,12 +380,12 @@ export default function Home() {
                   key={step}
                   className="relative flex gap-5 p-6 sm:p-8 rounded-2xl bg-white border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow"
                 >
-                  <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-gradient-to-br from-[#81a2c5] to-[#5a7a94] text-white font-extrabold text-lg flex items-center justify-center shadow-lg shadow-[#81a2c5]/25">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-gradient-to-br from-clinic-400 to-clinic-600 text-white font-extrabold text-lg flex items-center justify-center shadow-lg shadow-clinic-400/25">
                     {step}
                   </div>
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <Icon className="text-[#81a2c5]" size={20} />
+                      <Icon className="text-clinic-400" size={20} />
                       <h3 className="text-xl font-bold text-slate-900">{title}</h3>
                     </div>
                     <p className="text-slate-600 leading-relaxed">{desc}</p>
@@ -438,7 +432,7 @@ export default function Home() {
             </div>
             <div className="mt-10 rounded-2xl bg-slate-50 border border-slate-200 p-6 sm:p-8">
               <div className="flex items-start gap-3 mb-3">
-                <FiMonitor className="text-[#81a2c5] flex-shrink-0 mt-1" size={22} />
+                <FiMonitor className="text-clinic-400 flex-shrink-0 mt-1" size={22} />
                 <div>
                   <h4 className="font-bold text-slate-900 mb-2">Administratori i klinikës & tekniku i laboratorit</h4>
                   <ul className="space-y-2 text-slate-600 text-sm leading-relaxed">
@@ -458,7 +452,7 @@ export default function Home() {
           <div className="absolute inset-0 opacity-40 [background-image:radial-gradient(circle_at_1px_1px,rgb(148_163_184_/_22%)_1px,transparent_0)] [background-size:24px_24px]" />
           <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
             <div className="text-center max-w-2xl mx-auto mb-14 sm:mb-20">
-              <span className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-[#81a2c5] mb-3">
+              <span className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-clinic-400 mb-3">
                 Platforma juaj
               </span>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">
@@ -475,7 +469,7 @@ export default function Home() {
                   className={`
                     group relative flex flex-col rounded-2xl bg-white/90 backdrop-blur-sm
                     border border-white shadow-lg ${glow}
-                    hover:shadow-2xl hover:-translate-y-2 hover:border-[#81a2c5]/25
+                    hover:shadow-2xl hover:-translate-y-2 hover:border-clinic-400/25
                     transition-all duration-500 ease-out
                   `}
                 >
@@ -502,7 +496,7 @@ export default function Home() {
                     </p>
                   </div>
                   <div
-                    className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-white/0 via-[#81a2c5]/[0.04] to-cyan-500/[0.06]"
+                    className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-white/0 via-clinic-400/[0.04] to-cyan-500/[0.06]"
                     aria-hidden
                   />
                 </div>
@@ -528,8 +522,8 @@ export default function Home() {
             </div>
 
             {/* Trial banner */}
-            <div className="mb-10 rounded-3xl border-2 border-dashed border-[#81a2c5]/40 bg-gradient-to-br from-[#81a2c5]/[0.08] via-cyan-50/80 to-white p-8 sm:p-10 text-center shadow-inner">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#81a2c5] to-teal-600 text-white shadow-lg shadow-[#81a2c5]/30 mb-4">
+            <div className="mb-10 rounded-3xl border-2 border-dashed border-clinic-400/40 bg-gradient-to-br from-clinic-400/[0.08] via-cyan-50/80 to-white p-8 sm:p-10 text-center shadow-inner">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-clinic-400 to-teal-600 text-white shadow-lg shadow-clinic-400/30 mb-4">
                 <FiCalendar size={28} strokeWidth={1.5} />
               </div>
               <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2">
@@ -543,8 +537,8 @@ export default function Home() {
 
             <div className="grid md:grid-cols-2 gap-6 lg:gap-8 items-stretch">
               {/* Annual — featured */}
-              <div className="relative rounded-3xl border-2 border-[#81a2c5] bg-gradient-to-b from-white to-slate-50/90 p-8 sm:p-10 shadow-xl shadow-[#81a2c5]/15 flex flex-col">
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-[#81a2c5] to-teal-600 text-white text-xs font-bold uppercase tracking-wide shadow-md">
+              <div className="relative rounded-3xl border-2 border-clinic-400 bg-gradient-to-b from-white to-slate-50/90 p-8 sm:p-10 shadow-xl shadow-clinic-400/15 flex flex-col">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-clinic-400 to-teal-600 text-white text-xs font-bold uppercase tracking-wide shadow-md">
                   Më i zgjedhur
                 </span>
                 <h3 className="text-xl font-bold text-slate-900 mt-4 mb-1">Abonim vjetor</h3>
@@ -574,7 +568,7 @@ export default function Home() {
                 </ul>
                 <Link
                   to="/apply"
-                  className="inline-flex items-center justify-center w-full py-3.5 rounded-xl bg-gradient-to-r from-[#81a2c5] to-[#6b8fa8] text-white font-bold hover:shadow-lg transition-shadow"
+                  className="inline-flex items-center justify-center w-full py-3.5 rounded-xl bg-gradient-to-r from-clinic-400 to-clinic-500 text-white font-bold hover:shadow-lg transition-shadow"
                 >
                   Aplikoni dhe na kontaktoni
                 </Link>
@@ -595,21 +589,21 @@ export default function Home() {
                 </p>
                 <ul className="space-y-3 text-slate-700 text-sm mb-8 flex-1">
                   <li className="flex gap-2">
-                    <FiCheckCircle className="text-[#81a2c5] flex-shrink-0 mt-0.5" size={18} />
+                    <FiCheckCircle className="text-clinic-400 flex-shrink-0 mt-0.5" size={18} />
                     Pa angazhim të fshehur me kartë
                   </li>
                   <li className="flex gap-2">
-                    <FiCheckCircle className="text-[#81a2c5] flex-shrink-0 mt-0.5" size={18} />
+                    <FiCheckCircle className="text-clinic-400 flex-shrink-0 mt-0.5" size={18} />
                     Mbështetje gjatë përdorimit
                   </li>
                   <li className="flex gap-2">
-                    <FiCheckCircle className="text-[#81a2c5] flex-shrink-0 mt-0.5" size={18} />
+                    <FiCheckCircle className="text-clinic-400 flex-shrink-0 mt-0.5" size={18} />
                     Transparencë në çmime
                   </li>
                 </ul>
                 <Link
                   to="/apply"
-                  className="inline-flex items-center justify-center w-full py-3.5 rounded-xl border-2 border-slate-200 text-slate-800 font-bold hover:border-[#81a2c5] hover:bg-slate-50 transition-colors"
+                  className="inline-flex items-center justify-center w-full py-3.5 rounded-xl border-2 border-slate-200 text-slate-800 font-bold hover:border-clinic-400 hover:bg-slate-50 transition-colors"
                 >
                   Mësoni më shumë duke aplikuar
                 </Link>
@@ -659,16 +653,16 @@ export default function Home() {
             <span>© {new Date().getFullYear()}</span>
           </div>
           <div className="flex flex-wrap justify-center gap-6">
-            <a href="#funksionalitete" className="hover:text-[#81a2c5] font-medium transition-colors">
+            <a href="#funksionalitete" className="hover:text-clinic-400 font-medium transition-colors">
               Funksionalitete
             </a>
-            <Link to="/login" className="hover:text-[#81a2c5] font-medium transition-colors">
+            <Link to="/login" className="hover:text-clinic-400 font-medium transition-colors">
               Hyr
             </Link>
-            <Link to="/apply" className="hover:text-[#81a2c5] font-medium transition-colors">
+            <Link to="/apply" className="hover:text-clinic-400 font-medium transition-colors">
               Aplikoni
             </Link>
-            <a href="#cmime" className="hover:text-[#81a2c5] font-medium transition-colors">
+            <a href="#cmime" className="hover:text-clinic-400 font-medium transition-colors">
               Çmimet
             </a>
           </div>

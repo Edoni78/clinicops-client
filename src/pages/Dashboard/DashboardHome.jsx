@@ -10,14 +10,16 @@ import {
   FiCalendar,
 } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
-import { CLINIC_MODE_SOLO_DOCTOR } from "../../utils/clinicMode";
+import { useDashboardPanel } from "../../context/DashboardPanelContext";
+import { getSidebarMenuItems } from "../../utils/dashboardMenu";
 import api from "../../api/axios";
 import { getPatientCases } from "../../api/patientCase";
 import { isSameDay, isTerminalCaseStatus } from "../../utils/caseListFilters";
+import PageHeader from "../../components/ui/PageHeader";
 
 function StatFigure({ value, loading }) {
   if (loading) {
-    return <div className="h-9 w-24 bg-slate-200 rounded-md animate-pulse" aria-hidden />;
+    return <div className="h-9 w-24 bg-slate-200 rounded-lg animate-pulse" aria-hidden />;
   }
   if (value === null || value === undefined) {
     return <p className="text-3xl font-bold text-slate-400">—</p>;
@@ -26,8 +28,10 @@ function StatFigure({ value, loading }) {
 }
 
 const DashboardHome = () => {
-  const { clinicMode } = useAuth();
-  const isSoloDoctorClinic = clinicMode === CLINIC_MODE_SOLO_DOCTOR;
+  const { user, role } = useAuth();
+  const { activePanel } = useDashboardPanel();
+  const roleLower = String(role || "").toLowerCase();
+  const hasClinic = !!(user?.clinicId ?? user?.ClinicId);
   const [statsLoading, setStatsLoading] = useState(true);
   const [stats, setStats] = useState({
     totalPatients: null,
@@ -65,80 +69,67 @@ const DashboardHome = () => {
   useEffect(() => {
     loadDashboardStats();
   }, [loadDashboardStats]);
+
   const quickActions = [
     {
       title: "Regjistro pacient të ri",
       description: "Shto një pacient të ri në sistem",
       icon: FiUserPlus,
       link: "/dashboard/patients",
-      color: "bg-blue-500",
-      hoverColor: "hover:bg-blue-600",
+      accent: "bg-sky-500 text-white",
     },
     {
       title: "Shiko pacientët",
       description: "Shiko dhe menaxho të dhënat e pacientëve",
       icon: FiUsers,
       link: "/dashboard/patients-list",
-      color: "bg-green-500",
-      hoverColor: "hover:bg-green-600",
+      accent: "bg-emerald-500 text-white",
     },
     {
       title: "Rastet",
       description: "Menaxho rastet dhe trajtimin e pacientëve",
       icon: FiFolder,
       link: "/dashboard/cases",
-      color: "bg-purple-500",
-      hoverColor: "hover:bg-purple-600",
+      accent: "bg-violet-500 text-white",
     },
     {
       title: "Raportet",
       description: "Shiko dhe shkarko raportet e vizitave të përfunduara",
       icon: FiFileText,
       link: "/dashboard/reports",
-      color: "bg-indigo-500",
-      hoverColor: "hover:bg-indigo-600",
+      accent: "bg-indigo-500 text-white",
     },
     {
       title: "Laboratori",
       description: "Shiko rezultatet dhe testet e laboratorit",
       icon: FiActivity,
       link: "/dashboard/laboratory",
-      color: "bg-orange-500",
-      hoverColor: "hover:bg-orange-600",
+      accent: "bg-amber-500 text-white",
     },
     {
       title: "Pagesat",
       description: "Menaxho faturimin dhe pagesat",
       icon: FiDollarSign,
       link: "/dashboard/payments",
-      color: "bg-emerald-500",
-      hoverColor: "hover:bg-emerald-600",
+      accent: "bg-teal-500 text-white",
     },
   ];
-  const visibleQuickActions = isSoloDoctorClinic
-    ? quickActions.filter((a) => a.link !== "/dashboard/laboratory")
-    : quickActions;
+  const allowedPaths = new Set(
+    getSidebarMenuItems({ roleLower, activePanel, hasClinic }).map((i) => i.path)
+  );
+  const visibleQuickActions = quickActions.filter((a) => allowedPaths.has(a.link));
 
   return (
-    <div className="max-w-7xl mx-auto">
-      {/* Welcome Section */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">
-          Përmbledhja e panelit
-        </h1>
-        <p className="text-slate-600">
-          Mirë se vini në iKlinika. Menaxhoni operacionet e klinikës në mënyrë efikase.
-        </p>
-      </div>
+    <div className="page-shell">
+      <PageHeader
+        title="Përmbledhja e panelit"
+        subtitle="Mirë se vini në iKlinika. Menaxhoni operacionet e klinikës në mënyrë efikase."
+      />
 
-      {/* Live stats */}
-      <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Link
-          to="/dashboard/patients-list"
-          className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:border-[#81a2c5]/40 hover:shadow-md transition-all group"
-        >
+      <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <Link to="/dashboard/patients-list" className="stat-card group">
           <div className="flex items-start gap-3">
-            <div className="p-2.5 rounded-lg bg-green-500/10 text-green-700 group-hover:bg-green-500/15 transition-colors">
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-700 group-hover:bg-emerald-500/15 transition-colors">
               <FiUsers size={22} aria-hidden />
             </div>
             <div className="min-w-0 flex-1">
@@ -148,12 +139,9 @@ const DashboardHome = () => {
             </div>
           </div>
         </Link>
-        <Link
-          to="/dashboard/cases"
-          className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:border-[#81a2c5]/40 hover:shadow-md transition-all group"
-        >
+        <Link to="/dashboard/cases" className="stat-card group">
           <div className="flex items-start gap-3">
-            <div className="p-2.5 rounded-lg bg-purple-500/10 text-purple-700 group-hover:bg-purple-500/15 transition-colors">
+            <div className="p-2.5 rounded-xl bg-violet-500/10 text-violet-700 group-hover:bg-violet-500/15 transition-colors">
               <FiFolder size={22} aria-hidden />
             </div>
             <div className="min-w-0 flex-1">
@@ -163,12 +151,9 @@ const DashboardHome = () => {
             </div>
           </div>
         </Link>
-        <Link
-          to="/dashboard/cases"
-          className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:border-[#81a2c5]/40 hover:shadow-md transition-all group"
-        >
+        <Link to="/dashboard/cases" className="stat-card group sm:col-span-2 lg:col-span-1">
           <div className="flex items-start gap-3">
-            <div className="p-2.5 rounded-lg bg-sky-500/10 text-sky-700 group-hover:bg-sky-500/15 transition-colors">
+            <div className="p-2.5 rounded-xl bg-sky-500/10 text-sky-700 group-hover:bg-sky-500/15 transition-colors">
               <FiCalendar size={22} aria-hidden />
             </div>
             <div className="min-w-0 flex-1">
@@ -180,29 +165,25 @@ const DashboardHome = () => {
         </Link>
       </div>
 
-      {/* Quick Actions Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <h2 className="text-lg font-semibold text-slate-800 mb-4">Veprime të shpejta</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
         {visibleQuickActions.map((action) => {
           const Icon = action.icon;
           return (
             <Link
               key={action.title}
               to={action.link}
-              className="bg-white rounded-xl shadow-sm border border-slate-200 p-6
-                hover:shadow-md transition-all duration-200 group"
+              className="card p-5 sm:p-6 hover:shadow-card-md hover:border-clinic-300/40 transition-all duration-200 group"
             >
               <div className="flex items-start gap-4">
                 <div
-                  className={`${action.color} ${action.hoverColor} p-3 rounded-lg
-                    text-white transition-colors duration-200 group-hover:scale-110`}
+                  className={`${action.accent} p-3 rounded-xl transition-transform duration-200 group-hover:scale-105 shadow-sm`}
                 >
-                  <Icon size={24} />
+                  <Icon size={22} />
                 </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-slate-900 mb-1">
-                    {action.title}
-                  </h3>
-                  <p className="text-sm text-slate-600">{action.description}</p>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-semibold text-slate-900 mb-1">{action.title}</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">{action.description}</p>
                 </div>
               </div>
             </Link>

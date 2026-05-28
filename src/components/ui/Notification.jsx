@@ -1,25 +1,34 @@
 import React, { useEffect } from "react";
+import { FiCheckCircle, FiAlertCircle, FiInfo, FiAlertTriangle } from "react-icons/fi";
 
 const variants = {
   success: {
-    bg: "bg-green-50",
-    border: "border-green-400",
-    text: "text-green-700",
+    bg: "bg-emerald-50",
+    border: "border-emerald-200",
+    text: "text-emerald-800",
+    icon: FiCheckCircle,
+    iconColor: "text-emerald-500",
   },
   error: {
     bg: "bg-red-50",
-    border: "border-red-400",
-    text: "text-red-700",
+    border: "border-red-200",
+    text: "text-red-800",
+    icon: FiAlertCircle,
+    iconColor: "text-red-500",
   },
   info: {
-    bg: "bg-blue-50",
-    border: "border-blue-400",
-    text: "text-blue-700",
+    bg: "bg-sky-50",
+    border: "border-sky-200",
+    text: "text-sky-800",
+    icon: FiInfo,
+    iconColor: "text-sky-500",
   },
   warning: {
-    bg: "bg-yellow-50",
-    border: "border-yellow-400",
-    text: "text-yellow-700",
+    bg: "bg-amber-50",
+    border: "border-amber-200",
+    text: "text-amber-800",
+    icon: FiAlertTriangle,
+    iconColor: "text-amber-500",
   },
 };
 
@@ -42,27 +51,30 @@ const Notification = ({
 
   if (!visible) return null;
 
-  const style = variants[type];
+  const style = variants[type] || variants.info;
+  const Icon = style.icon;
 
   return (
     <div
       className={`
-        fixed top-6 right-6 z-50
+        fixed top-4 right-4 left-4 sm:left-auto sm:max-w-md z-[100]
         ${style.bg} ${style.border} ${style.text}
-        border-l-4
-        px-5 py-4
-        rounded-lg
-        shadow-lg
-        min-w-[280px]
+        border rounded-2xl
+        px-4 py-3.5
+        shadow-card-md
+        min-w-0
         animate-slide-in
       `}
+      role="alert"
     >
-      <div className="flex justify-between items-start gap-4">
-        <p className="text-sm font-medium">{message}</p>
-
+      <div className="flex items-start gap-3">
+        <Icon className={`shrink-0 mt-0.5 ${style.iconColor}`} size={20} aria-hidden />
+        <p className="text-sm font-medium flex-1 leading-snug">{message}</p>
         <button
+          type="button"
           onClick={onClose}
-          className="text-lg leading-none opacity-70 hover:opacity-100"
+          className="shrink-0 p-1 rounded-lg opacity-60 hover:opacity-100 hover:bg-black/5 transition-opacity"
+          aria-label="Mbyll"
         >
           ×
         </button>

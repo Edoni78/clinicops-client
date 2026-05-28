@@ -17,7 +17,8 @@ const cards = [
     subtitle: "Pacientët, rastet, shenjat jetësore, laboratori",
     icon: FiActivity,
     accent: "from-teal-500 to-teal-600",
-    border: "border-teal-400",
+    border: "border-teal-200",
+    ring: "hover:ring-teal-200",
   },
   {
     panel: PANEL_DOCTOR,
@@ -25,15 +26,17 @@ const cards = [
     subtitle: "Rastet, raportet, profili i mjekut, laboratori",
     icon: FiFileText,
     accent: "from-violet-500 to-violet-600",
-    border: "border-violet-400",
+    border: "border-violet-200",
+    ring: "hover:ring-violet-200",
   },
   {
     panel: PANEL_SUPERADMIN,
     title: "Paneli i super administratorit",
     subtitle: "Aplikimet, stafi, shërbimet, menaxhim i plotë",
     icon: FiShield,
-    accent: "from-slate-700 to-slate-900",
-    border: "border-slate-500",
+    accent: "from-slate-700 to-slate-800",
+    border: "border-slate-200",
+    ring: "hover:ring-slate-300",
   },
 ];
 
@@ -74,7 +77,7 @@ export default function PanelSelection() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex flex-col">
+    <div className="min-h-screen dashboard-bg flex flex-col">
       <Notification
         visible={notif.visible}
         type={notif.type}
@@ -82,22 +85,20 @@ export default function PanelSelection() {
         onClose={() => setNotif((p) => ({ ...p, visible: false }))}
       />
 
-      <header className="flex items-center justify-between px-6 py-4 border-b border-slate-200/80 bg-white/80 backdrop-blur">
-        <span className="font-bold text-xl tracking-tight text-[#81a2c5]">iKlinika</span>
-        <button
-          type="button"
-          onClick={() => {
-            logout();
-            navigate("/login", { replace: true });
-          }}
-          className="flex items-center gap-2 text-sm text-slate-600 hover:text-red-600"
-        >
-          <FiLogOut size={18} />
+      <header className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-200/80 bg-white/90 backdrop-blur sticky top-0 z-10">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-clinic-400 text-white font-bold text-sm">
+            iK
+          </span>
+          <span className="font-bold text-lg text-slate-900 tracking-tight">iKlinika</span>
+        </div>
+        <button type="button" onClick={() => { logout(); navigate("/login", { replace: true }); }} className="btn-danger btn-sm">
+          <FiLogOut size={16} />
           Dilni
         </button>
       </header>
 
-      <div className="flex-1 flex flex-col items-center justify-center p-6">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-10">
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center mb-2">
           Zgjidhni panelin
         </h1>
@@ -106,8 +107,10 @@ export default function PanelSelection() {
           tuaj.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl">
-          {cards.map(({ panel, title, subtitle, icon: Icon, accent, border }) => {
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 w-full max-w-5xl">
+          {cards
+            .filter(({ panel }) => roleLower === "superadmin" || canEnterPanel(panel))
+            .map(({ panel, title, subtitle, icon: Icon, accent, border, ring }) => {
             const allowed = canEnterPanel(panel);
             return (
               <button
@@ -115,22 +118,21 @@ export default function PanelSelection() {
                 type="button"
                 onClick={() => handleSelect(panel)}
                 className={`
-                  text-left rounded-2xl border-2 p-6 transition-all shadow-sm
+                  text-left rounded-2xl border-2 p-6 transition-all shadow-card
+                  ring-2 ring-transparent
                   ${allowed
-                    ? `bg-white ${border} hover:shadow-lg hover:scale-[1.02] cursor-pointer`
-                    : "bg-slate-50 border-slate-200 opacity-80 hover:bg-slate-100 cursor-pointer"
+                    ? `bg-white ${border} ${ring} hover:shadow-card-md hover:scale-[1.01] cursor-pointer`
+                    : "bg-slate-50/80 border-slate-200 opacity-90 hover:bg-slate-100 cursor-pointer"
                   }
                 `}
               >
-                <div
-                  className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${accent} text-white mb-4`}
-                >
-                  <Icon size={28} />
+                <div className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${accent} text-white mb-4 shadow-sm`}>
+                  <Icon size={26} />
                 </div>
                 <h2 className="text-lg font-semibold text-slate-900 mb-2">{title}</h2>
-                <p className="text-sm text-slate-600">{subtitle}</p>
+                <p className="text-sm text-slate-600 leading-relaxed">{subtitle}</p>
                 {!allowed && (
-                  <p className="mt-4 text-xs text-amber-700 font-medium">
+                  <p className="mt-4 text-xs text-amber-700 font-medium bg-amber-50 rounded-lg px-3 py-2">
                     Klikoni për mesazh — nuk keni akses me këtë rol
                   </p>
                 )}

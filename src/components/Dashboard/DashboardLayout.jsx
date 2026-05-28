@@ -1,18 +1,24 @@
-import React from "react";
+import React, { useState } from "react";
 import { Outlet, Navigate, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Topbar from "./TopBar";
+import LoadingSpinner from "../ui/LoadingSpinner";
 import { useDashboardPanel } from "../../context/DashboardPanelContext";
+import { useAuth } from "../../context/AuthContext";
+import { isDashboardPathAllowed } from "../../utils/dashboardMenu";
 
 function DashboardLayoutInner() {
   const location = useLocation();
-  const { requiresPanel, activePanel, initialized } = useDashboardPanel();
+  const { user } = useAuth();
+  const { requiresPanel, activePanel, initialized, roleLower } = useDashboardPanel();
   const isPanelRoute = location.pathname === "/dashboard/panel";
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const hasClinic = !!(user?.clinicId ?? user?.ClinicId);
 
   if (!initialized) {
     return (
-      <div className="h-screen flex items-center justify-center bg-slate-100">
-        <div className="animate-spin h-10 w-10 border-2 border-[#81a2c5] border-t-transparent rounded-full" />
+      <div className="h-screen flex items-center justify-center dashboard-bg">
+        <LoadingSpinner size="lg" label="Duke ngarkuar panelin…" />
       </div>
     );
   }
@@ -21,22 +27,33 @@ function DashboardLayoutInner() {
     return <Navigate to="/dashboard/panel" replace />;
   }
 
+  const menuCtx = { roleLower, activePanel, hasClinic };
+  if (
+    !isPanelRoute &&
+    !isDashboardPathAllowed(location.pathname, menuCtx)
+  ) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   if (isPanelRoute) {
     return (
-      <div className="min-h-screen bg-slate-100">
+      <div className="min-h-screen dashboard-bg">
         <Outlet />
       </div>
     );
   }
 
   return (
-    <div className="h-screen flex bg-slate-100">
-      <Sidebar />
+    <div className="h-screen flex dashboard-bg overflow-hidden">
+      <Sidebar
+        mobileOpen={mobileNavOpen}
+        onMobileClose={() => setMobileNavOpen(false)}
+      />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <Topbar />
+        <Topbar onMenuClick={() => setMobileNavOpen(true)} />
 
-        <main className="flex-1 p-6 overflow-y-auto">
+        <main className="dashboard-main">
           <Outlet />
         </main>
       </div>

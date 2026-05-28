@@ -13,6 +13,8 @@ import {
 } from "react-icons/fi";
 import { getPatientCases, getLabResults, uploadLabResult, downloadLabResultFile } from "../../api/patientCase";
 import Notification from "../../components/ui/Notification";
+import PageHeader from "../../components/ui/PageHeader";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { useAuth } from "../../context/AuthContext";
 import { CLINIC_MODE_SOLO_DOCTOR } from "../../utils/clinicMode";
 
@@ -164,7 +166,7 @@ export default function Laboratory() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="page-shell max-w-5xl">
       <Notification
         visible={notif.visible}
         type={notif.type}
@@ -172,28 +174,22 @@ export default function Laboratory() {
         onClose={() => setNotif((p) => ({ ...p, visible: false }))}
       />
 
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-            <span className="p-2 rounded-xl bg-amber-500 text-white shadow-lg">
-              <FiDroplet size={28} />
-            </span>
-            Laboratori – Rezultatet e laboratorit
-          </h1>
-          <p className="text-slate-600 mt-2 text-sm max-w-xl">
-            Të gjitha rastet. Për çdo rast mund të shikoni dhe të shtoni PDF të rezultateve të laboratorit.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => fetchCases().then(loadLabsForCases)}
-          disabled={loading}
-          className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50 transition-all shadow-sm"
-        >
-          <FiRefreshCw className={loading ? "animate-spin" : ""} size={18} />
-          Rifresko
-        </button>
-      </div>
+      <PageHeader
+        title="Laboratori"
+        subtitle="Të gjitha rastet. Për çdo rast mund të shikoni dhe të shtoni PDF të rezultateve të laboratorit."
+        icon={FiDroplet}
+        actions={
+          <button
+            type="button"
+            onClick={() => fetchCases().then(loadLabsForCases)}
+            disabled={loading}
+            className="btn-secondary btn-md"
+          >
+            <FiRefreshCw className={loading ? "animate-spin" : ""} size={18} />
+            Rifresko
+          </button>
+        }
+      />
 
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-4 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">

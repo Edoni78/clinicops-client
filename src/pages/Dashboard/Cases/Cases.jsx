@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FiFolder, FiRefreshCw, FiClock, FiCalendar, FiX, FiSearch } from "react-icons/fi";
 import { getPatientCases } from "../../../api/patientCase";
 import { useSignalR } from "../../../context/SignalRContext";
+import { useAuth } from "../../../context/AuthContext";
 import Notification from "../../../components/ui/Notification";
+import PageHeader from "../../../components/ui/PageHeader";
+import LoadingSpinner from "../../../components/ui/LoadingSpinner";
+import EmptyState from "../../../components/ui/EmptyState";
 import {
   isSameDay,
   isYesterday,
@@ -13,6 +17,7 @@ import {
   isTerminalCaseStatus,
   caseMatchesNameQuery,
 } from "../../../utils/caseListFilters";
+import { findActiveInConsultationCase } from "./caseStatus";
 
 const STATUS_LABELS = {
   Waiting: "Në pritje",
@@ -42,7 +47,7 @@ function formatDate(dateString) {
 }
 
 const selectDateClassName =
-  "px-2.5 py-2 rounded-lg border border-slate-200 text-sm text-slate-800 bg-white focus:ring-2 focus:ring-[#81a2c5]/40 focus:border-[#81a2c5] outline-none min-w-[4.5rem]";
+  "px-2.5 py-2 rounded-xl border border-slate-200 text-sm text-slate-800 bg-white focus:ring-2 focus:ring-clinic-400/35 focus:border-clinic-400 outline-none min-w-[4.5rem]";
 
 const CASE_TABS = [
   { value: "active", label: "Në vazhdim" },
@@ -61,6 +66,11 @@ function statusBadgeClass(status) {
 }
 
 export default function Cases() {
+  const navigate = useNavigate();
+  const { role } = useAuth();
+  const currentRole = String(role || "").toLowerCase();
+  const isDoctor = currentRole === "doctor";
+  const isNurse = currentRole === "nurse";
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [notif, setNotif] = useState({ visible: false, type: "info", message: "" });
@@ -124,6 +134,21 @@ export default function Cases() {
     });
   }, [cases, casesTab, nameSearch, searchDateYmd, casesQuickDate]);
 
+  const getCaseOpenPath = useCallback(
+    (c) => {
+      const caseId = c?.id ?? c?.Id;
+      if (!caseId) return "/dashboard/cases";
+      if (isDoctor) return `/dashboard/cases/${caseId}/doctor`;
+      if (isNurse) return `/dashboard/cases/${caseId}/nurse`;
+      const status = String(c?.status ?? c?.Status ?? "").trim().toLowerCase();
+      if (["inconsultation", "completed", "finished"].includes(status)) {
+        return `/dashboard/cases/${caseId}/doctor`;
+      }
+      return `/dashboard/cases/${caseId}/nurse`;
+    },
+    [isDoctor, isNurse]
+  );
+
   const fetchCases = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
@@ -138,6 +163,32 @@ export default function Cases() {
 
   useEffect(() => {
     fetchCases();
+  }, [fetchCases]);
+
+  // Doctor: open the active in-consultation case automatically (one visit at a time).
+  useEffect(() => {
+    if (!isDoctor || loading) return;
+    const active = findActiveInConsultationCase(cases);
+    const caseId = active?.id ?? active?.Id;
+    if (!caseId) return;
+    navigate(`/dashboard/cases/${caseId}/doctor`, { replace: true });
+  }, [isDoctor, loading, cases, navigate]);
+
+  // Fallback real-time sync for newly created cases.
+  // Some backends don't emit a dedicated "case created" SignalR event,
+  // so we silently refresh while this page is open.
+  useEffect(() => {
+    const refreshIfVisible = () => {
+      if (document.visibilityState === "visible") fetchCases(true);
+    };
+    const intervalId = window.setInterval(refreshIfVisible, 8000);
+    window.addEventListener("focus", refreshIfVisible);
+    document.addEventListener("visibilitychange", refreshIfVisible);
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", refreshIfVisible);
+      document.removeEventListener("visibilitychange", refreshIfVisible);
+    };
   }, [fetchCases]);
 
   // Auto-update list via SignalR and show notification when status changes (e.g. nurse sends case to doctor)
@@ -162,7 +213,7 @@ export default function Cases() {
   }, [connection, fetchCases, onVitalsUpdated, onReportUpdated, onCaseStatusChanged]);
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="page-shell max-w-6xl">
       <Notification
         visible={notif.visible}
         type={notif.type}
@@ -170,59 +221,47 @@ export default function Cases() {
         onClose={() => setNotif((p) => ({ ...p, visible: false }))}
       />
 
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-            <span className="p-2 rounded-xl bg-slate-900 text-white shadow-lg">
-              <FiFolder size={28} />
-            </span>
-            Rastet e pacientëve
-          </h1>
-          <p className="text-slate-600 mt-2 text-sm max-w-xl">
-            Të gjitha rastet. Ndryshimet e statusit (në pritje → në progres → në konsultim → përfunduar → mbyllur) përditësohen në kohë reale.
-          </p>
-        </div>
-        <div className="flex items-center gap-3 flex-shrink-0">
-          {connectionState === "Connected" && (
-            <span className="flex items-center gap-1.5 text-sm text-sky-700 bg-sky-50 border border-sky-200 px-3 py-1.5 rounded-lg font-medium">
-              <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
-              Direkt
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={() => fetchCases()}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50 transition-all shadow-sm"
-          >
-            <FiRefreshCw className={loading ? "animate-spin" : ""} size={18} />
-            Rifresko
-          </button>
-        </div>
+      <PageHeader
+        title="Rastet e pacientëve"
+        subtitle="Të gjitha rastet. Ndryshimet e statusit përditësohen në kohë reale."
+        icon={FiFolder}
+        actions={
+          <>
+            {connectionState === "Connected" && (
+              <span className="flex items-center gap-1.5 text-sm text-sky-700 bg-sky-50 border border-sky-200 px-3 py-1.5 rounded-xl font-medium">
+                <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
+                Direkt
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => fetchCases()}
+              disabled={loading}
+              className="btn-secondary btn-md"
+            >
+              <FiRefreshCw className={loading ? "animate-spin" : ""} size={18} />
+              Rifresko
+            </button>
+          </>
+        }
+      />
+
+      <div className="mb-5 card px-4 py-3 text-sm text-slate-600 flex flex-wrap gap-2 items-center">
+        <span className="font-semibold text-slate-700">Rrjedha e punës:</span>
+        <span className="px-2.5 py-1 rounded-full bg-slate-100">1) Infermieri: shenjat jetësore</span>
+        <span className="px-2.5 py-1 rounded-full bg-slate-100">2) Dërgo te mjeku</span>
+        <span className="px-2.5 py-1 rounded-full bg-slate-100">3) Mjeku: raport + përfundim</span>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="table-shell">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <svg
-              className="animate-spin h-10 w-10 text-[#81a2c5] mb-4"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-            </svg>
-            <p className="text-slate-500 text-sm">Duke ngarkuar…</p>
-          </div>
+          <LoadingSpinner className="py-20" label="Duke ngarkuar rastet…" />
         ) : cases.length === 0 ? (
-          <div className="text-center py-20 px-6">
-            <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
-              <FiFolder className="text-slate-400" size={32} />
-            </div>
-            <p className="text-slate-600 font-medium">Nuk ka raste</p>
-            <p className="text-slate-500 text-sm mt-1">Nuk ka raste të regjistruara.</p>
-          </div>
+          <EmptyState
+            icon={FiFolder}
+            title="Nuk ka raste"
+            description="Nuk ka raste të regjistruara ende."
+          />
         ) : (
           <>
             <div className="px-4 pt-4 pb-2 border-b border-slate-100 flex flex-wrap gap-2">
@@ -232,11 +271,7 @@ export default function Cases() {
                   key={tab.value}
                   type="button"
                   onClick={() => setCasesTab(tab.value)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    casesTab === tab.value
-                      ? "bg-slate-800 text-white"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
+                  className={casesTab === tab.value ? "tab-active" : "tab-inactive"}
                 >
                   {tab.label}
                 </button>
@@ -250,11 +285,7 @@ export default function Cases() {
                   setCasesQuickDate("today");
                   clearDateSearch();
                 }}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  !searchDateYmd && casesQuickDate === "today"
-                    ? "bg-[#81a2c5] text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
+                className={!searchDateYmd && casesQuickDate === "today" ? "tab-active" : "tab-inactive"}
               >
                 Sot
               </button>
@@ -264,11 +295,7 @@ export default function Cases() {
                   setCasesQuickDate("yesterday");
                   clearDateSearch();
                 }}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  !searchDateYmd && casesQuickDate === "yesterday"
-                    ? "bg-[#81a2c5] text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
+                className={!searchDateYmd && casesQuickDate === "yesterday" ? "tab-active" : "tab-inactive"}
               >
                 Dje
               </button>
@@ -278,11 +305,7 @@ export default function Cases() {
                   setCasesQuickDate("");
                   clearDateSearch();
                 }}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  !searchDateYmd && casesQuickDate === ""
-                    ? "bg-[#81a2c5] text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
+                className={!searchDateYmd && casesQuickDate === "" ? "tab-active" : "tab-inactive"}
               >
                 Të gjitha datat
               </button>
@@ -294,13 +317,13 @@ export default function Cases() {
                   value={nameSearch}
                   onChange={(e) => setNameSearch(e.target.value)}
                   placeholder="Kërko sipas emrit të pacientit…"
-                  className="flex-1 min-w-[12rem] px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-[#81a2c5]/40 focus:border-[#81a2c5] outline-none"
+                  className="search-input flex-1"
                 />
               </div>
               <span className="hidden sm:inline h-6 w-px bg-slate-200 mx-1 self-center" aria-hidden />
               <div lang="en-GB" className="flex flex-wrap items-center gap-2">
                 <span className="text-sm font-medium text-slate-600 inline-flex items-center gap-1.5">
-                  <FiCalendar size={16} className="text-[#81a2c5]" aria-hidden />
+                  <FiCalendar size={16} className="text-clinic-400" aria-hidden />
                   Sipas datës
                 </span>
                 <select
@@ -380,8 +403,8 @@ export default function Cases() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-slate-200 bg-slate-50/80">
-                      <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <tr className="table-head-row">
+                      <th className="table-th">
                         Pacienti
                       </th>
                       <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -401,11 +424,11 @@ export default function Cases() {
                       const status = c.status ?? c.Status;
                       const createdAt = c.createdAt ?? c.CreatedAt;
                       return (
-                        <tr key={caseId} className="border-b border-slate-100/90 hover:bg-slate-50 transition-colors">
+                        <tr key={caseId} className="table-row">
                           <td className="py-3 px-4">
                             <Link
-                              to={`/dashboard/cases/${caseId}`}
-                              className="font-medium text-slate-900 hover:text-[#81a2c5]"
+                              to={getCaseOpenPath(c)}
+                              className="font-medium text-slate-900 hover:text-clinic-400"
                             >
                               {firstName} {lastName}
                             </Link>
@@ -425,8 +448,8 @@ export default function Cases() {
                           </td>
                           <td className="py-3 px-4 text-right">
                             <Link
-                              to={`/dashboard/cases/${caseId}`}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#81a2c5] bg-[#81a2c5]/10 rounded-lg hover:bg-[#81a2c5]/20 transition-colors border border-[#81a2c5]/20"
+                              to={getCaseOpenPath(c)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-clinic-400 bg-clinic-400/10 rounded-lg hover:bg-clinic-400/20 transition-colors border border-clinic-400/20"
                             >
                               Hap
                               <span aria-hidden>→</span>

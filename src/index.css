@@ -5,5 +5,179 @@
 @layer base {
   html {
     font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900;
+  }
+
+  ::selection {
+    @apply bg-clinic-200 text-clinic-900;
+  }
+}
+
+@layer components {
+  .page-shell {
+    @apply max-w-7xl mx-auto w-full;
+  }
+
+  .page-header {
+    @apply mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4;
+  }
+
+  .page-title {
+    @apply text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight;
+  }
+
+  .page-subtitle {
+    @apply text-slate-600 mt-1 text-sm sm:text-base max-w-2xl;
+  }
+
+  .card {
+    @apply bg-white rounded-2xl border border-slate-200/80 shadow-card;
+  }
+
+  .card-padded {
+    @apply card p-5 sm:p-6 md:p-8;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-semibold rounded-xl
+      transition-all duration-200 focus:outline-none focus-visible:ring-2
+      focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed
+      disabled:pointer-events-none;
+  }
+
+  .btn-primary {
+    @apply btn bg-clinic-400 text-white hover:bg-clinic-500
+      focus-visible:ring-clinic-400 shadow-sm;
+  }
+
+  .btn-secondary {
+    @apply btn bg-white border border-slate-200 text-slate-700
+      hover:bg-slate-50 hover:border-slate-300 shadow-sm focus-visible:ring-slate-300;
+  }
+
+  .btn-ghost {
+    @apply btn text-slate-600 hover:bg-slate-100 focus-visible:ring-slate-300;
+  }
+
+  .btn-danger {
+    @apply btn text-red-600 border border-red-200/80 bg-white hover:bg-red-50
+      focus-visible:ring-red-300;
+  }
+
+  .btn-sm {
+    @apply px-3 py-2 text-sm;
+  }
+
+  .btn-md {
+    @apply px-4 py-2.5 text-sm;
+  }
+
+  .btn-lg {
+    @apply px-6 py-3 text-base;
+  }
+
+  .input {
+    @apply w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-white
+      text-slate-900 placeholder:text-slate-400
+      focus:outline-none focus:ring-2 focus:ring-clinic-400/35 focus:border-clinic-400
+      transition-all duration-200;
+  }
+
+  .input-icon-wrap {
+    @apply relative;
+  }
+
+  .input-icon {
+    @apply absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none;
+  }
+
+  .input-with-icon {
+    @apply input pl-10;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-slate-700 mb-1.5;
+  }
+
+  .table-shell {
+    @apply card overflow-hidden;
+  }
+
+  .table-head-row {
+    @apply border-b border-slate-200 bg-slate-50/90;
+  }
+
+  .table-th {
+    @apply text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500;
+  }
+
+  .table-td {
+    @apply py-3 px-4 text-sm;
+  }
+
+  .table-row {
+    @apply border-b border-slate-100 hover:bg-slate-50/80 transition-colors;
+  }
+
+  .tab {
+    @apply px-4 py-2 rounded-xl text-sm font-medium transition-colors;
+  }
+
+  .tab-active {
+    @apply tab bg-clinic-400 text-white shadow-sm;
+  }
+
+  .tab-inactive {
+    @apply tab bg-slate-100 text-slate-600 hover:bg-slate-200;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full;
+  }
+
+  .empty-state {
+    @apply flex flex-col items-center justify-center text-center py-16 px-6;
+  }
+
+  .empty-state-icon {
+    @apply w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mb-4 text-slate-400;
+  }
+
+  .stat-card {
+    @apply card p-5 sm:p-6 hover:border-clinic-300/50 hover:shadow-card-md transition-all duration-200;
+  }
+
+  .search-input {
+    @apply input py-2 text-sm min-w-[12rem];
+  }
+
+  .filter-chip {
+    @apply px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-slate-100 text-slate-600;
+  }
+
+  .sidebar-link {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+      text-slate-600 transition-colors duration-150;
+  }
+
+  .sidebar-link-active {
+    @apply sidebar-link bg-clinic-100 text-clinic-800 font-semibold;
+  }
+
+  .sidebar-link-inactive {
+    @apply sidebar-link hover:bg-slate-100 hover:text-slate-900;
+  }
+
+  .dashboard-main {
+    @apply flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto;
+  }
+
+  .dashboard-bg {
+    @apply min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-clinic-50/30;
   }
 }

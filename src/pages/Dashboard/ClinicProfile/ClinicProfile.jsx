@@ -9,6 +9,8 @@ import {
   FiBriefcase,
 } from "react-icons/fi";
 import Notification from "../../../components/ui/Notification";
+import PageHeader from "../../../components/ui/PageHeader";
+import LoadingSpinner from "../../../components/ui/LoadingSpinner";
 import {
   getClinicProfile,
   updateClinicProfile,
@@ -146,35 +148,21 @@ export default function ClinicProfile() {
         onClose={() => setNotif((p) => ({ ...p, visible: false }))}
       />
 
-      <div className="max-w-3xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-            <FiBriefcase className="text-[#81a2c5]" size={32} />
-            Profili i klinikës
-          </h1>
-          <p className="text-slate-600 mt-1">
-            Karta e klinikës: emri, logotipi, adresa, telefoni dhe përshkrimi.
-          </p>
-        </div>
+      <div className="page-shell max-w-3xl">
+        <PageHeader
+          title="Profili i klinikës"
+          subtitle="Karta e klinikës: emri, logotipi, adresa, telefoni dhe përshkrimi."
+          icon={FiBriefcase}
+        />
 
         {loading ? (
-          <div className="flex justify-center py-16">
-            <svg
-              className="animate-spin h-10 w-10 text-[#81a2c5]"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-            </svg>
-          </div>
+          <LoadingSpinner className="py-16" label="Duke ngarkuar profilin…" />
         ) : !profile ? (
-          <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-slate-500">
+          <div className="card-padded text-center text-slate-500">
             Nuk mund të ngarkohet profili i klinikës.
           </div>
         ) : editing ? (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div className="card-padded">
             <h2 className="text-lg font-semibold text-slate-900 mb-4">Ndrysho karten e klinikës</h2>
             <form onSubmit={handleSave} className="space-y-4">
               <div>
@@ -185,7 +173,7 @@ export default function ClinicProfile() {
                   onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
                   required
                   maxLength={200}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-clinic-400 focus:border-transparent"
                   placeholder="Emri i klinikës"
                 />
               </div>
@@ -196,7 +184,7 @@ export default function ClinicProfile() {
                   value={form.address}
                   onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))}
                   maxLength={300}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-clinic-400 focus:border-transparent"
                   placeholder="Adresa / vendndodhja"
                 />
               </div>
@@ -207,7 +195,7 @@ export default function ClinicProfile() {
                   value={form.phone}
                   onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
                   maxLength={50}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-clinic-400 focus:border-transparent"
                   placeholder="Numri i telefonit"
                 />
               </div>
@@ -218,7 +206,7 @@ export default function ClinicProfile() {
                   onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
                   rows={4}
                   maxLength={2000}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent resize-none"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-clinic-400 focus:border-transparent resize-none"
                   placeholder="Rreth klinikës suaj..."
                 />
               </div>
@@ -228,7 +216,7 @@ export default function ClinicProfile() {
                   type="file"
                   accept={ALLOWED_LOGO_TYPES}
                   onChange={(e) => setLogoFile(e.target.files?.[0] ?? null)}
-                  className="w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#81a2c5] file:text-white file:font-medium hover:file:bg-[#6b8fa8]"
+                  className="w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-clinic-400 file:text-white file:font-medium hover:file:bg-clinic-500"
                 />
                 <p className="text-xs text-slate-500 mt-1">Të lejuara: JPG, PNG, GIF, WebP</p>
               </div>
@@ -236,7 +224,7 @@ export default function ClinicProfile() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-[#81a2c5] text-white font-medium rounded-lg hover:bg-[#6b8fa8] disabled:opacity-50"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-clinic-400 text-white font-medium rounded-lg hover:bg-clinic-500 disabled:opacity-50"
                 >
                   <FiCheck size={18} />
                   {submitting ? "Duke ruajtur…" : "Ruaj"}
@@ -264,8 +252,8 @@ export default function ClinicProfile() {
                     className="w-24 h-24 rounded-xl object-cover border border-slate-200"
                   />
                 ) : (
-                  <div className="w-24 h-24 rounded-xl bg-[#81a2c5]/10 flex items-center justify-center border border-slate-200">
-                    <span className="text-2xl font-bold text-[#81a2c5]">
+                  <div className="w-24 h-24 rounded-xl bg-clinic-400/10 flex items-center justify-center border border-slate-200">
+                    <span className="text-2xl font-bold text-clinic-400">
                       {getInitials(displayName)}
                     </span>
                   </div>
@@ -292,7 +280,7 @@ export default function ClinicProfile() {
               <button
                 type="button"
                 onClick={() => setEditing(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-[#81a2c5] text-white text-sm font-medium rounded-lg hover:bg-[#6b8fa8]"
+                className="flex items-center gap-2 px-4 py-2 bg-clinic-400 text-white text-sm font-medium rounded-lg hover:bg-clinic-500"
               >
                 <FiEdit2 size={18} />
                 Ndrysho profilin

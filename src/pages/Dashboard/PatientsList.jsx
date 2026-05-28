@@ -9,6 +9,9 @@ import {
   FiPhone
 } from "react-icons/fi";
 import { Link } from "react-router-dom";
+import PageHeader from "../../components/ui/PageHeader";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import EmptyState from "../../components/ui/EmptyState";
 
 const PatientsList = () => {
   const [patientsLoading, setPatientsLoading] = useState(false);
@@ -89,126 +92,89 @@ const PatientsList = () => {
         onClose={() => setNotif((prev) => ({ ...prev, visible: false }))}
       />
 
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-3">
-              <FiUsers className="text-[#81a2c5]" size={32} />
-              Pacientët
-            </h1>
-            <p className="text-slate-600">
-              Shiko dhe menaxho të gjitha të dhënat e pacientëve në klinikën tuaj.
-            </p>
-          </div>
-          <Link
-            to="/dashboard/patients"
-            className="px-6 py-3 bg-[#81a2c5] text-white font-semibold rounded-lg
-              shadow-sm hover:bg-[#6b8fa8] transition-all duration-200
-              flex items-center gap-2"
-          >
-            <FiUserPlus size={18} />
-            Regjistro pacient të ri
-          </Link>
-        </div>
+      <div className="page-shell">
+        <PageHeader
+          title="Pacientët"
+          subtitle="Shiko dhe menaxho të gjitha të dhënat e pacientëve në klinikën tuaj."
+          icon={FiUsers}
+          actions={
+            <Link to="/dashboard/patients" className="btn-primary btn-md">
+              <FiUserPlus size={18} />
+              Regjistro pacient të ri
+            </Link>
+          }
+        />
 
-        {/* Search and Refresh Bar */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 relative">
-              <FiSearch
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"
-                size={18}
-              />
+        <div className="card p-4 sm:p-5 mb-6">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="input-icon-wrap flex-1">
+              <FiSearch className="input-icon" size={18} />
               <input
                 type="text"
                 placeholder="Kërko sipas emrit ose telefonit..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg
-                  focus:outline-none focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
+                className="input-with-icon"
               />
             </div>
             <button
+              type="button"
               onClick={fetchPatients}
               disabled={patientsLoading}
-              className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200
-                transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
+              className="btn-secondary btn-md"
             >
-              <FiRefreshCw
-                className={patientsLoading ? "animate-spin" : ""}
-                size={18}
-              />
+              <FiRefreshCw className={patientsLoading ? "animate-spin" : ""} size={18} />
               Rifresko
             </button>
           </div>
         </div>
 
-        {/* Patients Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <div className="table-shell p-4 sm:p-6">
           {patientsLoading ? (
-            <div className="flex justify-center items-center py-12">
-              <svg
-                className="animate-spin h-8 w-8 text-[#81a2c5]"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-            </div>
+            <LoadingSpinner className="py-12" label="Duke ngarkuar pacientët…" />
           ) : filteredPatients.length === 0 ? (
-            <div className="text-center py-12">
-              <FiUsers className="mx-auto text-slate-400 mb-4" size={48} />
-              <p className="text-slate-600 text-lg">
-                {searchQuery
-                  ? "Nuk u gjet asnjë pacient që përputhet me kërkimin."
-                  : "Ende nuk ka pacientë të regjistruar."}
-              </p>
-              {!searchQuery && (
-                <Link
-                  to="/dashboard/patients"
-                  className="mt-4 inline-block px-6 py-2 bg-[#81a2c5] text-white rounded-lg hover:bg-[#6b8fa8]
-                    transition-colors duration-200"
-                >
-                  Regjistro pacientin e parë
-                </Link>
-              )}
-            </div>
+            <EmptyState
+              icon={FiUsers}
+              title={
+                searchQuery
+                  ? "Nuk u gjet asnjë pacient"
+                  : "Ende nuk ka pacientë të regjistruar"
+              }
+              description={
+                searchQuery
+                  ? "Provoni një kërkim tjetër sipas emrit ose telefonit."
+                  : "Filloni duke regjistruar pacientin e parë në klinikë."
+              }
+              action={
+                !searchQuery && (
+                  <Link to="/dashboard/patients" className="btn-primary btn-md">
+                    Regjistro pacientin e parë
+                  </Link>
+                )
+              }
+            />
           ) : (
             <>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-slate-200">
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">
+                    <tr className="table-head-row">
+                      <th className="table-th">
                         Emri i pacientit
                       </th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">
+                      <th className="table-th">
                         Data e lindjes
                       </th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">
+                      <th className="table-th">
                         Mosha
                       </th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">
+                      <th className="table-th">
                         Gjinia
                       </th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">
+                      <th className="table-th">
                         Telefoni
                       </th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">
+                      <th className="table-th">
                         Shënime
                       </th>
                     </tr>
@@ -217,7 +183,7 @@ const PatientsList = () => {
                     {filteredPatients.map((patient) => (
                       <tr
                         key={patient.id || patient.patientId}
-                        className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+                        className="table-row"
                       >
                         <td className="py-4 px-4">
                           <div className="font-medium text-slate-900">

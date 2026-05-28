@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import {
   FiHome,
@@ -11,126 +11,175 @@ import {
   FiClipboard,
   FiBriefcase,
   FiPackage,
+  FiX,
 } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
-import {
-  useDashboardPanel,
-  PANEL_NURSE,
-  PANEL_DOCTOR,
-  PANEL_SUPERADMIN,
-} from "../../context/DashboardPanelContext";
-import { CLINIC_MODE_SOLO_DOCTOR } from "../../utils/clinicMode";
+import { useDashboardPanel } from "../../context/DashboardPanelContext";
+import { getClinicProfile, getLogoFullUrl } from "../../api/clinic";
+import { getJwtPayload } from "../../utils/jwt";
+import { getSidebarMenuItems } from "../../utils/dashboardMenu";
 
-const menuItems = [
-  { label: "Paneli", icon: FiHome, path: "/dashboard" },
-  { label: "Pacientët", icon: FiUsers, path: "/dashboard/patients" },
-  { label: "Rastet", icon: FiFolder, path: "/dashboard/cases" },
-  { label: "Raportet", icon: FiFileText, path: "/dashboard/reports" },
-  { label: "Laboratori", icon: FiActivity, path: "/dashboard/laboratory" },
-  { label: "Shërbimet", icon: FiPackage, path: "/dashboard/services" },
-  { label: "Pagesat", icon: FiDollarSign, path: "/dashboard/payments" },
-  { label: "Stafi", icon: FiUserCheck, path: "/dashboard/staff" },
-];
+function getClinicInitials(name) {
+  if (!name || !name.trim()) return "?";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
+}
 
-const patientsListItem = {
-  label: "Lista e pacientëve",
-  icon: FiUsers,
-  path: "/dashboard/patients-list",
+const MENU_ICONS = {
+  home: FiHome,
+  patients: FiUsers,
+  patientsList: FiUsers,
+  cases: FiFolder,
+  reports: FiFileText,
+  laboratory: FiActivity,
+  services: FiPackage,
+  payments: FiDollarSign,
+  staff: FiUserCheck,
+  applies: FiClipboard,
+  clinicProfile: FiBriefcase,
+  doctorProfile: FiUserCheck,
 };
 
-const Sidebar = () => {
-  const { user, role, clinicMode } = useAuth();
-  const { requiresPanel, activePanel } = useDashboardPanel();
-  const isSuperAdmin = role && role.toString().toLowerCase() === "superadmin";
-  const isDoctor = role && role.toString().toLowerCase() === "doctor";
+function NavItems({ items, onNavigate }) {
+  return (
+    <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+      {items.map(({ label, icon: Icon, path }) => (
+        <NavLink
+          key={`${path}-${label}`}
+          to={path}
+          end={path === "/dashboard"}
+          onClick={onNavigate}
+          className={({ isActive }) =>
+            isActive ? "sidebar-link-active" : "sidebar-link-inactive"
+          }
+        >
+          <Icon size={18} className="shrink-0 opacity-90" />
+          {label}
+        </NavLink>
+      ))}
+    </nav>
+  );
+}
+
+const Sidebar = ({ mobileOpen = false, onMobileClose }) => {
+  const { user } = useAuth();
+  const { activePanel, roleLower } = useDashboardPanel();
   const hasClinic = !!(user?.clinicId ?? user?.ClinicId);
-  const isSoloDoctorClinic = clinicMode === CLINIC_MODE_SOLO_DOCTOR;
+  const [clinicProfile, setClinicProfile] = useState(null);
+
+  useEffect(() => {
+    if (!hasClinic) {
+      setClinicProfile(null);
+      return;
+    }
+    getClinicProfile()
+      .then(setClinicProfile)
+      .catch(() => setClinicProfile(null));
+  }, [hasClinic]);
+
+  const jwtPayload = getJwtPayload();
+  const clinicDisplayName =
+    clinicProfile?.name ??
+    clinicProfile?.Name ??
+    jwtPayload?.clinicName ??
+    jwtPayload?.ClinicName ??
+    user?.clinicName ??
+    user?.ClinicName ??
+    null;
+  const clinicLogoUrl = getLogoFullUrl(
+    clinicProfile?.logoUrl ?? clinicProfile?.LogoUrl
+  );
 
   const items = useMemo(() => {
-    if (!requiresPanel) {
-      const baseMenu = isSoloDoctorClinic
-        ? menuItems.filter((i) => i.path !== "/dashboard/laboratory")
-        : menuItems;
-      const base = [
-        ...(isSuperAdmin ? [{ label: "Aplikimet", icon: FiClipboard, path: "/dashboard/applies" }] : []),
-        ...baseMenu,
-        ...(hasClinic ? [{ label: "Profili i klinikës", icon: FiBriefcase, path: "/dashboard/clinic-profile" }] : []),
-        ...(isDoctor ? [{ label: "Profili i mjekut", icon: FiUserCheck, path: "/dashboard/doctor-profile" }] : []),
-      ];
-      return base;
-    }
+    const menu = getSidebarMenuItems({ roleLower, activePanel, hasClinic });
+    return menu.map(({ key, label, path }) => ({
+      label,
+      path,
+      icon: MENU_ICONS[key] || FiHome,
+    }));
+  }, [roleLower, activePanel, hasClinic]);
 
-    if (!activePanel) return [];
-
-    if (activePanel === PANEL_NURSE) {
-      return [
-        { label: "Paneli", icon: FiHome, path: "/dashboard" },
-        { label: "Pacientët", icon: FiUsers, path: "/dashboard/patients" },
-        patientsListItem,
-        { label: "Rastet", icon: FiFolder, path: "/dashboard/cases" },
-        ...(!isSoloDoctorClinic ? [{ label: "Laboratori", icon: FiActivity, path: "/dashboard/laboratory" }] : []),
-      ];
-    }
-
-    if (activePanel === PANEL_DOCTOR) {
-      return [
-        { label: "Paneli", icon: FiHome, path: "/dashboard" },
-        { label: "Rastet", icon: FiFolder, path: "/dashboard/cases" },
-        { label: "Raportet", icon: FiFileText, path: "/dashboard/reports" },
-        ...(isDoctor ? [{ label: "Profili i mjekut", icon: FiUserCheck, path: "/dashboard/doctor-profile" }] : []),
-        ...(!isSoloDoctorClinic ? [{ label: "Laboratori", icon: FiActivity, path: "/dashboard/laboratory" }] : []),
-      ];
-    }
-
-    if (activePanel === PANEL_SUPERADMIN) {
-      return [
-        { label: "Paneli", icon: FiHome, path: "/dashboard" },
-        { label: "Aplikimet", icon: FiClipboard, path: "/dashboard/applies" },
-        { label: "Pacientët", icon: FiUsers, path: "/dashboard/patients" },
-        patientsListItem,
-        { label: "Rastet", icon: FiFolder, path: "/dashboard/cases" },
-        { label: "Raportet", icon: FiFileText, path: "/dashboard/reports" },
-        ...(!isSoloDoctorClinic ? [{ label: "Laboratori", icon: FiActivity, path: "/dashboard/laboratory" }] : []),
-        { label: "Shërbimet", icon: FiPackage, path: "/dashboard/services" },
-        { label: "Stafi", icon: FiUserCheck, path: "/dashboard/staff" },
-      ];
-    }
-
-    return [];
-  }, [requiresPanel, activePanel, isSuperAdmin, isDoctor, hasClinic, isSoloDoctorClinic]);
+  const sidebarContent = (
+    <>
+      <div className="px-5 py-5 border-b border-slate-100 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5 min-w-0">
+          {hasClinic ? (
+            <>
+              {clinicLogoUrl ? (
+                <img
+                  src={clinicLogoUrl}
+                  alt=""
+                  className="h-9 w-9 shrink-0 rounded-xl object-contain bg-slate-50 border border-slate-100"
+                />
+              ) : (
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-clinic-400 text-white font-bold text-xs shadow-sm">
+                  {getClinicInitials(clinicDisplayName || "K")}
+                </span>
+              )}
+              <span className="font-bold text-lg text-slate-900 tracking-tight truncate">
+                {clinicDisplayName || "Klinika"}
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-clinic-400 text-white font-bold text-sm shadow-sm">
+                CO
+              </span>
+              <span className="font-bold text-lg text-slate-900 tracking-tight truncate">
+                ClinicOps
+              </span>
+            </>
+          )}
+        </div>
+        {onMobileClose && (
+          <button
+            type="button"
+            onClick={onMobileClose}
+            className="md:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100"
+            aria-label="Mbyll menunë"
+          >
+            <FiX size={20} />
+          </button>
+        )}
+      </div>
+      <NavItems items={items} onNavigate={onMobileClose} />
+      <div className="px-4 py-4 border-t border-slate-100">
+        <p className="text-xs text-slate-400 text-center">Platformë për klinika</p>
+      </div>
+    </>
+  );
 
   return (
-    <aside className="w-64 bg-white border-r hidden md:flex flex-col">
-      <div className="p-6 font-bold text-xl text-[#81a2c5] border-b">
-        iKlinika
-      </div>
+    <>
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <button
+          type="button"
+          className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-[2px] md:hidden"
+          onClick={onMobileClose}
+          aria-label="Mbyll menunë"
+        />
+      )}
 
-      <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-        {items.map(({ label, icon: Icon, path }) => (
-          <NavLink
-            key={`${path}-${label}`}
-            to={path}
-            end={path === "/dashboard"}
-            className={({ isActive }) =>
-              `
-              flex items-center gap-3
-              px-4 py-2 rounded-lg
-              text-sm font-medium
-              transition
-              ${
-                isActive
-                  ? "bg-slate-200 text-slate-900"
-                  : "text-slate-600 hover:bg-slate-100"
-              }
-            `
-            }
-          >
-            <Icon size={18} />
-            {label}
-          </NavLink>
-        ))}
-      </nav>
-    </aside>
+      {/* Mobile drawer */}
+      <aside
+        className={`
+          fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white border-r border-slate-200
+          flex flex-col shadow-sidebar transform transition-transform duration-200 ease-out md:hidden
+          ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
+        `}
+      >
+        {sidebarContent}
+      </aside>
+
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex w-64 lg:w-72 bg-white border-r border-slate-200/80 flex-col shrink-0 shadow-sm">
+        {sidebarContent}
+      </aside>
+    </>
   );
 };
 

@@ -10,12 +10,12 @@ export default function ApplyPage() {
         <div className="max-w-2xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-[#81a2c5] transition-colors"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-clinic-400 transition-colors"
           >
             <FiArrowLeft size={18} />
             Kthehu në faqe kryesore
           </Link>
-          <Link to="/" className="text-lg font-bold text-[#81a2c5]">
+          <Link to="/" className="text-lg font-bold text-clinic-400">
             iKlinika
           </Link>
         </div>

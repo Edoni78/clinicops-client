@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { FiUserCheck, FiUserPlus, FiMail, FiRefreshCw } from "react-icons/fi";
 import Notification from "../../ui/Notification";
+import PageHeader from "../../ui/PageHeader";
+import LoadingSpinner from "../../ui/LoadingSpinner";
 import { listClinicUsers, createClinicUser } from "../../../api/clinicUser";
 import { useAuth } from "../../../context/AuthContext";
 import { useDashboardPanel, PANEL_SUPERADMIN } from "../../../context/DashboardPanelContext";
 import { getClinicId } from "../../../utils/clinicId";
 import { Navigate } from "react-router-dom";
 import { CLINIC_MODE_SOLO_DOCTOR } from "../../../utils/clinicMode";
+import { isClinicAdminRole } from "../../../utils/dashboardMenu";
 
 const ROLES = [
   { value: "Doctor", label: "Mjek" },
@@ -35,7 +38,7 @@ export default function Staff() {
   const [form, setForm] = useState({ email: "", password: "", role: "Doctor" });
   const [submitting, setSubmitting] = useState(false);
 
-  const isClinicAdmin = role && role.toString().toLowerCase() === "clinicadmin";
+  const isClinicAdmin = isClinicAdminRole(role);
   const isSuperAdmin = role && role.toString().toLowerCase() === "superadmin";
   const { activePanel } = useDashboardPanel();
   const canManageStaff = isClinicAdmin || isSuperAdmin;
@@ -118,48 +121,38 @@ export default function Staff() {
         onClose={() => setNotif((p) => ({ ...p, visible: false }))}
       />
 
-      <div className="max-w-5xl mx-auto">
-        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-              <FiUserCheck className="text-[#81a2c5]" size={32} />
-              Stafi
-            </h1>
-            <p className="text-slate-600 mt-1">
-              Menaxho përdoruesit e klinikës: mjekët, infermierët, teknikianët e laboratorit.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={fetchUsers}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 disabled:opacity-50"
-          >
-            <FiRefreshCw className={loading ? "animate-spin" : ""} size={18} />
-            Rifresko
-          </button>
-        </div>
+      <div className="page-shell max-w-5xl">
+        <PageHeader
+          title="Stafi"
+          subtitle="Menaxho përdoruesit e klinikës: mjekët, infermierët, teknikianët e laboratorit."
+          icon={FiUserCheck}
+          actions={
+            <button type="button" onClick={fetchUsers} disabled={loading} className="btn-secondary btn-md">
+              <FiRefreshCw className={loading ? "animate-spin" : ""} size={18} />
+              Rifresko
+            </button>
+          }
+        />
 
-        {/* Create user form */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+        <div className="card p-5 sm:p-6 mb-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-            <FiUserPlus className="text-[#81a2c5]" size={20} />
+            <FiUserPlus className="text-clinic-400" size={20} />
             Shto anëtar stafi
           </h2>
           <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Email *</label>
+              <label className="label">Email *</label>
               <input
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
                 required
                 placeholder="perdorues@klinika.com"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
+                className="input"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Fjalëkalimi *</label>
+              <label className="label">Fjalëkalimi *</label>
               <input
                 type="password"
                 value={form.password}
@@ -167,15 +160,15 @@ export default function Staff() {
                 required
                 minLength={6}
                 placeholder="••••••••"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
+                className="input"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Roli *</label>
+              <label className="label">Roli *</label>
               <select
                 value={form.role}
                 onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent bg-white"
+                className="input"
               >
                 {roleOptions.map((r) => (
                   <option key={r.value} value={r.value}>
@@ -187,7 +180,7 @@ export default function Staff() {
             <button
               type="submit"
               disabled={submitting}
-              className="px-4 py-2 bg-[#81a2c5] text-white font-medium rounded-lg hover:bg-[#6b8fa8] disabled:opacity-50"
+              className="btn-primary btn-md w-full"
             >
               {submitting ? "Duke krijuar…" : "Krijo përdoruesin"}
             </button>
@@ -199,7 +192,7 @@ export default function Staff() {
           <button
             type="button"
             onClick={() => setRoleFilter("")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium ${!roleFilter ? "bg-[#81a2c5] text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+            className={`px-4 py-2 rounded-lg text-sm font-medium ${!roleFilter ? "bg-clinic-400 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
           >
             Të gjitha
           </button>
@@ -208,7 +201,7 @@ export default function Staff() {
               key={r.value}
               type="button"
               onClick={() => setRoleFilter(r.value)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${roleFilter === r.value ? "bg-[#81a2c5] text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium ${roleFilter === r.value ? "bg-clinic-400 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
             >
               {r.label}
             </button>
@@ -219,7 +212,7 @@ export default function Staff() {
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           {loading ? (
             <div className="flex justify-center py-16">
-              <svg className="animate-spin h-8 w-8 text-[#81a2c5]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin h-8 w-8 text-clinic-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
@@ -240,8 +233,8 @@ export default function Staff() {
                 return (
                   <li key={id} className="flex flex-wrap items-center gap-4 px-6 py-4 hover:bg-slate-50">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="w-10 h-10 rounded-full bg-[#81a2c5]/10 flex items-center justify-center">
-                        <FiMail className="text-[#81a2c5]" size={20} />
+                      <div className="w-10 h-10 rounded-full bg-clinic-400/10 flex items-center justify-center">
+                        <FiMail className="text-clinic-400" size={20} />
                       </div>
                       <div>
                         <p className="font-medium text-slate-900 truncate">{email}</p>

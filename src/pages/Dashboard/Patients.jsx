@@ -4,6 +4,7 @@ import Notification from "../../components/ui/Notification";
 import { getJwtPayload } from "../../utils/jwt";
 import { FiUserPlus, FiCalendar, FiPhone, FiFileText, FiUsers } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
+import PageHeader from "../../components/ui/PageHeader";
 
 const Patients = () => {
   const navigate = useNavigate();
@@ -63,7 +64,9 @@ const Patients = () => {
         clinicId: clinicId,
       };
 
-      await api.post("/api/Patient/register", requestData);
+      const { data } = await api.post("/api/Patient/register", requestData);
+
+      const caseId = data?.patientCaseId ?? data?.PatientCaseId;
 
       // Reset form before leaving so a back navigation shows a clean form
       setFormData({
@@ -75,7 +78,11 @@ const Patients = () => {
         notes: "",
       });
 
-      navigate("/dashboard/cases");
+      if (caseId) {
+        navigate(`/dashboard/cases/${caseId}/nurse`);
+      } else {
+        navigate("/dashboard/cases");
+      }
     } catch (err) {
       let errorMessage = "Regjistrimi i pacientit dështoi. Ju lutemi provoni përsëri.";
 
@@ -118,32 +125,20 @@ const Patients = () => {
         onClose={() => setNotif((prev) => ({ ...prev, visible: false }))}
       />
 
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-3">
-              <FiUserPlus className="text-[#81a2c5]" size={32} />
-              Regjistro pacient të ri
-            </h1>
-            <p className="text-slate-600">
-              Shto një pacient të ri në sistemin e klinikës. Plotësoni të gjitha
-              fushat e kërkuara më poshtë.
-            </p>
-          </div>
-          <Link
-            to="/dashboard/patients-list"
-            className="px-6 py-3 bg-slate-100 text-slate-700 font-semibold rounded-lg
-              shadow-sm hover:bg-slate-200 transition-all duration-200
-              flex items-center gap-2"
-          >
-            <FiUsers size={18} />
-            Shiko të gjithë pacientët
-          </Link>
-        </div>
+      <div className="max-w-4xl mx-auto w-full">
+        <PageHeader
+          title="Regjistro pacient të ri"
+          subtitle="Shto një pacient të ri në sistemin e klinikës. Plotësoni të gjitha fushat e kërkuara më poshtë."
+          icon={FiUserPlus}
+          actions={
+            <Link to="/dashboard/patients-list" className="btn-secondary btn-md">
+              <FiUsers size={18} />
+              Shiko të gjithë pacientët
+            </Link>
+          }
+        />
 
-        {/* Form Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+        <div className="card-padded">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name Fields Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -151,7 +146,7 @@ const Patients = () => {
               <div>
                 <label
                   htmlFor="firstName"
-                  className="block text-sm font-medium text-slate-700 mb-2"
+                  className="label"
                 >
                   Emri <span className="text-red-500">*</span>
                 </label>
@@ -168,9 +163,7 @@ const Patients = () => {
                     onChange={handleChange}
                     required
                     placeholder="Vendosni emrin"
-                    className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg
-                      focus:outline-none focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent
-                      transition-all duration-200"
+                    className="input-with-icon"
                   />
                 </div>
               </div>
@@ -179,7 +172,7 @@ const Patients = () => {
               <div>
                 <label
                   htmlFor="lastName"
-                  className="block text-sm font-medium text-slate-700 mb-2"
+                  className="label"
                 >
                   Mbiemri <span className="text-red-500">*</span>
                 </label>
@@ -196,9 +189,7 @@ const Patients = () => {
                     onChange={handleChange}
                     required
                     placeholder="Vendosni mbiemrin"
-                    className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg
-                      focus:outline-none focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent
-                      transition-all duration-200"
+                    className="input-with-icon"
                   />
                 </div>
               </div>
@@ -210,7 +201,7 @@ const Patients = () => {
               <div>
                 <label
                   htmlFor="dateOfBirth"
-                  className="block text-sm font-medium text-slate-700 mb-2"
+                  className="label"
                 >
                   Data e lindjes <span className="text-red-500">*</span>
                 </label>
@@ -227,9 +218,7 @@ const Patients = () => {
                     onChange={handleChange}
                     required
                     max={new Date().toISOString().split("T")[0]}
-                    className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg
-                      focus:outline-none focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent
-                      transition-all duration-200"
+                    className="input-with-icon"
                   />
                 </div>
               </div>
@@ -238,7 +227,7 @@ const Patients = () => {
               <div>
                 <label
                   htmlFor="gender"
-                  className="block text-sm font-medium text-slate-700 mb-2"
+                  className="label"
                 >
                   Gjinia <span className="text-red-500">*</span>
                 </label>
@@ -248,9 +237,7 @@ const Patients = () => {
                   value={formData.gender}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg
-                    focus:outline-none focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent
-                    transition-all duration-200 bg-white"
+                  className="input"
                 >
                   <option value="">Zgjidhni gjininë</option>
                   <option value="Male">Mashkull</option>
@@ -281,9 +268,7 @@ const Patients = () => {
                   onChange={handleChange}
                   required
                   placeholder="+1234567890"
-                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg
-                    focus:outline-none focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent
-                    transition-all duration-200"
+                  className="input-with-icon"
                 />
               </div>
             </div>
@@ -308,9 +293,7 @@ const Patients = () => {
                   onChange={handleChange}
                   rows={4}
                   placeholder="Shënime shtesë ose informacion për pacientin..."
-                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg
-                    focus:outline-none focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent
-                    transition-all duration-200 resize-none"
+                  className="input-with-icon resize-none min-h-[7rem]"
                 />
               </div>
               <p className="mt-1 text-sm text-slate-500">
@@ -323,10 +306,7 @@ const Patients = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full md:w-auto px-8 py-3 bg-[#81a2c5] text-white font-semibold
-                  rounded-lg shadow-sm hover:bg-[#6b8fa8] focus:outline-none focus:ring-2
-                  focus:ring-[#81a2c5] focus:ring-offset-2 transition-all duration-200
-                  disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="btn-primary btn-lg w-full md:w-auto"
               >
                 {loading ? (
                   <>

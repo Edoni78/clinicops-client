@@ -1,8 +1,9 @@
 import api from "./axios";
+import { pickCaseServiceFields } from "../utils/caseServiceFields";
 
 /**
  * @param {string} [status] - Waiting | InProgress | InConsultation | Completed | Finished
- * @returns {Promise<Array<{ id, patientId, patientFirstName, patientLastName, status, createdAt }>>}
+ * @returns {Promise<Array<{ id, patientId, patientFirstName, patientLastName, status, createdAt, serviceId?, serviceName?, servicePrice? }>>}
  */
 export async function getPatientCases(status) {
   const params = status ? { status } : {};
@@ -17,6 +18,48 @@ export async function getPatientCases(status) {
 export async function getPatientCase(id) {
   const { data } = await api.get(`/api/PatientCase/${id}`);
   return data;
+}
+
+/**
+ * List API may omit service name/price; load from case detail when the list row has no service label.
+ * @param {Array<object>} cases
+ */
+export async function enrichPatientCasesWithService(cases) {
+  const list = Array.isArray(cases) ? [...cases] : [];
+  const needsDetail = list.filter((c) => !pickCaseServiceFields(c).serviceName);
+  if (needsDetail.length === 0) return list;
+
+  const pairs = await Promise.all(
+    needsDetail.map(async (c) => {
+      const id = c.id ?? c.Id;
+      try {
+        const detail = await getPatientCase(id);
+        return [id, detail];
+      } catch {
+        return [id, null];
+      }
+    })
+  );
+
+  const detailById = new Map(pairs);
+  return list.map((c) => {
+    const id = c.id ?? c.Id;
+    const detail = detailById.get(id);
+    if (!detail) return c;
+    const fromList = pickCaseServiceFields(c);
+    const fromDetail = pickCaseServiceFields(detail);
+    if (fromList.serviceName) return c;
+    if (!fromDetail.serviceName && fromDetail.servicePrice == null) return c;
+    return {
+      ...c,
+      serviceId: fromList.serviceId ?? fromDetail.serviceId,
+      serviceName: fromDetail.serviceName,
+      servicePrice: fromList.servicePrice ?? fromDetail.servicePrice,
+      ServiceId: fromList.serviceId ?? fromDetail.serviceId,
+      ServiceName: fromDetail.serviceName,
+      ServicePrice: fromList.servicePrice ?? fromDetail.servicePrice,
+    };
+  });
 }
 
 /**

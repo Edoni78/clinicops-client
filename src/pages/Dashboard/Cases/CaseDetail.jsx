@@ -4,6 +4,7 @@ import { FiArrowLeft } from "react-icons/fi";
 import Notification from "../../../components/ui/Notification";
 import {
   getPatientCase,
+  getPatientCases,
   submitVitals,
   submitReport,
   updateCaseStatus,
@@ -21,7 +22,12 @@ import { downloadCaseReportPdfFromBackend } from "../../../utils/caseReportPdf";
 import { useAuth } from "../../../context/AuthContext";
 import { useSignalR } from "../../../context/SignalRContext";
 import { CLINIC_MODE_SOLO_DOCTOR } from "../../../utils/clinicMode";
-import { STATUS_FLOW, normalizeCaseStatus } from "./caseStatus";
+import {
+  STATUS_FLOW,
+  normalizeCaseStatus,
+  SINGLE_CONSULTATION_MESSAGE,
+  findActiveInConsultationCase,
+} from "./caseStatus";
 import PatientInfoCard from "./components/PatientInfoCard";
 import NurseSection from "./components/NurseSection";
 import DoctorSection from "./components/DoctorSectionSimple";
@@ -68,6 +74,19 @@ export default function CaseDetail() {
   const [servicesLoading, setServicesLoading] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [serviceSubmitting, setServiceSubmitting] = useState(false);
+  /** Another case id already InConsultation (blocks starting a second). */
+  const [otherConsultationCaseId, setOtherConsultationCaseId] = useState(null);
+
+  const refreshConsultationLock = useCallback(async () => {
+    try {
+      const list = await getPatientCases("InConsultation");
+      const active = findActiveInConsultationCase(list);
+      const activeId = active?.id ?? active?.Id ?? null;
+      setOtherConsultationCaseId(activeId && activeId !== id ? activeId : null);
+    } catch {
+      setOtherConsultationCaseId(null);
+    }
+  }, [id]);
 
   const fetchCase = useCallback(async () => {
     if (!id) return;
@@ -107,6 +126,18 @@ export default function CaseDetail() {
   useEffect(() => {
     fetchCase();
   }, [fetchCase]);
+
+  useEffect(() => {
+    refreshConsultationLock();
+  }, [refreshConsultationLock]);
+
+  // Doctor: if another case is in consultation, stay on that visit.
+  useEffect(() => {
+    if (!isDoctor || loading || !caseData || !otherConsultationCaseId) return;
+    const status = normalizeCaseStatus(caseData?.status ?? caseData?.Status);
+    if (status === "InConsultation") return;
+    navigate(`/dashboard/cases/${otherConsultationCaseId}/doctor`, { replace: true });
+  }, [isDoctor, loading, caseData, otherConsultationCaseId, navigate]);
 
   useEffect(() => {
     if (isSoloDoctorClinic) {
@@ -161,8 +192,12 @@ export default function CaseDetail() {
       }
     });
     const unsubStatus = onCaseStatusChanged((patientCaseId, status) => {
+      refreshConsultationLock();
       if (patientCaseId === id) {
         setCaseData((prev) => (prev ? { ...prev, status } : null));
+      }
+      if (isDoctor && normalizeCaseStatus(status) === "InConsultation" && patientCaseId !== id) {
+        navigate(`/dashboard/cases/${patientCaseId}/doctor`, { replace: true });
       }
     });
     return () => {
@@ -170,7 +205,17 @@ export default function CaseDetail() {
       unsubReport();
       unsubStatus();
     };
-  }, [id, connection, joinCase, onVitalsUpdated, onReportUpdated, onCaseStatusChanged]);
+  }, [
+    id,
+    connection,
+    joinCase,
+    onVitalsUpdated,
+    onReportUpdated,
+    onCaseStatusChanged,
+    refreshConsultationLock,
+    isDoctor,
+    navigate,
+  ]);
 
   useEffect(() => {
     if (!showDoctorSection) return;
@@ -307,9 +352,14 @@ export default function CaseDetail() {
   };
 
   const handleStatusChange = async (newStatus) => {
+    if (newStatus === "InConsultation" && otherConsultationCaseId) {
+      showNotif("error", SINGLE_CONSULTATION_MESSAGE);
+      return;
+    }
     setStatusSubmitting(true);
     try {
       await updateCaseStatus(id, newStatus);
+      await refreshConsultationLock();
       setCaseData((prev) => (prev ? { ...prev, status: newStatus } : null));
       if (newStatus === "Completed") {
         navigate("/dashboard/cases");
@@ -346,15 +396,29 @@ export default function CaseDetail() {
     }
     setServiceSubmitting(true);
     try {
-      await attachServiceToCase(id, serviceId);
+      const attached = await attachServiceToCase(id, serviceId);
       const selected = services.find((s) => (s.id ?? s.Id) === serviceId);
       setCaseData((prev) => {
         if (!prev) return prev;
         return {
           ...prev,
-          serviceId,
-          serviceName: selected?.name ?? selected?.Name ?? prev.serviceName ?? prev.ServiceName ?? "",
-          servicePrice: selected?.price ?? selected?.Price ?? prev.servicePrice ?? prev.ServicePrice ?? null,
+          serviceId: attached?.serviceId ?? attached?.ServiceId ?? serviceId,
+          serviceName:
+            attached?.serviceName ??
+            attached?.ServiceName ??
+            selected?.name ??
+            selected?.Name ??
+            prev.serviceName ??
+            prev.ServiceName ??
+            "",
+          servicePrice:
+            attached?.servicePrice ??
+            attached?.ServicePrice ??
+            selected?.price ??
+            selected?.Price ??
+            prev.servicePrice ??
+            prev.ServicePrice ??
+            null,
         };
       });
       showNotif("success", "Shërbimi u lidh me rastin.");
@@ -373,14 +437,22 @@ export default function CaseDetail() {
   const rawStatus = caseData?.status ?? caseData?.Status;
   const caseStatus = normalizeCaseStatus(rawStatus);
   const allowedNextStatuses = caseData ? (STATUS_FLOW[caseStatus] || []) : [];
-  const nurseNextStatuses = allowedNextStatuses.filter((s) => s === "InProgress" || s === "InConsultation");
-  const doctorNextStatuses = allowedNextStatuses.filter((s) => s === "InConsultation" || s === "Completed");
+  const blockNewConsultation =
+    !!otherConsultationCaseId && caseStatus !== "InConsultation";
+  const withoutBlockedConsultation = (statuses) =>
+    blockNewConsultation ? statuses.filter((s) => s !== "InConsultation") : statuses;
+  const nurseNextStatuses = withoutBlockedConsultation(
+    allowedNextStatuses.filter((s) => s === "InProgress" || s === "InConsultation")
+  );
+  const doctorNextStatuses = withoutBlockedConsultation(
+    allowedNextStatuses.filter((s) => s === "InConsultation" || s === "Completed")
+  );
 
   if (loading && !caseData) {
     return (
       <div className="max-w-4xl mx-auto flex justify-center py-20">
         <svg
-          className="animate-spin h-10 w-10 text-[#81a2c5]"
+          className="animate-spin h-10 w-10 text-clinic-400"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
@@ -460,15 +532,23 @@ export default function CaseDetail() {
       />
 
       <div className="max-w-6xl mx-auto">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+        <div className="mb-6 flex flex-wrap items-center gap-4 border-b border-slate-200 pb-5">
           <button
             type="button"
             onClick={() => navigate("/dashboard/cases")}
-            className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors px-3 py-2 rounded-lg hover:bg-white border border-transparent hover:border-slate-200"
+            className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors px-3 py-2 rounded-lg hover:bg-slate-50 border border-slate-200"
           >
             <FiArrowLeft size={18} />
-            Mbrapsht te rastet
+            Rastet
           </button>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 truncate">
+              {patientDisplayName}
+            </h1>
+            <p className="text-xs text-slate-500 uppercase tracking-wider mt-0.5">
+              Kartela e rastit
+            </p>
+          </div>
         </div>
 
         <PatientInfoCard
@@ -477,6 +557,12 @@ export default function CaseDetail() {
           patientPhone={patientPhone}
           caseStatus={caseData.status ?? caseData.Status}
         />
+
+        {blockNewConsultation && (
+          <p className="mb-6 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            {SINGLE_CONSULTATION_MESSAGE}
+          </p>
+        )}
 
         {showNurseSection && (
           <NurseSection

@@ -8,6 +8,8 @@ import {
   FiX,
 } from "react-icons/fi";
 import Notification from "../../../components/ui/Notification";
+import PageHeader from "../../../components/ui/PageHeader";
+import LoadingSpinner from "../../../components/ui/LoadingSpinner";
 import { listServices, createService, updateService, deleteService } from "../../../api/service";
 import { useAuth } from "../../../context/AuthContext";
 import { useDashboardPanel, PANEL_SUPERADMIN } from "../../../context/DashboardPanelContext";
@@ -170,7 +172,7 @@ export default function Services() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="page-shell max-w-4xl">
       <Notification
         visible={notif.visible}
         type={notif.type}
@@ -178,31 +180,19 @@ export default function Services() {
         onClose={() => setNotif((p) => ({ ...p, visible: false }))}
       />
 
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-            <span className="p-2 rounded-xl bg-[#81a2c5] text-white shadow-lg">
-              <FiPackage size={28} />
-            </span>
-            Shërbimet
-          </h1>
-          <p className="text-slate-600 mt-2 text-sm">
-            Emrat dhe çmimet e shërbimeve të klinikës. Shtoni, ndryshoni ose fshini shërbime.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => fetchServices()}
-          disabled={loading}
-          className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 disabled:opacity-50 transition-all shadow-sm"
-        >
-          <FiRefreshCw className={loading ? "animate-spin" : ""} size={18} />
-          Rifresko
-        </button>
-      </div>
+      <PageHeader
+        title="Shërbimet"
+        subtitle="Emrat dhe çmimet e shërbimeve të klinikës. Shtoni, ndryshoni ose fshini shërbime."
+        icon={FiPackage}
+        actions={
+          <button type="button" onClick={() => fetchServices()} disabled={loading} className="btn-secondary btn-md">
+            <FiRefreshCw className={loading ? "animate-spin" : ""} size={18} />
+            Rifresko
+          </button>
+        }
+      />
 
-      {/* Add form */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
+      <div className="card p-5 mb-6">
         <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
           <FiPlus size={20} />
           Shto shërbim
@@ -215,7 +205,7 @@ export default function Services() {
               value={addForm.name}
               onChange={(e) => setAddForm((p) => ({ ...p, name: e.target.value }))}
               maxLength={NAME_MAX + 1}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-clinic-400 focus:border-transparent"
               placeholder="p.sh. Kontrolle + Analiza"
             />
             <p className="text-xs text-slate-500 mt-0.5">{addForm.name.length}/{NAME_MAX}</p>
@@ -228,14 +218,14 @@ export default function Services() {
               min={PRICE_MIN}
               value={addForm.price}
               onChange={(e) => setAddForm((p) => ({ ...p, price: e.target.value }))}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-clinic-400 focus:border-transparent"
               placeholder="0"
             />
           </div>
           <button
             type="submit"
             disabled={addSubmitting}
-            className="px-5 py-2.5 bg-[#81a2c5] text-white font-medium rounded-lg hover:bg-[#6b8fa8] disabled:opacity-50 transition-colors"
+            className="px-5 py-2.5 bg-clinic-400 text-white font-medium rounded-lg hover:bg-clinic-500 disabled:opacity-50 transition-colors"
           >
             {addSubmitting ? "Duke shtuar…" : "Shto"}
           </button>
@@ -253,7 +243,7 @@ export default function Services() {
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <div className="animate-spin h-10 w-10 border-2 border-[#81a2c5] border-t-transparent rounded-full mb-3" />
+            <div className="animate-spin h-10 w-10 border-2 border-clinic-400 border-t-transparent rounded-full mb-3" />
             <p className="text-slate-500 text-sm">Duke ngarkuar…</p>
           </div>
         ) : services.length === 0 ? (
@@ -345,7 +335,7 @@ export default function Services() {
                   value={editForm.name}
                   onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))}
                   maxLength={NAME_MAX + 1}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-clinic-400 focus:border-transparent"
                 />
                 <p className="text-xs text-slate-500 mt-0.5">{editForm.name.length}/{NAME_MAX}</p>
               </div>
@@ -357,7 +347,7 @@ export default function Services() {
                   min={PRICE_MIN}
                   value={editForm.price}
                   onChange={(e) => setEditForm((p) => ({ ...p, price: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-clinic-400 focus:border-transparent"
                 />
               </div>
               {editErrors.length > 0 && (
@@ -378,7 +368,7 @@ export default function Services() {
                 <button
                   type="submit"
                   disabled={editSubmitting}
-                  className="px-4 py-2 bg-[#81a2c5] text-white rounded-lg hover:bg-[#6b8fa8] disabled:opacity-50"
+                  className="px-4 py-2 bg-clinic-400 text-white rounded-lg hover:bg-clinic-500 disabled:opacity-50"
                 >
                   {editSubmitting ? "Duke ruajtur…" : "Ruaj"}
                 </button>

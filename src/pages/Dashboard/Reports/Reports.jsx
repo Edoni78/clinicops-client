@@ -5,13 +5,20 @@ import {
   FiClock,
   FiCalendar,
   FiDownload,
+  FiPrinter,
   FiRefreshCw,
   FiX,
   FiSearch,
 } from "react-icons/fi";
-import { getPatientCases } from "../../../api/patientCase";
-import { downloadCaseReportPdfFromBackend } from "../../../utils/caseReportPdf";
+import { getPatientCases, enrichPatientCasesWithService } from "../../../api/patientCase";
+import { pickCaseServiceFields, formatCaseServicePriceEUR } from "../../../utils/caseServiceFields";
+import {
+  downloadCaseReportPdfFromBackend,
+  printCaseReportPdfFromBackend,
+} from "../../../utils/caseReportPdf";
 import Notification from "../../../components/ui/Notification";
+import PageHeader from "../../../components/ui/PageHeader";
+import LoadingSpinner from "../../../components/ui/LoadingSpinner";
 import {
   isSameDay,
   isYesterday,
@@ -74,15 +81,8 @@ function formatDate(dateString) {
   }
 }
 
-function formatServicePrice(raw) {
-  if (raw == null || raw === "") return null;
-  const n = typeof raw === "number" ? raw : Number(raw);
-  if (Number.isNaN(n)) return null;
-  return `${n.toFixed(2)} EUR`;
-}
-
 const selectDateClassName =
-  "px-2.5 py-2 rounded-lg border border-slate-200 text-sm text-slate-800 bg-white focus:ring-2 focus:ring-[#81a2c5]/40 focus:border-[#81a2c5] outline-none min-w-[4.5rem]";
+  "px-2.5 py-2 rounded-lg border border-slate-200 text-sm text-slate-800 bg-white focus:ring-2 focus:ring-clinic-400/40 focus:border-clinic-400 outline-none min-w-[4.5rem]";
 
 export default function Reports() {
   const [reports, setReports] = useState([]);
@@ -98,6 +98,7 @@ export default function Reports() {
     [dateParts.day, dateParts.month, dateParts.year]
   );
   const [downloadingId, setDownloadingId] = useState(null);
+  const [printingId, setPrintingId] = useState(null);
   const [notif, setNotif] = useState({ visible: false, type: "info", message: "" });
 
   const setDatePart = (key, raw) => {
@@ -147,7 +148,8 @@ export default function Reports() {
         const id = c.id ?? c.Id;
         if (id && !byId.has(id)) byId.set(id, c);
       });
-      setReports(Array.from(byId.values()));
+      const merged = await enrichPatientCasesWithService(Array.from(byId.values()));
+      setReports(merged);
     } catch {
       setReports([]);
     } finally {
@@ -175,54 +177,57 @@ export default function Reports() {
     });
   }, [reports, reportStatusTab, nameSearch, searchDate, dateFilter]);
 
+  const pdfErrorMessage = (e, fallback) =>
+    e.response?.status === 404
+      ? "Rasti nuk u gjet ose nuk është në klinikën tuaj."
+      : e.response?.data?.message ||
+        e.response?.data ||
+        e.message ||
+        fallback;
+
   const handleDownloadPdf = async (caseId) => {
     setDownloadingId(caseId);
     try {
       await downloadCaseReportPdfFromBackend(caseId);
     } catch (e) {
-      const msg =
-        e.response?.status === 404
-          ? "Rasti nuk u gjet ose nuk është në klinikën tuaj."
-          : e.response?.data?.message ||
-            e.response?.data ||
-            e.message ||
-            "Dështoi shkarkimi i raportit.";
-      setNotif({ visible: true, type: "error", message: msg });
+      setNotif({ visible: true, type: "error", message: pdfErrorMessage(e, "Dështoi shkarkimi i raportit.") });
     } finally {
       setDownloadingId(null);
     }
   };
 
+  const handlePrintPdf = async (caseId) => {
+    setPrintingId(caseId);
+    try {
+      await printCaseReportPdfFromBackend(caseId);
+    } catch (e) {
+      setNotif({ visible: true, type: "error", message: pdfErrorMessage(e, "Dështoi printimi i raportit.") });
+    } finally {
+      setPrintingId(null);
+    }
+  };
+
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="page-shell max-w-6xl">
       <Notification
         visible={notif.visible}
         type={notif.type}
         message={notif.message}
         onClose={() => setNotif((p) => ({ ...p, visible: false }))}
       />
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-            <FiFileText className="text-[#81a2c5]" size={32} />
-            Raportet
-          </h1>
-          <p className="text-slate-600 mt-1">
-            Vizitat e përfunduara. Shiko ose shkarko raportet mjekësore.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={fetchReports}
-          disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 disabled:opacity-50 transition-colors"
-        >
-          <FiRefreshCw className={loading ? "animate-spin" : ""} size={18} />
-          Rifresko
-        </button>
-      </div>
+      <PageHeader
+        title="Raportet"
+        subtitle="Vizitat e përfunduara. Printoni ose shkarkoni raportet mjekësore."
+        icon={FiFileText}
+        actions={
+          <button type="button" onClick={fetchReports} disabled={loading} className="btn-secondary btn-md">
+            <FiRefreshCw className={loading ? "animate-spin" : ""} size={18} />
+            Rifresko
+          </button>
+        }
+      />
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="table-shell">
         <div className="px-4 pt-4 pb-2 border-b border-slate-100 flex flex-wrap gap-2">
           <span className="text-sm font-medium text-slate-600 self-center mr-1">Raporti:</span>
           {STATUS_TABS.map((tab) => (
@@ -230,11 +235,7 @@ export default function Reports() {
               key={tab.value}
               type="button"
               onClick={() => setReportStatusTab(tab.value)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                reportStatusTab === tab.value
-                  ? "bg-slate-800 text-white"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              }`}
+              className={reportStatusTab === tab.value ? "tab-active" : "tab-inactive"}
             >
               {tab.label}
             </button>
@@ -250,11 +251,7 @@ export default function Reports() {
                 setDateFilter(opt.value);
                 clearDateSearch();
               }}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                !searchDate && dateFilter === opt.value
-                  ? "bg-[#81a2c5] text-white"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              }`}
+              className={!searchDate && dateFilter === opt.value ? "tab-active" : "tab-inactive"}
             >
               {opt.label}
             </button>
@@ -267,13 +264,13 @@ export default function Reports() {
               value={nameSearch}
               onChange={(e) => setNameSearch(e.target.value)}
               placeholder="Kërko sipas emrit të pacientit…"
-              className="flex-1 min-w-[12rem] px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-[#81a2c5]/40 focus:border-[#81a2c5] outline-none"
+              className="flex-1 min-w-[12rem] px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-clinic-400/40 focus:border-clinic-400 outline-none"
             />
           </div>
           <span className="hidden sm:inline h-6 w-px bg-slate-200 mx-1 self-center" aria-hidden />
           <div lang="en-GB" className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-medium text-slate-600 inline-flex items-center gap-1.5">
-              <FiCalendar size={16} className="text-[#81a2c5]" aria-hidden />
+              <FiCalendar size={16} className="text-clinic-400" aria-hidden />
               Sipas datës
             </span>
             <select
@@ -335,7 +332,7 @@ export default function Reports() {
         {loading ? (
           <div className="flex justify-center py-16">
             <svg
-              className="animate-spin h-8 w-8 text-[#81a2c5]"
+              className="animate-spin h-8 w-8 text-clinic-400"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -371,7 +368,7 @@ export default function Reports() {
             </p>
             <Link
               to="/dashboard/cases"
-              className="inline-block mt-4 text-[#81a2c5] font-medium hover:underline"
+              className="inline-block mt-4 text-clinic-400 font-medium hover:underline"
             >
               Shko te Rastet
             </Link>
@@ -407,18 +404,22 @@ export default function Reports() {
                   const firstName = r.patientFirstName ?? r.PatientFirstName ?? "";
                   const lastName = r.patientLastName ?? r.PatientLastName ?? "";
                   const status = r.status ?? r.Status;
-                  const updated = r.updatedAt ?? r.UpdatedAt ?? r.createdAt ?? r.CreatedAt;
-                  const serviceName = r.serviceName ?? r.ServiceName;
-                  const servicePriceRaw = r.servicePrice ?? r.ServicePrice;
-                  const servicePriceLabel = formatServicePrice(servicePriceRaw);
-                  const serviceDisplay =
-                    serviceName && String(serviceName).trim() ? String(serviceName).trim() : "—";
+                  const updated =
+                    r.updatedAt ??
+                    r.UpdatedAt ??
+                    r.completedAt ??
+                    r.CompletedAt ??
+                    r.createdAt ??
+                    r.CreatedAt;
+                  const { serviceName, servicePrice } = pickCaseServiceFields(r);
+                  const servicePriceLabel = formatCaseServicePriceEUR(servicePrice);
+                  const serviceDisplay = serviceName || "—";
                   return (
                     <tr key={caseId} className="border-b border-slate-100/90 hover:bg-slate-50 transition-colors">
                       <td className="py-3 px-4">
                         <Link
                           to={`/dashboard/cases/${caseId}`}
-                          className="font-medium text-slate-900 hover:text-[#81a2c5]"
+                          className="font-medium text-slate-900 hover:text-clinic-400"
                         >
                           {firstName} {lastName}
                         </Link>
@@ -446,16 +447,25 @@ export default function Reports() {
                       </td>
                       <td className="py-3 px-4 text-right whitespace-nowrap">
                         <div className="inline-flex flex-wrap items-center justify-end gap-2">
-                          <Link
-                            to={`/dashboard/cases/${caseId}`}
-                            className="px-3 py-1.5 text-sm font-medium text-[#81a2c5] bg-[#81a2c5]/10 rounded-lg hover:bg-[#81a2c5]/20 transition-colors border border-[#81a2c5]/20"
+                          <button
+                            type="button"
+                            onClick={() => handlePrintPdf(caseId)}
+                            disabled={printingId === caseId || downloadingId === caseId}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-clinic-400 bg-clinic-400/10 rounded-lg hover:bg-clinic-400/20 transition-colors border border-clinic-400/20 disabled:opacity-50"
                           >
-                            Shiko
-                          </Link>
+                            {printingId === caseId ? (
+                              <span className="animate-pulse px-1">…</span>
+                            ) : (
+                              <>
+                                <FiPrinter size={16} />
+                                Printo
+                              </>
+                            )}
+                          </button>
                           <button
                             type="button"
                             onClick={() => handleDownloadPdf(caseId)}
-                            disabled={downloadingId === caseId}
+                            disabled={downloadingId === caseId || printingId === caseId}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 text-white text-sm font-medium rounded-lg hover:bg-slate-700 disabled:opacity-50 transition-colors"
                           >
                             {downloadingId === caseId ? (

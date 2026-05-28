@@ -9,6 +9,8 @@ import {
   FiPhone,
 } from "react-icons/fi";
 import Notification from "../../../components/ui/Notification";
+import PageHeader from "../../../components/ui/PageHeader";
+import LoadingSpinner from "../../../components/ui/LoadingSpinner";
 import {
   listApplications,
   approveApplication,
@@ -157,7 +159,7 @@ export default function Applies() {
                 onChange={(e) => setActionModal((m) => ({ ...m, reviewNote: e.target.value }))}
                 rows={3}
                 placeholder="Shto një shënim për të dhënat..."
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#81a2c5] focus:border-transparent resize-none"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-clinic-400 focus:border-transparent resize-none"
               />
             </div>
             <div className="mt-6 flex gap-3 justify-end">
@@ -185,40 +187,27 @@ export default function Applies() {
         </div>
       )}
 
-      <div className="max-w-5xl mx-auto">
-        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-              <FiFileText className="text-[#81a2c5]" size={32} />
-              Aplikimet e klinikave
-            </h1>
-            <p className="text-slate-600 mt-1">
-              Rishiko dhe aprovo ose refuzo aplikimet e klinikave.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => fetchApplications()}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 disabled:opacity-50"
-          >
-            <FiRefreshCw className={loading ? "animate-spin" : ""} size={18} />
-            Rifresko
-          </button>
-        </div>
+      <div className="page-shell max-w-5xl">
+        <PageHeader
+          title="Aplikimet e klinikave"
+          subtitle="Rishiko dhe aprovo ose refuzo aplikimet e klinikave."
+          icon={FiFileText}
+          actions={
+            <button type="button" onClick={() => fetchApplications()} disabled={loading} className="btn-secondary btn-md">
+              <FiRefreshCw className={loading ? "animate-spin" : ""} size={18} />
+              Rifresko
+            </button>
+          }
+        />
 
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="table-shell">
           <div className="p-4 border-b border-slate-200 flex flex-wrap gap-2">
             {STATUS_OPTIONS.map((opt) => (
               <button
                 key={opt.value || "all"}
                 type="button"
                 onClick={() => setStatusFilter(opt.value)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                  (opt.value || "") === (statusFilter || "")
-                    ? "bg-[#81a2c5] text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
+                className={(opt.value || "") === (statusFilter || "") ? "tab-active" : "tab-inactive"}
               >
                 {opt.label}
               </button>
@@ -227,7 +216,7 @@ export default function Applies() {
 
           {loading ? (
             <div className="flex justify-center py-16">
-              <svg className="animate-spin h-8 w-8 text-[#81a2c5]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin h-8 w-8 text-clinic-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>

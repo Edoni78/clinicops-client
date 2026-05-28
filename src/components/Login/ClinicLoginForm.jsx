@@ -3,6 +3,7 @@ import { login as apiLogin } from "../../api/auth";
 import Notification from "../../components/ui/Notification";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { FiMail, FiLock } from "react-icons/fi";
 
 const ClinicLoginForm = () => {
   const navigate = useNavigate();
@@ -75,66 +76,78 @@ const ClinicLoginForm = () => {
 
       <Link
         to="/"
-        className="inline-block text-sm font-semibold text-slate-500 hover:text-[#81a2c5] mb-6"
+        className="inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-clinic-500 mb-8 transition-colors"
       >
         ← Faqe kryesore
       </Link>
 
-      <h1 className="text-4xl font-bold text-[#81a2c5] mb-4">
-        Hyr në iKlinika
-      </h1>
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-clinic-400 text-white font-bold shadow-sm">
+            iK
+          </span>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Hyr në iKlinika</h1>
+            <p className="text-sm text-slate-500 mt-0.5">Paneli i menaxhimit të klinikës</p>
+          </div>
+        </div>
+        <p className="text-slate-600 max-w-md text-sm sm:text-base">
+          Identifikohuni për të menaxhuar klinikën, pacientët dhe stafin.
+        </p>
+      </div>
 
-      <p className="text-slate-500 mb-10 max-w-xl">
-        Identifikohuni për të menaxhuar klinikën, pacientët dhe stafin.
-      </p>
+      <form onSubmit={handleSubmit} className="space-y-5 max-w-md">
+        <div>
+          <label htmlFor="login-email" className="label">
+            Email
+          </label>
+          <div className="input-icon-wrap">
+            <FiMail className="input-icon" size={18} />
+            <input
+              id="login-email"
+              type="email"
+              placeholder="admin@klinika.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              className="input-with-icon"
+            />
+          </div>
+        </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-6 max-w-xl"
-      >
-        <input
-          type="email"
-          placeholder="Admin email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          className="w-full border border-slate-300 rounded-md px-4 py-3 text-lg
-          focus:outline-none focus:ring-2 focus:ring-[#81a2c5]"
-        />
+        <div>
+          <label htmlFor="login-password" className="label">
+            Fjalëkalimi
+          </label>
+          <div className="input-icon-wrap">
+            <FiLock className="input-icon" size={18} />
+            <input
+              id="login-password"
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+              className="input-with-icon"
+            />
+          </div>
+        </div>
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          className="w-full border border-slate-300 rounded-md px-4 py-3 text-lg
-          focus:outline-none focus:ring-2 focus:ring-[#81a2c5]"
-        />
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-[#81a2c5] text-white py-3 rounded-md text-lg font-semibold
-          hover:opacity-90 transition disabled:opacity-60"
-        >
-          {loading ? "Signing in..." : "Login"}
+        <button type="submit" disabled={loading} className="btn-primary btn-lg w-full">
+          {loading ? "Duke u identifikuar…" : "Hyr"}
         </button>
 
-        <p className="text-center text-slate-500 text-sm">
+        <p className="text-center text-slate-500 text-sm pt-2">
           Nuk keni llogari klinike?{" "}
-          <Link
-            to="/apply"
-            className="font-semibold text-[#81a2c5] hover:underline"
-          >
+          <Link to="/apply" className="font-semibold text-clinic-500 hover:text-clinic-600 hover:underline">
             Aplikoni këtu
           </Link>
         </p>
       </form>
 
-      <p className="text-sm text-slate-400 mt-10">
-        I sigurt • I shpejtë • iKlinika
-      </p>
+      <p className="text-xs text-slate-400 mt-10">I sigurt • I shpejtë • iKlinika</p>
     </>
   );
 };

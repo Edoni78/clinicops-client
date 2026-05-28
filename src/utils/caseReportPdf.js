@@ -339,3 +339,74 @@ export async function downloadCaseReportPdfFromBackend(caseId) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
+/**
+ * Open the backend case report PDF in a hidden frame and trigger the browser print dialog.
+ * Resolves as soon as print() is called so the UI can print again (afterprint is unreliable in iframes).
+ * @param {string} caseId - case id (GUID)
+ */
+export async function printCaseReportPdfFromBackend(caseId) {
+  const { blob } = await getCaseReportPdf(caseId);
+  const url = URL.createObjectURL(blob);
+
+  return new Promise((resolve, reject) => {
+    const iframe = document.createElement("iframe");
+    iframe.setAttribute("title", "Raport mjekësor");
+    iframe.style.cssText =
+      "position:fixed;width:0;height:0;border:0;opacity:0;pointer-events:none;";
+
+    let settled = false;
+    let printed = false;
+
+    const cleanup = () => {
+      try {
+        if (iframe.parentNode) document.body.removeChild(iframe);
+      } catch (_) {}
+      URL.revokeObjectURL(url);
+    };
+
+    const settleOk = () => {
+      if (settled) return;
+      settled = true;
+      resolve();
+    };
+
+    const settleErr = (err) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(err);
+    };
+
+    const triggerPrint = () => {
+      if (printed) return;
+      printed = true;
+      try {
+        const win = iframe.contentWindow;
+        if (!win?.print) {
+          settleErr(new Error("Printimi nuk mbështetet në këtë shfletues."));
+          return;
+        }
+        const onAfterPrint = () => cleanup();
+        win.addEventListener("afterprint", onAfterPrint, { once: true });
+        window.addEventListener("afterprint", onAfterPrint, { once: true });
+        win.focus();
+        win.print();
+        settleOk();
+        window.setTimeout(cleanup, 90_000);
+      } catch (e) {
+        settleErr(e);
+      }
+    };
+
+    iframe.onload = triggerPrint;
+    iframe.onerror = () => settleErr(new Error("Dështoi ngarkimi i PDF për printim."));
+
+    iframe.src = url;
+    document.body.appendChild(iframe);
+
+    window.setTimeout(() => {
+      if (!printed) triggerPrint();
+    }, 1500);
+  });
+}

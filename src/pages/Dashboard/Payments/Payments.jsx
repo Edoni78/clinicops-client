@@ -10,7 +10,8 @@ import {
   FiPieChart,
   FiLayers,
 } from "react-icons/fi";
-import { getPatientCases } from "../../../api/patientCase";
+import { getPatientCases, enrichPatientCasesWithService } from "../../../api/patientCase";
+import { pickCaseServiceFields } from "../../../utils/caseServiceFields";
 import {
   isSameDay,
   isYesterday,
@@ -21,6 +22,8 @@ import {
   normalizeStatusKey,
   caseMatchesNameQuery,
 } from "../../../utils/caseListFilters";
+import PageHeader from "../../../components/ui/PageHeader";
+import LoadingSpinner from "../../../components/ui/LoadingSpinner";
 
 const DATE_FILTERS = [
   { value: "today", label: "Sot" },
@@ -86,12 +89,11 @@ function formatEUR(n) {
 }
 
 function getServiceDisplay(c) {
-  const s = c.serviceName ?? c.ServiceName;
-  return s && String(s).trim() ? String(s).trim() : "";
+  return pickCaseServiceFields(c).serviceName;
 }
 
 const selectDateClassName =
-  "px-2.5 py-2 rounded-lg border border-slate-200 text-sm text-slate-800 bg-white focus:ring-2 focus:ring-[#81a2c5]/40 focus:border-[#81a2c5] outline-none min-w-[4.5rem]";
+  "px-2.5 py-2 rounded-lg border border-slate-200 text-sm text-slate-800 bg-white focus:ring-2 focus:ring-clinic-400/40 focus:border-clinic-400 outline-none min-w-[4.5rem]";
 
 export default function Payments() {
   const [items, setItems] = useState([]);
@@ -153,7 +155,8 @@ export default function Payments() {
         const id = c.id ?? c.Id;
         if (id && !byId.has(id)) byId.set(id, c);
       });
-      setItems(Array.from(byId.values()));
+      const merged = await enrichPatientCasesWithService(Array.from(byId.values()));
+      setItems(merged);
     } catch {
       setItems([]);
     } finally {
@@ -190,7 +193,13 @@ export default function Payments() {
           if (d) return false;
         } else if (d !== serviceFilter) return false;
       }
-      const updated = r.updatedAt ?? r.UpdatedAt ?? r.createdAt ?? r.CreatedAt;
+      const updated =
+        r.updatedAt ??
+        r.UpdatedAt ??
+        r.completedAt ??
+        r.CompletedAt ??
+        r.createdAt ??
+        r.CreatedAt;
       if (searchDate) return isSameCalendarDay(updated, searchDate);
       if (dateFilter === "today") return isSameDay(updated, new Date().toISOString());
       if (dateFilter === "yesterday") return isYesterday(updated);
@@ -210,7 +219,7 @@ export default function Payments() {
       const sk = normalizeStatusKey(status);
       if (sk === "completed") completed += 1;
       if (sk === "finished") finished += 1;
-      const n = toPriceNumber(r.servicePrice ?? r.ServicePrice);
+      const n = toPriceNumber(pickCaseServiceFields(r).servicePrice);
       if (n != null) {
         sum += n;
         priced += 1;
@@ -222,36 +231,21 @@ export default function Payments() {
   }, [filtered]);
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-            <span className="p-2 rounded-xl bg-emerald-600 text-white shadow-md">
-              <FiDollarSign size={28} />
-            </span>
-            Pagesat
-          </h1>
-          <p className="text-slate-600 mt-2 text-sm max-w-2xl leading-relaxed">
-            Këtu shfaqen vizitat që konsiderohen të paguara: rastet me status{" "}
-            <strong className="font-semibold text-slate-800">Përfunduar</strong> (nga mjeku) dhe{" "}
-            <strong className="font-semibold text-slate-800">Mbyllur</strong> (nga klinika). Shuma vjen nga çmimi i
-            shërbimit të lidhur me rastin.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={fetchPaidCases}
-          disabled={loading}
-          className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50 transition-all shadow-sm shrink-0"
-        >
-          <FiRefreshCw className={loading ? "animate-spin" : ""} size={18} />
-          Rifresko
-        </button>
-      </div>
+    <div className="page-shell">
+      <PageHeader
+        title="Pagesat"
+        subtitle="Vizitat e paguara: rastet Përfunduar ose Mbyllur. Shuma vjen nga çmimi i shërbimit të lidhur me rastin."
+        icon={FiDollarSign}
+        actions={
+          <button type="button" onClick={fetchPaidCases} disabled={loading} className="btn-secondary btn-md">
+            <FiRefreshCw className={loading ? "animate-spin" : ""} size={18} />
+            Rifresko
+          </button>
+        }
+      />
 
-      {/* Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="stat-card">
           <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">
             <FiDollarSign className="text-emerald-600" size={14} aria-hidden />
             Totali (i filtruar)
@@ -261,9 +255,9 @@ export default function Payments() {
             {totals.priced} me çmim{totals.unpriced > 0 ? ` · ${totals.unpriced} pa çmim` : ""}
           </p>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="stat-card">
           <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">
-            <FiPieChart className="text-[#81a2c5]" size={14} aria-hidden />
+            <FiPieChart className="text-clinic-400" size={14} aria-hidden />
             Vizita
           </div>
           <p className="text-2xl font-bold tabular-nums text-slate-900">{totals.count}</p>
@@ -273,7 +267,7 @@ export default function Payments() {
             <span className="text-slate-600 font-medium">{totals.finished} mbyllur</span>
           </p>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="stat-card">
           <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">
             <FiLayers className="text-amber-600" size={14} aria-hidden />
             Mesatarja / vizitë me çmim
@@ -289,7 +283,7 @@ export default function Payments() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="table-shell">
         <div className="px-4 pt-4 pb-2 border-b border-slate-100 flex flex-wrap gap-2">
           <span className="text-sm font-medium text-slate-600 self-center mr-1">Statusi (pagesa):</span>
           {STATUS_TABS.map((tab) => (
@@ -299,8 +293,8 @@ export default function Payments() {
               onClick={() => setStatusTab(tab.value)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 statusTab === tab.value
-                  ? "bg-slate-800 text-white"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  ? "tab-active"
+                  : "tab-inactive"
               }`}
             >
               {tab.label}
@@ -320,8 +314,8 @@ export default function Payments() {
               }}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 !searchDate && dateFilter === opt.value
-                  ? "bg-[#81a2c5] text-white"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  ? "tab-active"
+                  : "tab-inactive"
               }`}
             >
               {opt.label}
@@ -333,7 +327,7 @@ export default function Payments() {
             <select
               value={serviceFilter}
               onChange={(e) => setServiceFilter(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-800 bg-white focus:ring-2 focus:ring-[#81a2c5]/40 focus:border-[#81a2c5] outline-none min-w-[12rem] max-w-[20rem]"
+              className="px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-800 bg-white focus:ring-2 focus:ring-clinic-400/40 focus:border-clinic-400 outline-none min-w-[12rem] max-w-[20rem]"
             >
               <option value="">Të gjitha shërbimet</option>
               {serviceOptions.hasEmpty && <option value="__none__">Pa shërbim të caktuar</option>}
@@ -352,7 +346,7 @@ export default function Payments() {
               value={nameSearch}
               onChange={(e) => setNameSearch(e.target.value)}
               placeholder="Kërko sipas emrit të pacientit…"
-              className="flex-1 min-w-[12rem] px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-[#81a2c5]/40 focus:border-[#81a2c5] outline-none"
+              className="flex-1 min-w-[12rem] px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-clinic-400/40 focus:border-clinic-400 outline-none"
             />
           </div>
         </div>
@@ -360,7 +354,7 @@ export default function Payments() {
         <div className="px-4 pb-4 pt-0 border-b border-slate-200 flex flex-wrap items-center gap-3 gap-y-3">
           <div lang="en-GB" className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-medium text-slate-600 inline-flex items-center gap-1.5">
-              <FiCalendar size={16} className="text-[#81a2c5]" aria-hidden />
+              <FiCalendar size={16} className="text-clinic-400" aria-hidden />
               Sipas datës
             </span>
             <select
@@ -423,7 +417,7 @@ export default function Payments() {
         {loading ? (
           <div className="flex justify-center py-16">
             <svg
-              className="animate-spin h-8 w-8 text-[#81a2c5]"
+              className="animate-spin h-8 w-8 text-clinic-400"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -471,7 +465,7 @@ export default function Payments() {
             </p>
             <Link
               to="/dashboard/cases"
-              className="inline-block mt-4 text-[#81a2c5] font-medium hover:underline"
+              className="inline-block mt-4 text-clinic-400 font-medium hover:underline"
             >
               Shko te Rastet
             </Link>
@@ -507,15 +501,22 @@ export default function Payments() {
                   const firstName = r.patientFirstName ?? r.PatientFirstName ?? "";
                   const lastName = r.patientLastName ?? r.PatientLastName ?? "";
                   const status = r.status ?? r.Status;
-                  const updated = r.updatedAt ?? r.UpdatedAt ?? r.createdAt ?? r.CreatedAt;
+                  const updated =
+        r.updatedAt ??
+        r.UpdatedAt ??
+        r.completedAt ??
+        r.CompletedAt ??
+        r.createdAt ??
+        r.CreatedAt;
                   const serviceLabel = getServiceDisplay(r) || "—";
-                  const priceNum = toPriceNumber(r.servicePrice ?? r.ServicePrice);
+                  const { servicePrice } = pickCaseServiceFields(r);
+                  const priceNum = toPriceNumber(servicePrice);
                   return (
                     <tr key={caseId} className="border-b border-slate-100/90 hover:bg-slate-50 transition-colors">
                       <td className="py-3 px-4">
                         <Link
                           to={`/dashboard/cases/${caseId}`}
-                          className="font-medium text-slate-900 hover:text-[#81a2c5]"
+                          className="font-medium text-slate-900 hover:text-clinic-400"
                         >
                           {firstName} {lastName}
                         </Link>
@@ -544,7 +545,7 @@ export default function Payments() {
                       <td className="py-3 px-4 text-right whitespace-nowrap">
                         <Link
                           to={`/dashboard/cases/${caseId}`}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#81a2c5] bg-[#81a2c5]/10 rounded-lg hover:bg-[#81a2c5]/20 transition-colors border border-[#81a2c5]/20"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-clinic-400 bg-clinic-400/10 rounded-lg hover:bg-clinic-400/20 transition-colors border border-clinic-400/20"
                         >
                           Hap rastin
                         </Link>
