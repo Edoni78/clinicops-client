@@ -6,16 +6,24 @@ import {
   FiRefreshCw,
   FiSearch,
   FiUserPlus,
-  FiPhone
+  FiPhone,
+  FiTrash2,
 } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import PageHeader from "../../components/ui/PageHeader";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import EmptyState from "../../components/ui/EmptyState";
+import { useAuth } from "../../context/AuthContext";
+import { deletePatient } from "../../api/patient";
+import { isClinicAdminRole } from "../../utils/dashboardMenu";
 
 const PatientsList = () => {
+  const { role } = useAuth();
+  const roleLower = String(role || "").toLowerCase();
+  const canDeletePatients = isClinicAdminRole(roleLower) || roleLower === "doctor" || roleLower === "superadmin";
   const [patientsLoading, setPatientsLoading] = useState(false);
   const [patients, setPatients] = useState([]);
+  const [deletingPatientId, setDeletingPatientId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [notif, setNotif] = useState({
     visible: false,
@@ -43,6 +51,33 @@ const PatientsList = () => {
       });
     } finally {
       setPatientsLoading(false);
+    }
+  };
+
+  const handleDeletePatient = async (patient) => {
+    const id = patient.id || patient.patientId || patient.Id;
+    const name = `${patient.firstName || ""} ${patient.lastName || ""}`.trim() || "pacientin";
+    const ok = window.confirm(`Fshij ${name}?`);
+    if (!ok) return;
+    setDeletingPatientId(id);
+    try {
+      // Backend supports ClinicAdmin delete with no query params.
+      // SuperAdmin can also delete without clinicId (clinicId is optional).
+      await deletePatient(id);
+      setNotif({ visible: true, type: "success", message: "Pacienti u fshi." });
+      fetchPatients();
+    } catch (err) {
+      const serverMessage =
+        typeof err.response?.data === "string"
+          ? err.response.data
+          : err.response?.data?.message;
+      setNotif({
+        visible: true,
+        type: "error",
+        message: serverMessage || "Fshirja e pacientit dështoi.",
+      });
+    } finally {
+      setDeletingPatientId(null);
     }
   };
 
@@ -81,6 +116,13 @@ const PatientsList = () => {
     } catch {
       return "N/A";
     }
+  };
+
+  const getGenderLabel = (gender) => {
+    const g = String(gender || "").trim().toLowerCase();
+    if (g === "male" || g === "mashkull") return "Mashkull";
+    if (g === "female" || g === "femer" || g === "femër") return "Femër";
+    return gender || "N/A";
   };
 
   return (
@@ -177,6 +219,7 @@ const PatientsList = () => {
                       <th className="table-th">
                         Shënime
                       </th>
+                      {canDeletePatients && <th className="table-th text-right">Veprime</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -199,14 +242,14 @@ const PatientsList = () => {
                         <td className="py-4 px-4">
                           <span
                             className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                              patient.gender === "Male"
+                              getGenderLabel(patient.gender) === "Mashkull"
                                 ? "bg-blue-100 text-blue-800"
-                                : patient.gender === "Female"
+                                : getGenderLabel(patient.gender) === "Femër"
                                 ? "bg-pink-100 text-pink-800"
                                 : "bg-gray-100 text-gray-800"
                             }`}
                           >
-                            {patient.gender || "N/A"}
+                            {getGenderLabel(patient.gender)}
                           </span>
                         </td>
                         <td className="py-4 px-4 text-slate-600">
@@ -220,6 +263,21 @@ const PatientsList = () => {
                             {patient.notes || "-"}
                           </div>
                         </td>
+                        {canDeletePatients && (
+                          <td className="py-4 px-4 text-right">
+                            <button
+                              type="button"
+                              onClick={() => handleDeletePatient(patient)}
+                              disabled={deletingPatientId === (patient.id || patient.patientId || patient.Id)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 disabled:opacity-60"
+                            >
+                              <FiTrash2 size={14} />
+                              {deletingPatientId === (patient.id || patient.patientId || patient.Id)
+                                ? "Duke fshirë..."
+                                : "Fshij"}
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>

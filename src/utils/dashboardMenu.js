@@ -2,6 +2,7 @@ import { PANEL_NURSE, PANEL_DOCTOR, PANEL_SUPERADMIN } from "./dashboardPanels";
 
 export const MENU = {
   home: { key: "home", label: "Paneli", path: "/dashboard" },
+  emrs: { key: "emrs", label: "EMRs", path: "/dashboard/emrs" },
   patients: { key: "patients", label: "Pacientët", path: "/dashboard/patients" },
   patientsList: {
     key: "patientsList",
@@ -33,6 +34,8 @@ function pick(...items) {
 
 const DOCTOR_MENU = pick(
   MENU.home,
+  MENU.emrs,
+  MENU.patientsList,
   MENU.cases,
   MENU.reports,
   MENU.doctorProfile
@@ -40,17 +43,19 @@ const DOCTOR_MENU = pick(
 
 const NURSE_MENU = pick(
   MENU.home,
+  MENU.emrs,
   MENU.patients,
   MENU.patientsList,
   MENU.cases,
   MENU.reports
 );
 
-const LAB_TECHNICIAN_MENU = pick(MENU.home, MENU.laboratory, MENU.cases);
+const LAB_TECHNICIAN_MENU = pick(MENU.home, MENU.emrs, MENU.laboratory, MENU.cases);
 
 const CLINIC_ADMIN_MENU = (hasClinic) =>
   pick(
     MENU.home,
+    MENU.emrs,
     MENU.patients,
     MENU.patientsList,
     MENU.cases,
@@ -76,6 +81,7 @@ export function isClinicAdminRole(role) {
 
 const SUPERADMIN_MENU = pick(
   MENU.home,
+  MENU.emrs,
   MENU.applies,
   MENU.patients,
   MENU.patientsList,

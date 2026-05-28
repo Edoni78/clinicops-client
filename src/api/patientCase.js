@@ -105,6 +105,24 @@ export async function updateCaseStatus(id, status) {
 }
 
 /**
+ * Hard-delete patient case (+ cascade children on backend).
+ * DELETE /api/PatientCase/{id}
+ * Query: clinicId (for SuperAdmin)
+ */
+export async function deletePatientCase(id, clinicId) {
+  const config = clinicId ? { params: { clinicId } } : {};
+  await api.delete(`/api/PatientCase/${id}`, config);
+}
+
+/**
+ * Delete medical report from case.
+ * DELETE /api/PatientCase/{id}/report
+ */
+export async function deletePatientCaseReport(id) {
+  await api.delete(`/api/PatientCase/${id}/report`);
+}
+
+/**
  * Attach a clinic service to a patient case.
  * Tries common backend shapes to stay compatible across API versions.
  * @param {string} id - case id

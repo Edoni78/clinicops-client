@@ -4,6 +4,7 @@ import {
   FiUsers,
   FiFolder,
   FiFileText,
+  FiBookOpen,
   FiActivity,
   FiDollarSign,
   FiUserPlus,
@@ -98,6 +99,13 @@ const DashboardHome = () => {
       icon: FiFileText,
       link: "/dashboard/reports",
       accent: "bg-indigo-500 text-white",
+    },
+    {
+      title: "EMRs",
+      description: "Historiku i konsultave për secilin pacient",
+      icon: FiBookOpen,
+      link: "/dashboard/emrs",
+      accent: "bg-fuchsia-500 text-white",
     },
     {
       title: "Laboratori",

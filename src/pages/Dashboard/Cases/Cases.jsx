@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FiFolder, FiRefreshCw, FiClock, FiCalendar, FiX, FiSearch } from "react-icons/fi";
-import { getPatientCases } from "../../../api/patientCase";
+import { FiFolder, FiRefreshCw, FiClock, FiCalendar, FiX, FiSearch, FiTrash2 } from "react-icons/fi";
+import { getPatientCases, deletePatientCase } from "../../../api/patientCase";
 import { useSignalR } from "../../../context/SignalRContext";
 import { useAuth } from "../../../context/AuthContext";
 import Notification from "../../../components/ui/Notification";
@@ -18,6 +18,8 @@ import {
   caseMatchesNameQuery,
 } from "../../../utils/caseListFilters";
 import { findActiveInConsultationCase } from "./caseStatus";
+import { getClinicId } from "../../../utils/clinicId";
+import { isClinicAdminRole } from "../../../utils/dashboardMenu";
 
 const STATUS_LABELS = {
   Waiting: "Në pritje",
@@ -71,7 +73,10 @@ export default function Cases() {
   const currentRole = String(role || "").toLowerCase();
   const isDoctor = currentRole === "doctor";
   const isNurse = currentRole === "nurse";
+  const canDeleteCases =
+    isClinicAdminRole(currentRole) || currentRole === "doctor" || currentRole === "superadmin";
   const [cases, setCases] = useState([]);
+  const [deletingCaseId, setDeletingCaseId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notif, setNotif] = useState({ visible: false, type: "info", message: "" });
   /** Në vazhdim | përfunduar / mbyllur */
@@ -211,6 +216,28 @@ export default function Cases() {
       unsubS();
     };
   }, [connection, fetchCases, onVitalsUpdated, onReportUpdated, onCaseStatusChanged]);
+
+  const handleDeleteCase = async (c) => {
+    const caseId = c?.id ?? c?.Id;
+    if (!caseId) return;
+    const name = `${c?.patientFirstName ?? c?.PatientFirstName ?? ""} ${c?.patientLastName ?? c?.PatientLastName ?? ""}`.trim();
+    const ok = window.confirm(`Fshij rastin ${name ? `të ${name}` : ""}?`);
+    if (!ok) return;
+    setDeletingCaseId(caseId);
+    try {
+      await deletePatientCase(caseId, currentRole === "superadmin" ? getClinicId() : undefined);
+      setNotif({ visible: true, type: "success", message: "Rasti u fshi." });
+      fetchCases(true);
+    } catch (err) {
+      setNotif({
+        visible: true,
+        type: "error",
+        message: err.response?.data?.message ?? err.response?.data ?? "Fshirja e rastit dështoi.",
+      });
+    } finally {
+      setDeletingCaseId(null);
+    }
+  };
 
   return (
     <div className="page-shell max-w-6xl">
@@ -414,6 +441,7 @@ export default function Cases() {
                         Statusi
                       </th>
                       <th className="w-16" />
+                      {canDeleteCases && <th className="w-20" />}
                     </tr>
                   </thead>
                   <tbody>
@@ -455,6 +483,19 @@ export default function Cases() {
                               <span aria-hidden>→</span>
                             </Link>
                           </td>
+                          {canDeleteCases && (
+                            <td className="py-3 px-4 text-right">
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteCase(c)}
+                                disabled={deletingCaseId === caseId}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-sm font-medium text-red-700 bg-red-50 rounded-lg border border-red-200 hover:bg-red-100 disabled:opacity-60"
+                              >
+                                <FiTrash2 size={14} />
+                                {deletingCaseId === caseId ? "..." : "Fshij"}
+                              </button>
+                            </td>
+                          )}
                         </tr>
                       );
                     })}

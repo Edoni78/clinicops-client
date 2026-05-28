@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { FiUserCheck, FiUserPlus, FiMail, FiRefreshCw } from "react-icons/fi";
+import { FiUserCheck, FiUserPlus, FiMail, FiRefreshCw, FiTrash2 } from "react-icons/fi";
 import Notification from "../../ui/Notification";
 import PageHeader from "../../ui/PageHeader";
-import LoadingSpinner from "../../ui/LoadingSpinner";
-import { listClinicUsers, createClinicUser } from "../../../api/clinicUser";
+import { listClinicUsers, createClinicUser, deleteClinicUser } from "../../../api/clinicUser";
 import { useAuth } from "../../../context/AuthContext";
 import { useDashboardPanel, PANEL_SUPERADMIN } from "../../../context/DashboardPanelContext";
 import { getClinicId } from "../../../utils/clinicId";
@@ -37,6 +36,7 @@ export default function Staff() {
   const [notif, setNotif] = useState({ visible: false, type: "info", message: "" });
   const [form, setForm] = useState({ email: "", password: "", role: "Doctor" });
   const [submitting, setSubmitting] = useState(false);
+  const [deletingUserId, setDeletingUserId] = useState(null);
 
   const isClinicAdmin = isClinicAdminRole(role);
   const isSuperAdmin = role && role.toString().toLowerCase() === "superadmin";
@@ -97,6 +97,25 @@ export default function Staff() {
       });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDeleteUser = async (id, email) => {
+    const ok = window.confirm(`Fshij përdoruesin e stafit "${email}"?`);
+    if (!ok) return;
+    setDeletingUserId(id);
+    try {
+      await deleteClinicUser(id, isSuperAdmin ? getClinicId() : undefined);
+      setNotif({ visible: true, type: "success", message: "Përdoruesi u fshi." });
+      fetchUsers();
+    } catch (err) {
+      setNotif({
+        visible: true,
+        type: "error",
+        message: err.response?.data?.message ?? err.response?.data ?? "Fshirja dështoi.",
+      });
+    } finally {
+      setDeletingUserId(null);
     }
   };
 
@@ -250,6 +269,15 @@ export default function Staff() {
                     >
                       {isActive ? "Aktiv" : "Joaktiv"}
                     </span>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteUser(id, email)}
+                      disabled={deletingUserId === id}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 disabled:opacity-60"
+                    >
+                      <FiTrash2 size={14} />
+                      {deletingUserId === id ? "Duke fshirë..." : "Fshij"}
+                    </button>
                   </li>
                 );
               })}

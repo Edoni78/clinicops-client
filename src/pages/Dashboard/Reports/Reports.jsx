@@ -9,8 +9,15 @@ import {
   FiRefreshCw,
   FiX,
   FiSearch,
+  FiTrash2,
 } from "react-icons/fi";
-import { getPatientCases, enrichPatientCasesWithService } from "../../../api/patientCase";
+import {
+  getPatientCases,
+  enrichPatientCasesWithService,
+  deletePatientCaseReport,
+} from "../../../api/patientCase";
+import { getDoctorProfile } from "../../../api/doctorProfile";
+import { useAuth } from "../../../context/AuthContext";
 import { pickCaseServiceFields, formatCaseServicePriceEUR } from "../../../utils/caseServiceFields";
 import {
   downloadCaseReportPdfFromBackend,
@@ -29,6 +36,7 @@ import {
   normalizeStatusKey,
   caseMatchesNameQuery,
 } from "../../../utils/caseListFilters";
+import { isClinicAdminRole } from "../../../utils/dashboardMenu";
 
 const DATE_FILTERS = [
   { value: "today", label: "Sot" },
@@ -81,10 +89,34 @@ function formatDate(dateString) {
   }
 }
 
+function looksLikeEmail(v) {
+  return typeof v === "string" && v.includes("@");
+}
+
+function resolveDoctorNameFromCase(c, fallbackDisplayName) {
+  const raw =
+    c?.doctorDisplayName ??
+    c?.DoctorDisplayName ??
+    c?.doctorName ??
+    c?.DoctorName ??
+    c?.doctorEmail ??
+    c?.DoctorEmail ??
+    "";
+  if (!raw) return fallbackDisplayName || "Mjek";
+  if (looksLikeEmail(raw) && fallbackDisplayName) return fallbackDisplayName;
+  return raw;
+}
+
 const selectDateClassName =
   "px-2.5 py-2 rounded-lg border border-slate-200 text-sm text-slate-800 bg-white focus:ring-2 focus:ring-clinic-400/40 focus:border-clinic-400 outline-none min-w-[4.5rem]";
 
 export default function Reports() {
+  const { role } = useAuth();
+  const roleLower = String(role || "").toLowerCase();
+  const canDeleteReports =
+    isClinicAdminRole(roleLower) || roleLower === "doctor" || roleLower === "superadmin";
+  const isDoctor = String(role || "").toLowerCase() === "doctor";
+  const [doctorDisplayName, setDoctorDisplayName] = useState("");
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   /** all | Completed | Finished — completed-visit type */
@@ -99,6 +131,16 @@ export default function Reports() {
   );
   const [downloadingId, setDownloadingId] = useState(null);
   const [printingId, setPrintingId] = useState(null);
+  const [deletingReportId, setDeletingReportId] = useState(null);
+  const [deletedReportCaseIds, setDeletedReportCaseIds] = useState(() => {
+    try {
+      const raw = sessionStorage.getItem("deleted_report_case_ids");
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  });
   const [notif, setNotif] = useState({ visible: false, type: "info", message: "" });
 
   const setDatePart = (key, raw) => {
@@ -161,8 +203,21 @@ export default function Reports() {
     fetchReports();
   }, [fetchReports]);
 
+  useEffect(() => {
+    sessionStorage.setItem("deleted_report_case_ids", JSON.stringify(deletedReportCaseIds));
+  }, [deletedReportCaseIds]);
+
+  useEffect(() => {
+    if (!isDoctor) return;
+    getDoctorProfile()
+      .then((p) => setDoctorDisplayName(p?.displayName ?? p?.DisplayName ?? ""))
+      .catch(() => setDoctorDisplayName(""));
+  }, [isDoctor]);
+
   const filteredReports = useMemo(() => {
     return reports.filter((r) => {
+      const caseId = r.id ?? r.Id;
+      if (deletedReportCaseIds.includes(caseId)) return false;
       const status = r.status ?? r.Status;
       const sk = normalizeStatusKey(status);
       if (reportStatusTab === "Completed" && sk !== "completed") return false;
@@ -175,7 +230,7 @@ export default function Reports() {
       if (dateFilter === "week") return isInThisWeek(updated);
       return true;
     });
-  }, [reports, reportStatusTab, nameSearch, searchDate, dateFilter]);
+  }, [reports, deletedReportCaseIds, reportStatusTab, nameSearch, searchDate, dateFilter]);
 
   const pdfErrorMessage = (e, fallback) =>
     e.response?.status === 404
@@ -204,6 +259,35 @@ export default function Reports() {
       setNotif({ visible: true, type: "error", message: pdfErrorMessage(e, "Dështoi printimi i raportit.") });
     } finally {
       setPrintingId(null);
+    }
+  };
+
+  const handleDeleteReport = async (caseId) => {
+    const ok = window.confirm("Fshij raportin mjekësor (EMR) për këtë rast?");
+    if (!ok) return;
+    setDeletingReportId(caseId);
+    try {
+      await deletePatientCaseReport(caseId);
+      setDeletedReportCaseIds((prev) => (prev.includes(caseId) ? prev : [...prev, caseId]));
+      setNotif({ visible: true, type: "success", message: "Raporti u fshi." });
+      fetchReports();
+    } catch (err) {
+      if (err?.response?.status === 404) {
+        setDeletedReportCaseIds((prev) => (prev.includes(caseId) ? prev : [...prev, caseId]));
+        setNotif({
+          visible: true,
+          type: "info",
+          message: "Raporti nuk u gjet; u fshi nga lista.",
+        });
+        return;
+      }
+      setNotif({
+        visible: true,
+        type: "error",
+        message: err.response?.data?.message ?? err.response?.data ?? "Fshirja e raportit dështoi.",
+      });
+    } finally {
+      setDeletingReportId(null);
     }
   };
 
@@ -388,6 +472,9 @@ export default function Reports() {
                     Statusi
                   </th>
                   <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Mjeku
+                  </th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
                     Shërbimi
                   </th>
                   <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -411,6 +498,7 @@ export default function Reports() {
                     r.CompletedAt ??
                     r.createdAt ??
                     r.CreatedAt;
+                  const doctorName = resolveDoctorNameFromCase(r, doctorDisplayName);
                   const { serviceName, servicePrice } = pickCaseServiceFields(r);
                   const servicePriceLabel = formatCaseServicePriceEUR(servicePrice);
                   const serviceDisplay = serviceName || "—";
@@ -436,6 +524,9 @@ export default function Reports() {
                         >
                           {getStatusLabel(status)}
                         </span>
+                      </td>
+                      <td className="py-3 px-4 text-sm text-slate-700 whitespace-nowrap">
+                        {doctorName || "—"}
                       </td>
                       <td className="py-3 px-4 text-sm text-slate-700 max-w-[200px] sm:max-w-xs">
                         <span className="line-clamp-2" title={serviceDisplay !== "—" ? serviceDisplay : undefined}>
@@ -477,6 +568,17 @@ export default function Reports() {
                               </>
                             )}
                           </button>
+                          {canDeleteReports && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteReport(caseId)}
+                              disabled={deletingReportId === caseId}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-700 bg-red-50 rounded-lg border border-red-200 hover:bg-red-100 disabled:opacity-60"
+                            >
+                              <FiTrash2 size={16} />
+                              {deletingReportId === caseId ? "Duke fshirë..." : "Fshij raportin"}
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

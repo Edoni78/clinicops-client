@@ -19,6 +19,8 @@ import Laboratory from "./pages/Dashboard/Laboratory";
 import Services from "./pages/Dashboard/Services/Services";
 import Payments from "./pages/Dashboard/Payments/Payments";
 import Staff from "./components/Dashboard/Staff/Staff";
+import EMRs from "./pages/Dashboard/EMRs/EMRs";
+import PublicEmrView from "./pages/Public/PublicEmrView";
 
 function App() {
   return (
@@ -27,6 +29,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/apply" element={<ApplyPage />} />
         <Route path="/login" element={<ClinicLogin />} />
+        <Route path="/emr/:patientId" element={<PublicEmrView />} />
 
         {/* PROTECTED DASHBOARD */}
         <Route
@@ -54,6 +57,7 @@ function App() {
           <Route path="services" element={<Services />} />
           <Route path="payments" element={<Payments />} />
           <Route path="staff" element={<Staff />} />
+          <Route path="emrs" element={<EMRs />} />
         </Route>
       </Routes>
     </BrowserRouter>
