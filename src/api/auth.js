@@ -32,3 +32,35 @@ export async function applyForClinic(clinicName, email, password, clinicMode) {
   });
   return data;
 }
+
+/**
+ * Start MFA setup for the authenticated user.
+ * POST /api/auth/mfa/setup
+ */
+export async function setupMfa() {
+  const { data } = await api.post("/api/auth/mfa/setup");
+  return data;
+}
+
+/**
+ * Enable MFA using a TOTP code from authenticator app.
+ * POST /api/auth/mfa/enable
+ * Body: { code }
+ */
+export async function enableMfa(code) {
+  const { data } = await api.post("/api/auth/mfa/enable", { code });
+  return data;
+}
+
+/**
+ * Verify MFA challenge for login and return full auth payload.
+ * POST /api/auth/mfa/verify-login
+ * Body: { mfaTicket, code }
+ */
+export async function verifyMfaLogin(mfaTicket, code) {
+  const { data } = await api.post("/api/auth/mfa/verify-login", {
+    mfaTicket,
+    code,
+  });
+  return data;
+}
