@@ -1,9 +1,10 @@
 export const STATUS_LABELS = {
   Waiting: "Në pritje",
-  InProgress: "Në progres",
   InConsultation: "Në konsultim",
+  Finished: "Përfunduar",
+  // Legacy statuses kept only so older records still render a readable label.
+  InProgress: "Në progres",
   Completed: "Përfunduar",
-  Finished: "Mbyllur",
 };
 
 export function getCaseStatusLabel(status) {
@@ -11,26 +12,29 @@ export function getCaseStatusLabel(status) {
   return STATUS_LABELS[key] || status || "—";
 }
 
+/**
+ * Simplified 3-step flow: Waiting → InConsultation → Finished.
+ * (InProgress / Completed are no longer used.)
+ */
 export const STATUS_FLOW = {
-  Waiting: ["InProgress"],
-  InProgress: ["InConsultation"],
-  InConsultation: ["Completed"],
-  Completed: ["Finished"],
+  Waiting: ["InConsultation"],
+  InConsultation: ["Finished"],
   Finished: [],
 };
 
-/** Normalize status string to match STATUS_FLOW keys (backend may return enum string). */
+/** Normalize status string to canonical casing (backend may return enum string). */
 export function normalizeCaseStatus(s) {
   const t = String(s ?? "").trim();
   const key = t.toLowerCase().replace(/\s+/g, "");
   const map = {
     waiting: "Waiting",
-    inprogress: "InProgress",
-    in_progress: "InProgress",
     inconsultation: "InConsultation",
     in_consultation: "InConsultation",
-    completed: "Completed",
     finished: "Finished",
+    // Legacy mappings for backward compatibility with old records.
+    inprogress: "InProgress",
+    in_progress: "InProgress",
+    completed: "Completed",
   };
   return map[key] ?? (STATUS_FLOW[t] ? t : "Waiting");
 }

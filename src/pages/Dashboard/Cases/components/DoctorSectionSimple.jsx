@@ -37,19 +37,14 @@ export default function DoctorSectionSimple(props) {
     attachedServicePrice,
   } = props;
 
-  const doctorUiStatuses = doctorNextStatuses.filter((s) => s !== "Finished");
-  const doctorStatusOrder = { InConsultation: 0, Completed: 1 };
-  const sortDoctorStatuses = (arr) =>
-    [...arr].sort((a, b) => (doctorStatusOrder[a] ?? 99) - (doctorStatusOrder[b] ?? 99));
-
-  const doctorCanCompleteVisit = doctorUiStatuses.includes("Completed");
-  const doctorHeaderStatuses = sortDoctorStatuses(
-    canEditReportAndStatus ? doctorUiStatuses.filter((s) => s !== "Completed") : doctorUiStatuses
-  );
+  // 3-step flow: "Fillo konsultimin" (→InConsultation) in header,
+  // "Përfundo vizitën" (→Finished) shown alongside the report form.
+  const doctorCanCompleteVisit = doctorNextStatuses.includes("Finished");
+  const doctorHeaderStatuses = doctorNextStatuses.filter((s) => s === "InConsultation");
 
   const doctorActionLabel = (s) => {
     if (s === "InConsultation") return "Fillo konsultimin";
-    if (s === "Completed") return "Përfundo vizitën";
+    if (s === "Finished") return "Përfundo vizitën";
     return s;
   };
 
@@ -270,7 +265,7 @@ export default function DoctorSectionSimple(props) {
                     <button
                       type="button"
                       disabled={statusSubmitting}
-                      onClick={() => handleStatusChange("Completed")}
+                      onClick={() => handleStatusChange("Finished")}
                       className="inline-flex items-center gap-2 px-4 py-2 border border-slate-700 text-slate-800 bg-white text-sm font-semibold rounded-md hover:bg-slate-50 disabled:opacity-50"
                     >
                       Përfundo vizitën

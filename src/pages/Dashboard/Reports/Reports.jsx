@@ -47,8 +47,7 @@ const DATE_FILTERS = [
 
 const STATUS_TABS = [
   { value: "all", label: "Të gjitha" },
-  { value: "Completed", label: "Përfunduar" },
-  { value: "Finished", label: "Mbyllur" },
+  { value: "Finished", label: "Përfunduar" },
 ];
 
 const STATUS_LABELS = {
@@ -56,7 +55,7 @@ const STATUS_LABELS = {
   InProgress: "Në progres",
   InConsultation: "Në konsultim",
   Completed: "Përfunduar",
-  Finished: "Mbyllur",
+  Finished: "Përfunduar",
 };
 
 function getStatusLabel(status) {
@@ -69,7 +68,7 @@ function statusBadgeClass(status) {
     InProgress: "bg-blue-100 text-blue-800",
     InConsultation: "bg-sky-100 text-sky-800",
     Completed: "bg-indigo-100 text-indigo-800",
-    Finished: "bg-slate-100 text-slate-700",
+    Finished: "bg-emerald-100 text-emerald-800",
   };
   return map[status] || "bg-gray-100 text-gray-800";
 }
@@ -177,14 +176,9 @@ export default function Reports() {
   const fetchReports = useCallback(async () => {
     setLoading(true);
     try {
-      const [finished, completed] = await Promise.all([
-        getPatientCases("Finished"),
-        getPatientCases("Completed"),
-      ]);
-      const combined = [
-        ...(Array.isArray(finished) ? finished : []),
-        ...(Array.isArray(completed) ? completed : []),
-      ];
+      // Simplified flow: a completed visit is "Finished".
+      const finished = await getPatientCases("Finished");
+      const combined = [...(Array.isArray(finished) ? finished : [])];
       const byId = new Map();
       combined.forEach((c) => {
         const id = c.id ?? c.Id;

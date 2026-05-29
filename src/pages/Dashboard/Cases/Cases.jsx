@@ -26,7 +26,7 @@ const STATUS_LABELS = {
   InProgress: "Në progres",
   InConsultation: "Në konsultim",
   Completed: "Përfunduar",
-  Finished: "Mbyllur",
+  Finished: "Përfunduar",
 };
 
 function getStatusLabel(status) {
@@ -62,7 +62,7 @@ function statusBadgeClass(status) {
     InProgress: "bg-blue-100 text-blue-800",
     InConsultation: "bg-sky-100 text-sky-800",
     Completed: "bg-indigo-100 text-indigo-800",
-    Finished: "bg-slate-100 text-slate-700",
+    Finished: "bg-emerald-100 text-emerald-800",
   };
   return map[status] || "bg-gray-100 text-gray-800";
 }
@@ -276,8 +276,8 @@ export default function Cases() {
       <div className="mb-5 card px-4 py-3 text-sm text-slate-600 flex flex-wrap gap-2 items-center">
         <span className="font-semibold text-slate-700">Rrjedha e punës:</span>
         <span className="px-2.5 py-1 rounded-full bg-slate-100">1) Infermieri: shenjat jetësore</span>
-        <span className="px-2.5 py-1 rounded-full bg-slate-100">2) Dërgo te mjeku</span>
-        <span className="px-2.5 py-1 rounded-full bg-slate-100">3) Mjeku: raport + përfundim</span>
+        <span className="px-2.5 py-1 rounded-full bg-slate-100">2) Dërgo te mjeku (në konsultim)</span>
+        <span className="px-2.5 py-1 rounded-full bg-slate-100">3) Mjeku: raport + përfundo vizitën</span>
       </div>
 
       <div className="table-shell">

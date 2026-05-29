@@ -319,7 +319,7 @@ export default function CaseDetail() {
           await updateCaseStatus(id, "Finished");
           finished = true;
         } catch {
-          const fallbackFlow = ["InProgress", "InConsultation", "Completed", "Finished"];
+          const fallbackFlow = ["InConsultation", "Finished"];
           for (const next of fallbackFlow) {
             try {
               await updateCaseStatus(id, next);
@@ -361,7 +361,7 @@ export default function CaseDetail() {
       await updateCaseStatus(id, newStatus);
       await refreshConsultationLock();
       setCaseData((prev) => (prev ? { ...prev, status: newStatus } : null));
-      if (newStatus === "Completed") {
+      if (newStatus === "Finished") {
         navigate("/dashboard/cases");
         return;
       }
@@ -441,11 +441,12 @@ export default function CaseDetail() {
     !!otherConsultationCaseId && caseStatus !== "InConsultation";
   const withoutBlockedConsultation = (statuses) =>
     blockNewConsultation ? statuses.filter((s) => s !== "InConsultation") : statuses;
+  // Nurse can send the patient to the doctor (Waiting → InConsultation).
   const nurseNextStatuses = withoutBlockedConsultation(
-    allowedNextStatuses.filter((s) => s === "InProgress" || s === "InConsultation")
+    allowedNextStatuses.filter((s) => s === "InConsultation")
   );
   const doctorNextStatuses = withoutBlockedConsultation(
-    allowedNextStatuses.filter((s) => s === "InConsultation" || s === "Completed")
+    allowedNextStatuses.filter((s) => s === "InConsultation" || s === "Finished")
   );
 
   if (loading && !caseData) {
