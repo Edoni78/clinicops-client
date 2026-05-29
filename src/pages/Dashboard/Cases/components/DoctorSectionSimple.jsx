@@ -37,16 +37,8 @@ export default function DoctorSectionSimple(props) {
     attachedServicePrice,
   } = props;
 
-  // 3-step flow: "Fillo konsultimin" (→InConsultation) in header,
-  // "Përfundo vizitën" (→Finished) shown alongside the report form.
+  // Doctor completes visit from the report form; consultation starts from the cases list.
   const doctorCanCompleteVisit = doctorNextStatuses.includes("Finished");
-  const doctorHeaderStatuses = doctorNextStatuses.filter((s) => s === "InConsultation");
-
-  const doctorActionLabel = (s) => {
-    if (s === "InConsultation") return "Fillo konsultimin";
-    if (s === "Finished") return "Përfundo vizitën";
-    return s;
-  };
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden mb-6">
@@ -102,26 +94,6 @@ export default function DoctorSectionSimple(props) {
           </section>
         )}
 
-        {doctorHeaderStatuses.length > 0 && (
-          <section className={!isSoloDoctorClinic ? "pt-4 border-t border-slate-200" : ""}>
-            <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">
-              Veprimet
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {doctorHeaderStatuses.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  disabled={statusSubmitting}
-                  onClick={() => handleStatusChange(s)}
-                  className="px-4 py-2 bg-clinic-400 text-white text-sm font-medium rounded-md hover:bg-clinic-500 disabled:opacity-50 transition-colors"
-                >
-                  {doctorActionLabel(s)}
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
       </div>
 
       <div className="border-t border-slate-200">

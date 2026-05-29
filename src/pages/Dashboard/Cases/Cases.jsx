@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FiFolder, FiRefreshCw, FiClock, FiCalendar, FiX, FiSearch, FiTrash2 } from "react-icons/fi";
-import { getPatientCases, deletePatientCase } from "../../../api/patientCase";
+import { getPatientCases, deletePatientCase, updateCaseStatus } from "../../../api/patientCase";
 import { useSignalR } from "../../../context/SignalRContext";
 import { useAuth } from "../../../context/AuthContext";
 import Notification from "../../../components/ui/Notification";
@@ -17,7 +17,7 @@ import {
   isTerminalCaseStatus,
   caseMatchesNameQuery,
 } from "../../../utils/caseListFilters";
-import { findActiveInConsultationCase } from "./caseStatus";
+import { normalizeCaseStatus } from "./caseStatus";
 import { getClinicId } from "../../../utils/clinicId";
 import { isClinicAdminRole } from "../../../utils/dashboardMenu";
 
@@ -77,6 +77,7 @@ export default function Cases() {
     isClinicAdminRole(currentRole) || currentRole === "doctor" || currentRole === "superadmin";
   const [cases, setCases] = useState([]);
   const [deletingCaseId, setDeletingCaseId] = useState(null);
+  const [continuingCaseId, setContinuingCaseId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notif, setNotif] = useState({ visible: false, type: "info", message: "" });
   /** Në vazhdim | përfunduar / mbyllur */
@@ -170,15 +171,6 @@ export default function Cases() {
     fetchCases();
   }, [fetchCases]);
 
-  // Doctor: open the active in-consultation case automatically (one visit at a time).
-  useEffect(() => {
-    if (!isDoctor || loading) return;
-    const active = findActiveInConsultationCase(cases);
-    const caseId = active?.id ?? active?.Id;
-    if (!caseId) return;
-    navigate(`/dashboard/cases/${caseId}/doctor`, { replace: true });
-  }, [isDoctor, loading, cases, navigate]);
-
   // Fallback real-time sync for newly created cases.
   // Some backends don't emit a dedicated "case created" SignalR event,
   // so we silently refresh while this page is open.
@@ -204,8 +196,8 @@ export default function Cases() {
     const unsubS = onCaseStatusChanged((patientCaseId, newStatus) => {
       fetchCases(true);
       const statusStr = String(newStatus || "").toLowerCase();
-      if (statusStr === "inconsultation") {
-        setNotif({ visible: true, type: "success", message: "Një rast u bë gati për konsultim. Lista u përditësua." });
+      if (statusStr === "waiting") {
+        setNotif({ visible: true, type: "success", message: "Një pacient i ri është në pritje te mjeku. Lista u përditësua." });
       } else {
         setNotif({ visible: true, type: "info", message: "Statusi i rastit u përditësua. Lista u rifreskua." });
       }
@@ -216,6 +208,24 @@ export default function Cases() {
       unsubS();
     };
   }, [connection, fetchCases, onVitalsUpdated, onReportUpdated, onCaseStatusChanged]);
+
+  const handleContinueCase = async (c) => {
+    const caseId = c?.id ?? c?.Id;
+    if (!caseId) return;
+    setContinuingCaseId(caseId);
+    try {
+      await updateCaseStatus(caseId, "InConsultation");
+      navigate(`/dashboard/cases/${caseId}/doctor`);
+    } catch (err) {
+      setNotif({
+        visible: true,
+        type: "error",
+        message: err.response?.data?.message ?? err.response?.data ?? "Dështoi hapja e rastit.",
+      });
+    } finally {
+      setContinuingCaseId(null);
+    }
+  };
 
   const handleDeleteCase = async (c) => {
     const caseId = c?.id ?? c?.Id;
@@ -240,7 +250,7 @@ export default function Cases() {
   };
 
   return (
-    <div className="page-shell max-w-6xl">
+    <div className="page-shell">
       <Notification
         visible={notif.visible}
         type={notif.type}
@@ -276,7 +286,7 @@ export default function Cases() {
       <div className="mb-5 card px-4 py-3 text-sm text-slate-600 flex flex-wrap gap-2 items-center">
         <span className="font-semibold text-slate-700">Rrjedha e punës:</span>
         <span className="px-2.5 py-1 rounded-full bg-slate-100">1) Infermieri: shenjat jetësore</span>
-        <span className="px-2.5 py-1 rounded-full bg-slate-100">2) Dërgo te mjeku (në konsultim)</span>
+        <span className="px-2.5 py-1 rounded-full bg-slate-100">2) Mjeku: zgjedh rastin (Vazhdo Rastin)</span>
         <span className="px-2.5 py-1 rounded-full bg-slate-100">3) Mjeku: raport + përfundo vizitën</span>
       </div>
 
@@ -443,7 +453,9 @@ export default function Cases() {
                       <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
                         Mjeku
                       </th>
-                      <th className="w-16" />
+                      <th className="text-right py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500 min-w-[14rem]">
+                        Veprimet
+                      </th>
                       {canDeleteCases && <th className="w-20" />}
                     </tr>
                   </thead>
@@ -483,13 +495,25 @@ export default function Cases() {
                             {assignedDoctorName || "—"}
                           </td>
                           <td className="py-3 px-4 text-right">
-                            <Link
-                              to={getCaseOpenPath(c)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-clinic-400 bg-clinic-400/10 rounded-lg hover:bg-clinic-400/20 transition-colors border border-clinic-400/20"
-                            >
-                              Hap
-                              <span aria-hidden>→</span>
-                            </Link>
+                            <div className="flex flex-wrap items-center justify-end gap-2">
+                              {isDoctor && normalizeCaseStatus(status) === "Waiting" && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleContinueCase(c)}
+                                  disabled={continuingCaseId === caseId}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-white bg-clinic-400 rounded-lg hover:bg-clinic-500 disabled:opacity-60 transition-colors"
+                                >
+                                  {continuingCaseId === caseId ? "Duke hapur…" : "Vazhdo Rastin"}
+                                </button>
+                              )}
+                              <Link
+                                to={getCaseOpenPath(c)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-clinic-400 bg-clinic-400/10 rounded-lg hover:bg-clinic-400/20 transition-colors border border-clinic-400/20"
+                              >
+                                Hap
+                                <span aria-hidden>→</span>
+                              </Link>
+                            </div>
                           </td>
                           {canDeleteCases && (
                             <td className="py-3 px-4 text-right">
