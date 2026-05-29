@@ -15,6 +15,7 @@ export default function PatientInfoCard({
   patientGender,
   patientPhone,
   caseStatus,
+  assignedDoctorName,
 }) {
   const normalized = normalizeCaseStatus(caseStatus);
   const badgeClass = STATUS_BADGE[normalized] || "bg-slate-100 text-slate-700 border-slate-200";
@@ -48,6 +49,12 @@ export default function PatientInfoCard({
           </p>
           <p className="mt-1 text-sm font-semibold text-slate-900 tabular-nums">{patientPhone}</p>
         </div>
+        {assignedDoctorName && (
+          <div>
+            <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Mjeku përgjegjës</p>
+            <p className="mt-1 text-sm font-semibold text-slate-900">{assignedDoctorName}</p>
+          </div>
+        )}
       </div>
     </div>
   );

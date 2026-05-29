@@ -440,6 +440,9 @@ export default function Cases() {
                       <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
                         Statusi
                       </th>
+                      <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                        Mjeku
+                      </th>
                       <th className="w-16" />
                       {canDeleteCases && <th className="w-20" />}
                     </tr>
@@ -451,6 +454,8 @@ export default function Cases() {
                       const lastName = c.patientLastName ?? c.PatientLastName ?? "";
                       const status = c.status ?? c.Status;
                       const createdAt = c.createdAt ?? c.CreatedAt;
+                      const assignedDoctorName =
+                        c.assignedDoctorName ?? c.AssignedDoctorName ?? "";
                       return (
                         <tr key={caseId} className="table-row">
                           <td className="py-3 px-4">
@@ -473,6 +478,9 @@ export default function Cases() {
                             >
                               {getStatusLabel(status)}
                             </span>
+                          </td>
+                          <td className="py-3 px-4 text-sm text-slate-600 whitespace-nowrap">
+                            {assignedDoctorName || "—"}
                           </td>
                           <td className="py-3 px-4 text-right">
                             <Link

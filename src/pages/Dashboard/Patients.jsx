@@ -1,10 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import api from "../../api/axios";
 import Notification from "../../components/ui/Notification";
 import { getJwtPayload } from "../../utils/jwt";
-import { FiUserPlus, FiCalendar, FiPhone, FiFileText, FiUsers } from "react-icons/fi";
+import { FiUserPlus, FiCalendar, FiPhone, FiFileText, FiUsers, FiActivity } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
 import PageHeader from "../../components/ui/PageHeader";
+import { listClinicUsers } from "../../api/clinicUser";
+
+function getDoctorLabel(doctor) {
+  return (
+    doctor?.displayName ??
+    doctor?.DisplayName ??
+    doctor?.fullName ??
+    doctor?.FullName ??
+    doctor?.name ??
+    doctor?.Name ??
+    doctor?.email ??
+    doctor?.Email ??
+    "Mjek"
+  );
+}
 
 const Patients = () => {
   const navigate = useNavigate();
@@ -15,7 +30,12 @@ const Patients = () => {
     gender: "",
     phone: "",
     notes: "",
+    assignedDoctorUserId: "",
   });
+
+  const [doctors, setDoctors] = useState([]);
+  const [doctorsLoading, setDoctorsLoading] = useState(false);
+  const [doctorsError, setDoctorsError] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [notif, setNotif] = useState({
@@ -23,6 +43,36 @@ const Patients = () => {
     type: "info",
     message: "",
   });
+
+  useEffect(() => {
+    let active = true;
+    setDoctorsLoading(true);
+    setDoctorsError("");
+    listClinicUsers({ role: "Doctor" })
+      .then((list) => {
+        if (!active) return;
+        const onlyDoctors = (Array.isArray(list) ? list : []).filter((u) => {
+          const r = String(u?.role ?? u?.Role ?? "").toLowerCase();
+          return r === "doctor" || r === "";
+        });
+        setDoctors(onlyDoctors);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setDoctors([]);
+        setDoctorsError(
+          err?.response?.status === 403
+            ? "Nuk keni leje për të parë listën e mjekëve. Kontaktoni administratorin e klinikës."
+            : "Lista e mjekëve nuk u ngarkua. Ju lutemi provoni përsëri."
+        );
+      })
+      .finally(() => {
+        if (active) setDoctorsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -34,6 +84,16 @@ const Patients = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!formData.assignedDoctorUserId) {
+      setNotif({
+        visible: true,
+        type: "warning",
+        message: "Ju lutemi zgjidhni një mjek për pacientin.",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -61,6 +121,7 @@ const Patients = () => {
         gender: formData.gender,
         phone: formData.phone,
         notes: formData.notes || "",
+        assignedDoctorUserId: formData.assignedDoctorUserId,
         clinicId: clinicId,
       };
 
@@ -76,6 +137,7 @@ const Patients = () => {
         gender: "",
         phone: "",
         notes: "",
+        assignedDoctorUserId: "",
       });
 
       if (caseId) {
@@ -245,6 +307,51 @@ const Patients = () => {
                   <option value="Other">Tjetër</option>
                 </select>
               </div>
+            </div>
+
+            {/* Assigned Doctor */}
+            <div>
+              <label htmlFor="assignedDoctorUserId" className="label">
+                Mjeku përgjegjës <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <FiActivity
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"
+                  size={18}
+                />
+                <select
+                  id="assignedDoctorUserId"
+                  name="assignedDoctorUserId"
+                  value={formData.assignedDoctorUserId}
+                  onChange={handleChange}
+                  required
+                  disabled={doctorsLoading || doctors.length === 0}
+                  className="input-with-icon"
+                >
+                  <option value="">
+                    {doctorsLoading
+                      ? "Duke ngarkuar mjekët…"
+                      : doctors.length === 0
+                        ? "Nuk ka mjekë të disponueshëm"
+                        : "Zgjidhni mjekun"}
+                  </option>
+                  {doctors.map((doctor) => {
+                    const id = doctor?.id ?? doctor?.Id;
+                    return (
+                      <option key={id} value={id}>
+                        {getDoctorLabel(doctor)}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+              {doctorsError ? (
+                <p className="mt-1 text-sm text-red-600">{doctorsError}</p>
+              ) : (
+                <p className="mt-1 text-sm text-slate-500">
+                  Pacienti do t'i caktohet mjekut të zgjedhur.
+                </p>
+              )}
             </div>
 
             {/* Phone */}

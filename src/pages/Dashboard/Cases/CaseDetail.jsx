@@ -507,6 +507,8 @@ export default function CaseDetail() {
   const stampPath = doctorProfile?.stampUrl ?? doctorProfile?.StampUrl;
   const signaturePreviewUrl = getDoctorImageFullUrl(signaturePath);
   const stampPreviewUrl = getDoctorImageFullUrl(stampPath);
+  const assignedDoctorName =
+    caseData?.assignedDoctorName ?? caseData?.AssignedDoctorName ?? "";
   const attachedServiceName = caseData?.serviceName ?? caseData?.ServiceName ?? "";
   const attachedServicePrice = caseData?.servicePrice ?? caseData?.ServicePrice;
   const formatDateDisplay = (dateString) => {
@@ -556,6 +558,7 @@ export default function CaseDetail() {
           patientGender={patientGender}
           patientPhone={patientPhone}
           caseStatus={caseData.status ?? caseData.Status}
+          assignedDoctorName={assignedDoctorName}
         />
 
         {blockNewConsultation && (
