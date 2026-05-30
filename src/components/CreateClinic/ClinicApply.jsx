@@ -7,7 +7,14 @@ import {
   CLINIC_MODE_FULL_TEAM,
 } from "../../utils/clinicMode";
 
-const ClinicApply = () => {
+const inputClass =
+  "w-full px-4 py-3 border border-slate-200 rounded-lg text-sm text-slate-900 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-clinic-400/30 focus:border-clinic-400 transition-all";
+
+/**
+ * @param {{ embedded?: boolean }} props
+ * When embedded=true, only the form is rendered (page shell provides title/copy).
+ */
+const ClinicApply = ({ embedded = false }) => {
   const [clinicName, setClinicName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -60,64 +67,76 @@ const ClinicApply = () => {
         visible={notif.visible}
         type={notif.type}
         message={notif.message}
-        onClose={() =>
-          setNotif((prev) => ({ ...prev, visible: false }))
-        }
+        onClose={() => setNotif((prev) => ({ ...prev, visible: false }))}
       />
 
-      <h1 className="text-4xl font-bold text-clinic-400 mb-4">
-        Aplikoni për iKlinika
-      </h1>
+      {!embedded && (
+        <>
+          <h1 className="text-3xl sm:text-4xl font-semibold text-slate-900 tracking-tight mb-4">
+            Aplikoni për iKlinika
+          </h1>
+          <p className="text-slate-600 mb-10 max-w-xl leading-relaxed">
+            Plotësoni aplikimin për klinikën tuaj. Ekipi ynë e shqyrton dhe aktivizon llogarinë pasi të aprovohet.
+          </p>
+        </>
+      )}
 
-      <p className="text-slate-500 mb-10 max-w-xl">
-        Plotësoni aplikimin për klinikën tuaj. Ekipi ynë e shqyrton dhe aktivizon llogarinë pasi të
-        aprovohet.
-      </p>
-
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-6 max-w-xl"
-      >
-        <input
-          type="text"
-          placeholder="Clinic name"
-          value={clinicName}
-          onChange={(e) => setClinicName(e.target.value)}
-          required
-          className="w-full border border-slate-300 rounded-md px-4 py-3 text-lg
-          focus:outline-none focus:ring-2 focus:ring-clinic-400"
-        />
-
-        <input
-          type="email"
-          placeholder="Admin email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          className="w-full border border-slate-300 rounded-md px-4 py-3 text-lg
-          focus:outline-none focus:ring-2 focus:ring-clinic-400"
-        />
-
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          className="w-full border border-slate-300 rounded-md px-4 py-3 text-lg
-          focus:outline-none focus:ring-2 focus:ring-clinic-400"
-        />
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div>
+          <label htmlFor="clinic-name" className="label">
+            Emri i klinikës
+          </label>
+          <input
+            id="clinic-name"
+            type="text"
+            placeholder="Clinic name"
+            value={clinicName}
+            onChange={(e) => setClinicName(e.target.value)}
+            required
+            className={inputClass}
+          />
+        </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
+          <label htmlFor="admin-email" className="label">
+            Email i administratorit
+          </label>
+          <input
+            id="admin-email"
+            type="email"
+            placeholder="Admin email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className={inputClass}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="admin-password" className="label">
+            Fjalëkalimi
+          </label>
+          <input
+            id="admin-password"
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className={inputClass}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="clinic-mode" className="label">
             Lloji i klinikës *
           </label>
           <select
+            id="clinic-mode"
             value={clinicMode}
             onChange={(e) => setClinicMode(e.target.value)}
             required
-            className="w-full border border-slate-300 rounded-md px-4 py-3 text-base bg-white
-            focus:outline-none focus:ring-2 focus:ring-clinic-400"
+            className={inputClass}
           >
             <option value={CLINIC_MODE_FULL_TEAM}>
               FullTeam - me infermier dhe laborator
@@ -131,26 +150,24 @@ const ClinicApply = () => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-clinic-400 text-white py-3 rounded-md text-lg font-semibold
-          hover:opacity-90 transition disabled:opacity-60"
+          className="w-full h-12 rounded-lg bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
         >
           {loading ? "Submitting..." : "Submit Application"}
         </button>
 
-        <p className="text-center text-slate-500 text-sm">
+        <p className="text-center text-slate-500 text-sm pt-1">
           Tashmë i aprovuar?{" "}
-          <Link
-            to="/login"
-            className="font-semibold text-clinic-400 hover:underline"
-          >
+          <Link to="/login" className="font-semibold text-clinic-600 hover:text-clinic-700 transition-colors">
             Hyr në sistem
           </Link>
         </p>
       </form>
 
-      <p className="text-sm text-slate-400 mt-10">
-        I sigurt • I shqyrtuar • iKlinika
-      </p>
+      {!embedded && (
+        <p className="text-xs text-slate-400 mt-8 uppercase tracking-wider">
+          I sigurt • I shqyrtuar • iKlinika
+        </p>
+      )}
     </>
   );
 };

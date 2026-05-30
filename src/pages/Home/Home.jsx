@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   FiArrowRight,
@@ -20,10 +20,33 @@ import {
   FiHeart,
   FiTag,
   FiCalendar,
+  FiMenu,
+  FiX,
+  FiPlay,
 } from "react-icons/fi";
-import entryImg from "../../assets/images/entry.jpg";
-// Logo navigimi — zëvendësoni skedarin (p.sh. logo.png) dhe/ose ndryshoni rrugën e importit
 import navLogo from "../../assets/images/logo3.png";
+import heroDashboard from "../../assets/home/hero/panel.png";
+import tab1 from "../../assets/home/hero/tab1.png";
+import tab2 from "../../assets/home/hero/tab2.png";
+import tab3 from "../../assets/home/hero/tab3.png";
+import tab4 from "../../assets/home/hero/tab4.png";
+import tab5 from "../../assets/home/hero/tab5.png";
+import tab6 from "../../assets/home/hero/tab6.png";
+import tab7 from "../../assets/home/hero/tab7.png";
+import heroImage from "../../assets/home/martha-dominguez-de-gouveia-nMyM7fxpokE-unsplash.jpg";
+import workflowImage from "../../assets/home/ibrahim-boran-zsKFQs2kDpM-unsplash.jpg";
+import platformImage from "../../assets/home/national-cancer-institute-NFvdKIhxYlU-unsplash.jpg";
+
+const IMAGES = {
+  hero: heroDashboard,
+  heroAlt: "Paneli i iKlinikës — menaxhim i rasteve, mjekëve dhe checkout",
+  workflow: workflowImage,
+  workflowAlt: "Pajisje dhe materiale mjekësore në klinikë",
+  platform: platformImage,
+  platformAlt: "Mjek duke përdorur laptop dhe stetoskop — menaxhim dixhital",
+  cta: heroImage,
+  ctaAlt: "Recepsion modern klinike",
+};
 
 const features = [
   {
@@ -58,7 +81,100 @@ const highlights = [
   "Gati për klinika moderne — shqip, i thjeshtë për ekipin",
 ];
 
-/** Hapat e një vizite tipike në platformë */
+const featureTabs = [
+  {
+    label: "Të gjitha funksionet",
+    headline: "Menaxhoni detyrat kryesore me shpejtësi dhe qartësi.",
+    description:
+      "Gjithçka që ju duhet për të organizuar proceset, menaxhuar informacionin dhe mbajtur punën e përditshme të klinikës të rrjedhë si duhet.",
+    bullets: [
+      "Planifikoni, caktoni dhe menaxhoni rastet qartë nëpër ekip.",
+      "Ruani informacionin e përbashkët në mënyrë të sigurt dhe qasuni kur duhet.",
+      "Automatizoni proceset e përditshme për të reduktuar punën manuale dhe gabimet.",
+    ],
+    image: tab1,
+    imageAlt: "Pamje e përgjithshme e panelit iKlinika",
+  },
+  {
+    label: "Pacientë & raste",
+    headline: "Regjistrim i shpejtë dhe menaxhim i qartë i rasteve.",
+    description:
+      "Hapni raste të reja, ndiqni statusin nga pritja deri te mbyllja dhe mbani historikun e pacientit në një vend të vetëm.",
+    bullets: [
+      "Formular regjistrimi me të dhëna bazë dhe lidhje me klinikën.",
+      "Lista e rasteve me status me ngjyra: në pritje, në progres, përfunduar.",
+      "Faqe detaji për çdo rast sipas rolit — infermier ose mjek.",
+    ],
+    image: tab2,
+    imageAlt: "Paneli i pacientëve dhe rasteve",
+  },
+  {
+    label: "Shenja jetësore",
+    headline: "Matje të sakta dhe kalim i qetë te mjeku.",
+    description:
+      "Infermierët regjistrojnë pesha, presion, temperaturë dhe rrahje zemre — rasti kalon te mjeku sapo të jetë gati.",
+    bullets: [
+      "Formular i thjeshtë për shenjat jetësore në çdo vizitë.",
+      "Ruajtje e menjëhershme dhe historik për çdo rast.",
+      "Përditësime në kohë reale pa rifreskuar faqen.",
+    ],
+    image: tab3,
+    imageAlt: "Paneli i shenjave jetësore",
+  },
+  {
+    label: "Konsultimi mjekësor",
+    headline: "Konsultim i plotë dhe raport mjekësor në minuta.",
+    description:
+      "Anamneza, diagnoza dhe terapia në një ndërfaqe të pastër — filloni konsultimin dhe përfundoni vizitën me një klik.",
+    bullets: [
+      "Ndryshim statusi: fillo konsultimin, përfundo vizitën.",
+      "Raport mjekësor i strukturuar për çdo rast.",
+      "Profili i mjekut: emër shfaqje, nënshkrim dhe vulë për PDF.",
+    ],
+    image: tab4,
+    imageAlt: "Paneli i konsultimit mjekësor",
+  },
+  {
+    label: "Laboratori",
+    headline: "Rezultatet e laboratorit të organizuara sipas rastit.",
+    description:
+      "Ngarkoni PDF rezultatesh, filtroni sipas datës dhe qasuni shpejt te dokumentacioni i çdo pacienti.",
+    bullets: [
+      "Faqe e dedikuar me filtrim: sot, dje ose datë e zgjedhur.",
+      "Ngarkim dhe shkarkim PDF të sigurt për çdo rast.",
+      "Rezultatet bashkohen automatikisht në raportin final.",
+    ],
+    image: tab5,
+    imageAlt: "Paneli i laboratorit",
+  },
+  {
+    label: "Raportet & PDF",
+    headline: "Raport i plotë PDF me një klik.",
+    description:
+      "Shkarkoni raportin mjekësor së bashku me të gjitha PDF-të e laboratorit — një skedar i vetëm, i gatshëm për arshivim ose printim.",
+    bullets: [
+      "Lista e raporteve me filtra: sot, java, të gjitha.",
+      "PDF nga serveri me token të sigurt — skedarët nuk janë publikë.",
+      "Përmbledhje e plotë: raport mjekësor + faqet e laboratorit.",
+    ],
+    image: tab6,
+    imageAlt: "Paneli i raporteve dhe PDF",
+  },
+  {
+    label: "Stafi & rolet",
+    headline: "Menaxhim i roleve dhe qasjes për çdo anëtar të ekipit.",
+    description:
+      "Krijoni llogari për mjekë, infermierë dhe laborator — çdo rol sheh vetëm panelin dhe menutë që i duhen.",
+    bullets: [
+      "Panele të ndara: infermier, mjek, super administrator.",
+      "Krijim përdoruesish të rinj nga admini i klinikës.",
+      "Autentikim me JWT dhe kontroll i qartë i qasjes.",
+    ],
+    image: tab7,
+    imageAlt: "Paneli i stafit dhe roleve",
+  },
+];
+
 const workflowSteps = [
   {
     step: "1",
@@ -86,7 +202,6 @@ const workflowSteps = [
   },
 ];
 
-/** Tre panelet e dashboard-it */
 const dashboardPanels = [
   {
     title: "Paneli i infermierit",
@@ -125,7 +240,6 @@ const dashboardPanels = [
   },
 ];
 
-/** Funksionalitete në detaj — çdo kartë ka gradient unik për ikonën */
 const deepFeatures = [
   {
     icon: FiUsers,
@@ -215,456 +329,612 @@ const adminBullets = [
   "Pas hyrjes, infermierët, mjekët dhe super admin zgjedhin panelin e duhur; paneli i gabuar tregon mesazh qartë nëse roli nuk përputhet.",
 ];
 
-export default function Home() {
-  return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-800 overflow-x-hidden">
-      {/* Decorative background */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-32 -right-32 w-[520px] h-[520px] rounded-full bg-gradient-to-br from-cyan-200/40 via-clinic-400/20 to-transparent blur-3xl" />
-        <div className="absolute top-1/2 -left-40 w-96 h-96 rounded-full bg-gradient-to-tr from-violet-200/30 to-transparent blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-80 h-80 rounded-full bg-cyan-100/50 blur-3xl" />
-      </div>
+const navLinks = [
+  { href: "#funksionalitete", label: "Funksionalitete" },
+  { href: "#cmime", label: "Çmimet" },
+  { href: "/apply", label: "Aplikoni", isRoute: true },
+];
 
-      {/* Nav */}
-      <header className="relative z-20 border-b border-slate-200/80 bg-white/70 backdrop-blur-xl sticky top-0 py-2">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 sm:h-18 flex items-center justify-between gap-4">
-          <Link to="/" className="flex items-center group">
-            <img
-              src={navLogo}
-              alt="iKlinika"
-              className="h-12 sm:h-14 lg:h-16 w-auto max-h-16 object-contain object-left group-hover:opacity-90 transition-opacity"
-            />
-            <span className="text-xl sm:text-2xl font-bold tracking-tight text-[#8db2c6]">
-              iKlinika
-            </span>
+const shell = "max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10";
+
+function Reveal({ children, className = "", delay = 0, scale = false }) {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const delayClass =
+    delay === 1 ? "landing-delay-1" : delay === 2 ? "landing-delay-2" : delay === 3 ? "landing-delay-3" : delay === 4 ? "landing-delay-4" : "";
+
+  return (
+    <div
+      ref={ref}
+      className={`${scale ? "landing-reveal-scale" : "landing-reveal"} ${visible ? "is-visible" : ""} ${delayClass} ${className}`}
+      style={delay && !delayClass ? { animationDelay: `${delay}s` } : undefined}
+    >
+      {children}
+    </div>
+  );
+}
+
+function SectionLabel({ children, dark = false }) {
+  return (
+    <p className={`text-[11px] font-semibold uppercase tracking-[0.22em] mb-4 ${dark ? "text-clinic-400" : "text-clinic-600"}`}>
+      {children}
+    </p>
+  );
+}
+
+function EnterpriseIcon({ icon: Icon }) {
+  return (
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 group-hover:border-clinic-300 group-hover:text-clinic-700 transition-colors duration-300">
+      <Icon size={18} strokeWidth={1.75} />
+    </div>
+  );
+}
+
+function FeatureTabCheck() {
+  return (
+    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-clinic-700 text-white shadow-sm">
+      <FiCheckCircle size={14} strokeWidth={2.5} />
+    </span>
+  );
+}
+
+export default function Home() {
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [navScrolled, setNavScrolled] = useState(false);
+  const [activeFeatureTab, setActiveFeatureTab] = useState(0);
+
+  useEffect(() => {
+    const onScroll = () => setNavScrolled(window.scrollY > 24);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const closeMobileNav = () => setMobileNavOpen(false);
+
+  const activeTab = featureTabs[activeFeatureTab];
+
+  return (
+    <div className="min-h-screen bg-[#f7f8fa] text-slate-800 overflow-x-hidden antialiased">
+      {/* ── Navigation ── */}
+      <header
+        className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
+          navScrolled
+            ? "bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-sm"
+            : "bg-white/80 backdrop-blur-sm border-b border-transparent"
+        }`}
+      >
+        <div className={`${shell} flex h-16 lg:h-[4.25rem] items-center justify-between gap-6`}>
+          <Link to="/" className="flex items-center gap-3 shrink-0" onClick={closeMobileNav}>
+            <img src={navLogo} alt="iKlinika" className="h-9 sm:h-10 lg:h-11 w-auto object-contain" />
+            <span className="text-lg sm:text-xl font-semibold tracking-tight text-clinic-700">iKlinika</span>
           </Link>
-          <nav className="flex items-center gap-2 sm:gap-3">
-            <a
-              href="#funksionalitete"
-              className="hidden md:inline-flex px-3 py-2 text-sm font-semibold text-slate-600 hover:text-clinic-400 transition-colors"
-            >
-              Funksionalitete
-            </a>
-            <a
-              href="#cmime"
-              className="hidden md:inline-flex px-3 py-2 text-sm font-semibold text-slate-600 hover:text-clinic-400 transition-colors"
-            >
-              Çmimet
-            </a>
-            <Link
-              to="/apply"
-              className="hidden sm:inline-flex px-4 py-2 text-sm font-semibold text-slate-600 hover:text-clinic-400 transition-colors"
-            >
-              Aplikoni
-            </Link>
+
+          <nav className="hidden md:flex items-center gap-8">
+            {navLinks.map(({ href, label, isRoute }) =>
+              isRoute ? (
+                <Link
+                  key={href}
+                  to={href}
+                  className="text-[13px] font-medium text-slate-600 hover:text-slate-900 transition-colors"
+                >
+                  {label}
+                </Link>
+              ) : (
+                <a
+                  key={href}
+                  href={href}
+                  className="text-[13px] font-medium text-slate-600 hover:text-slate-900 transition-colors"
+                >
+                  {label}
+                </a>
+              )
+            )}
+          </nav>
+
+          <div className="hidden md:flex items-center gap-5">
             <Link
               to="/login"
-              className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 shadow-lg shadow-slate-900/15 transition-all hover:-translate-y-0.5"
+              className="text-[13px] font-medium text-slate-600 hover:text-clinic-800 transition-colors"
             >
-              Hyr në sistem
-              <FiArrowRight className="opacity-80" size={18} />
+              Hyr
             </Link>
-          </nav>
+            <Link
+              to="/apply"
+              className="inline-flex items-center gap-2 h-10 px-5 rounded-full bg-clinic-700 text-white text-[13px] font-semibold hover:bg-clinic-800 transition-colors shadow-sm"
+            >
+              Fillo tani
+              <FiArrowRight size={15} />
+            </Link>
+          </div>
+
+          <button
+            type="button"
+            className="md:hidden flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700"
+            aria-label={mobileNavOpen ? "Mbyll menunë" : "Hap menunë"}
+            onClick={() => setMobileNavOpen((o) => !o)}
+          >
+            {mobileNavOpen ? <FiX size={20} /> : <FiMenu size={20} />}
+          </button>
         </div>
+
+        {mobileNavOpen && (
+          <div className="md:hidden border-t border-slate-200 bg-white">
+            <nav className={`${shell} py-4 flex flex-col gap-1`}>
+              {navLinks.map(({ href, label, isRoute }) =>
+                isRoute ? (
+                  <Link key={href} to={href} onClick={closeMobileNav} className="px-3 py-3 text-sm font-medium text-slate-700">
+                    {label}
+                  </Link>
+                ) : (
+                  <a key={href} href={href} onClick={closeMobileNav} className="px-3 py-3 text-sm font-medium text-slate-700">
+                    {label}
+                  </a>
+                )
+              )}
+              <Link
+                to="/login"
+                onClick={closeMobileNav}
+                className="mt-2 flex h-11 items-center justify-center rounded-full border border-slate-200 text-slate-700 text-sm font-semibold"
+              >
+                Hyr
+              </Link>
+              <Link
+                to="/apply"
+                onClick={closeMobileNav}
+                className="flex h-11 items-center justify-center rounded-full bg-clinic-700 text-white text-sm font-semibold"
+              >
+                Fillo tani
+              </Link>
+            </nav>
+          </div>
+        )}
       </header>
 
-      <main className="relative z-10">
-        {/* Hero */}
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-12 sm:pt-20 pb-16 sm:pb-24">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            <div>
-              <p className="inline-flex items-center gap-2 text-sm font-semibold text-clinic-400 mb-4">
-                <span className="h-px w-8 bg-clinic-400/60" />
-                Platformë për klinika
-              </p>
-              <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] font-extrabold text-slate-900 leading-[1.1] tracking-tight mb-6">
-                Menaxhoni klinikën{" "}
-                <span className="bg-gradient-to-r from-clinic-400 via-cyan-600 to-teal-600 bg-clip-text text-transparent">
-                  më thjesht
-                </span>
-                , në një vend.
+      <main>
+        {/* ── Hero ── */}
+        <section className="relative pt-28 sm:pt-32 lg:pt-36 pb-12 lg:pb-20 overflow-hidden bg-white">
+          <div className="absolute inset-x-0 top-0 h-[480px] bg-gradient-to-b from-clinic-50/60 to-transparent pointer-events-none" />
+
+          <div className={`relative z-10 ${shell} w-full`}>
+            <div className="max-w-3xl mx-auto text-center landing-hero-enter">
+              <h1 className="text-[2.15rem] sm:text-5xl lg:text-[3.25rem] font-semibold leading-[1.1] tracking-tight text-clinic-800 mb-6">
+                Menaxhoni operacionet në një platformë të unifikuar
               </h1>
-              <p className="text-lg text-slate-600 leading-relaxed max-w-xl mb-10">
+              <p className="text-base sm:text-lg text-slate-500 leading-relaxed mb-10 max-w-2xl mx-auto">
                 iKlinika lidh recepsionin, infermierët, mjekët dhe laboratorin në një panel të sigurt —
-                më pak letër, më shumë kohë për pacientët. Më poshtë gjeni të gjitha funksionet që ofron platforma jonë.
+                organizoni rrjedhën e punës, ndiqni progresin dhe menaxhoni aktivitetet e përditshme në një hapësirë të përbashkët.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center mb-14 lg:mb-16">
                 <Link
                   to="/login"
-                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-clinic-400 to-clinic-500 text-white text-base font-bold shadow-xl shadow-clinic-400/30 hover:shadow-2xl hover:shadow-clinic-400/35 hover:-translate-y-0.5 transition-all"
+                  className="inline-flex h-12 items-center justify-center gap-2 px-7 rounded-full bg-clinic-700 text-white text-sm font-semibold hover:bg-clinic-800 transition-colors shadow-sm"
                 >
                   Hyr në sistem
-                  <FiArrowRight size={20} />
+                  <FiArrowRight size={16} />
                 </Link>
-                <Link
-                  to="/apply"
-                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl border-2 border-slate-200 bg-white text-slate-800 text-base font-bold hover:border-clinic-400/50 hover:bg-slate-50/80 transition-all"
+                <a
+                  href="#funksionalitete"
+                  className="inline-flex h-12 items-center justify-center gap-2 px-7 rounded-full border border-slate-200 bg-white text-slate-700 text-sm font-semibold hover:bg-slate-50 hover:border-slate-300 transition-colors"
                 >
-                  Aplikoni për klinikë
-                </Link>
+                  <FiPlay size={16} className="text-clinic-600" />
+                  Shiko funksionalitetet
+                </a>
               </div>
-
-              <ul className="mt-10 space-y-3">
-                {highlights.map((text) => (
-                  <li key={text} className="flex items-start gap-3 text-slate-600 text-sm sm:text-base">
-                    <FiCheckCircle className="text-emerald-500 flex-shrink-0 mt-0.5" size={20} />
-                    {text}
-                  </li>
-                ))}
-              </ul>
             </div>
 
-            <div className="relative lg:pl-4">
-              <div className="relative rounded-[2rem] overflow-hidden shadow-2xl shadow-slate-900/10 ring-1 ring-slate-200/80 aspect-[4/5] sm:aspect-auto sm:min-h-[420px] lg:min-h-[480px]">
+            <div className="relative landing-hero-image max-w-5xl mx-auto">
+              <div className="landing-hero-dashboard rounded-2xl overflow-hidden border border-slate-200/80 bg-white">
                 <img
-                  src={entryImg}
-                  alt="Kujdes shëndetësor"
-                  className="w-full h-full object-cover"
+                  src={IMAGES.hero}
+                  alt={IMAGES.heroAlt}
+                  className="w-full h-auto block"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 via-transparent to-transparent" />
-                <div className="absolute bottom-6 left-6 right-6 text-white">
-                  <p className="text-sm font-medium text-white/90 mb-1">E ndërtuar për ekipet mjekësore</p>
-                  <p className="text-lg font-bold">Rrjedhë e qartë, nga vizita te raporti.</p>
+              </div>
+            </div>
+
+            <ul className="mt-12 lg:mt-16 grid sm:grid-cols-3 gap-4 lg:gap-6 max-w-4xl mx-auto">
+              {highlights.map((text) => (
+                <li
+                  key={text}
+                  className="flex items-start gap-3 rounded-xl border border-slate-200/80 bg-slate-50/50 px-4 py-4 text-sm text-slate-600 leading-relaxed"
+                >
+                  <FiCheckCircle className="text-clinic-600 shrink-0 mt-0.5" size={16} />
+                  {text}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* ── Feature tabs ── */}
+        <section id="funksionalitete" className="scroll-mt-24 py-16 lg:py-24 bg-white border-b border-slate-200/80">
+          <div className={shell}>
+            <div className="rounded-full bg-slate-100/90 p-1.5 flex gap-0.5 overflow-x-auto scrollbar-none mb-6 lg:mb-8">
+              {featureTabs.map((tab, index) => (
+                <button
+                  key={tab.label}
+                  type="button"
+                  onClick={() => setActiveFeatureTab(index)}
+                  className={`shrink-0 whitespace-nowrap rounded-full px-4 sm:px-5 py-2.5 text-[13px] sm:text-sm font-medium transition-all duration-200 ${
+                    activeFeatureTab === index
+                      ? "bg-clinic-700 text-white shadow-sm"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-6 sm:p-8 lg:p-10 xl:p-12">
+              <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 xl:gap-20 items-start">
+                <div className="min-w-0">
+                  <h2 className="text-2xl sm:text-3xl lg:text-[2rem] font-semibold text-slate-900 tracking-tight leading-snug mb-4">
+                    {activeTab.headline}
+                  </h2>
+                  <p className="text-slate-500 text-base sm:text-[17px] leading-relaxed mb-8 max-w-lg">
+                    {activeTab.description}
+                  </p>
+                  <Link
+                    to="/apply"
+                    className="inline-flex h-11 items-center justify-center gap-2 px-6 rounded-full bg-clinic-700 text-white text-sm font-semibold hover:bg-clinic-800 transition-colors shadow-sm"
+                  >
+                    Eksploro më shumë
+                    <FiArrowRight size={15} />
+                  </Link>
                 </div>
+
+                <ul className="min-w-0 divide-y divide-slate-200/90">
+                  {activeTab.bullets.map((bullet) => (
+                    <li key={bullet} className="flex items-start gap-4 py-5 first:pt-0 last:pb-0">
+                      <FeatureTabCheck />
+                      <span className="text-[15px] sm:text-base text-slate-600 leading-relaxed pt-0.5">{bullet}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
 
+              <div className="mt-10 lg:mt-12 landing-hero-dashboard rounded-xl overflow-hidden border border-slate-200/80 bg-slate-50">
+                <img
+                  key={activeFeatureTab}
+                  src={activeTab.image}
+                  alt={activeTab.imageAlt}
+                  className="w-full h-auto block"
+                  loading="lazy"
+                />
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Overview cards */}
-        <section id="funksionalitete" className="scroll-mt-20 border-t border-slate-200/80 bg-white/60 backdrop-blur-sm py-16 sm:py-20">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
-              <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">
+        {/* ── Overview ── */}
+        <section className="py-24 lg:py-32 bg-white border-b border-slate-200/80">
+          <div className={shell}>
+            <Reveal className="max-w-2xl mb-16 lg:mb-20">
+              <SectionLabel>Përmbledhje</SectionLabel>
+              <h2 className="text-3xl sm:text-4xl font-semibold text-slate-900 tracking-tight mb-4">
                 Çfarë ofron iKlinika
               </h2>
-              <p className="text-slate-600 text-lg">
+              <p className="text-slate-600 text-lg leading-relaxed">
                 Një përmbledhje e shpejtë — më poshtë zgjerojmë çdo pjesë me hapa konkretë.
               </p>
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {features.map(({ icon: Icon, title, desc, color }) => (
-                <div
-                  key={title}
-                  className="group rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm hover:shadow-lg hover:border-clinic-400/20 hover:-translate-y-1 transition-all duration-300"
-                >
-                  <div className={`inline-flex p-3 rounded-xl ${color} mb-4`}>
-                    <Icon size={24} />
-                  </div>
-                  <h3 className="text-lg font-bold text-slate-900 mb-2">{title}</h3>
-                  <p className="text-slate-600 text-sm leading-relaxed">{desc}</p>
-                </div>
+            </Reveal>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-slate-200 rounded-xl overflow-hidden border border-slate-200">
+              {features.map(({ icon: Icon, title, desc }, i) => (
+                <Reveal key={title} delay={i + 1} className="group bg-white p-8 lg:p-9 hover:bg-slate-50/80 transition-colors duration-300">
+                  <EnterpriseIcon icon={Icon} />
+                  <h3 className="mt-6 text-base font-semibold text-slate-900 mb-2">{title}</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">{desc}</p>
+                </Reveal>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Workflow */}
-        <section className="py-16 sm:py-24 bg-gradient-to-b from-slate-50 to-white border-y border-slate-200/60">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <div className="max-w-3xl mb-12 sm:mb-16">
-              <p className="text-sm font-bold text-clinic-400 uppercase tracking-wider mb-2">Rrjedha e punës</p>
-              <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">
-                Nga vizita te raporti i plotë PDF
-              </h2>
-              <p className="text-slate-600 text-lg leading-relaxed">
-                Platforma pasqyron procesin real në klinikë: hapja e rastit, matjet nga infermieri, konsultimi dhe dokumentimi nga mjeku,
-                plus rezultatet e laboratorit që bashkohen automatikisht në një raport të vetëm kur shkarkoni PDF nga sistemi.
-              </p>
-            </div>
-            <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
-              {workflowSteps.map(({ step, title, desc, icon: Icon }) => (
-                <div
-                  key={step}
-                  className="relative flex gap-5 p-6 sm:p-8 rounded-2xl bg-white border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-gradient-to-br from-clinic-400 to-clinic-600 text-white font-extrabold text-lg flex items-center justify-center shadow-lg shadow-clinic-400/25">
-                    {step}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Icon className="text-clinic-400" size={20} />
-                      <h3 className="text-xl font-bold text-slate-900">{title}</h3>
-                    </div>
-                    <p className="text-slate-600 leading-relaxed">{desc}</p>
-                  </div>
+        {/* ── Workflow ── */}
+        <section className="py-24 lg:py-32 bg-[#f7f8fa]">
+          <div className={shell}>
+            <div className="grid lg:grid-cols-12 gap-16 lg:gap-20 items-start">
+              <div className="lg:col-span-5 lg:sticky lg:top-28">
+                <Reveal>
+                  <SectionLabel>Rrjedha e punës</SectionLabel>
+                  <h2 className="text-3xl sm:text-4xl font-semibold text-slate-900 tracking-tight mb-5">
+                    Nga vizita te raporti i plotë PDF
+                  </h2>
+                  <p className="text-slate-600 text-lg leading-relaxed mb-10">
+                    Platforma pasqyron procesin real në klinikë: hapja e rastit, matjet nga infermieri, konsultimi dhe dokumentimi nga mjeku,
+                    plus rezultatet e laboratorit që bashkohen automatikisht në një raport të vetëm kur shkarkoni PDF nga sistemi.
+                  </p>
+                </Reveal>
+                <Reveal scale className="rounded-xl overflow-hidden border border-slate-200 shadow-sm aspect-[4/3]">
+                  <img
+                    src={IMAGES.workflow}
+                    alt={IMAGES.workflowAlt}
+                    className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-700"
+                    loading="lazy"
+                  />
+                </Reveal>
+              </div>
+
+              <div className="lg:col-span-7 relative">
+                <div className="absolute left-[19px] top-2 bottom-2 w-px bg-slate-200 hidden sm:block" />
+                <div className="space-y-0">
+                  {workflowSteps.map(({ step, title, desc, icon: Icon }, i) => (
+                    <Reveal key={step} delay={i + 1}>
+                      <div className="group relative flex gap-6 sm:gap-8 py-8 border-b border-slate-200/80 last:border-0">
+                        <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-slate-900 bg-white text-xs font-bold text-slate-900 group-hover:bg-slate-900 group-hover:text-white transition-colors duration-300">
+                          {step}
+                        </div>
+                        <div className="pt-0.5">
+                          <div className="flex items-center gap-2.5 mb-2">
+                            <Icon className="text-slate-400" size={16} />
+                            <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
+                          </div>
+                          <p className="text-slate-600 leading-relaxed text-[15px]">{desc}</p>
+                        </div>
+                      </div>
+                    </Reveal>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Three panels */}
-        <section className="py-16 sm:py-24 bg-white">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
-              <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">
+        {/* ── Panels ── */}
+        <section className="py-24 lg:py-32 bg-white border-y border-slate-200/80">
+          <div className={shell}>
+            <Reveal className="max-w-2xl mx-auto text-center mb-16 lg:mb-20">
+              <SectionLabel>Arkitektura e platformës</SectionLabel>
+              <h2 className="text-3xl sm:text-4xl font-semibold text-slate-900 tracking-tight mb-4">
                 Tre panele, një platformë
               </h2>
-              <p className="text-slate-600 text-lg">
+              <p className="text-slate-600 text-lg leading-relaxed">
                 Pas hyrjes, përdoruesit me rol infermier, mjek ose super administrator zgjedhin panelin e tyre.
                 Menuja dhe qasja përshtaten — për shembull aplikimet e klinikave të reja shfaqen vetëm në panelin e super administratorit.
               </p>
-            </div>
-            <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
-              {dashboardPanels.map((panel) => (
-                <div
-                  key={panel.title}
-                  className={`rounded-2xl border-2 p-6 sm:p-8 ${panel.accent} flex flex-col h-full`}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className={`w-2 h-2 rounded-full ${panel.dot}`} />
-                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{panel.subtitle}</span>
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-5">{panel.title}</h3>
-                  <ul className="space-y-3 flex-1">
-                    {panel.items.map((item) => (
-                      <li key={item} className="flex gap-3 text-slate-700 text-sm leading-relaxed">
-                        <FiCheckCircle className="text-emerald-500 flex-shrink-0 mt-0.5" size={18} />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+            </Reveal>
+
+            <div className="grid lg:grid-cols-3 gap-6">
+              {dashboardPanels.map((panel, i) => (
+                <Reveal key={panel.title} delay={i + 1}>
+                  <article className="h-full flex flex-col bg-white border border-slate-200 rounded-xl p-8 hover:border-slate-300 hover:shadow-[0_8px_30px_rgb(0_0_0_/0.06)] transition-all duration-300">
+                    <div className="flex items-center gap-2 mb-6">
+                      <span className={`h-1.5 w-1.5 rounded-full ${panel.dot}`} />
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{panel.subtitle}</span>
+                    </div>
+                    <h3 className="text-xl font-semibold text-slate-900 mb-6">{panel.title}</h3>
+                    <ul className="space-y-3.5 flex-1">
+                      {panel.items.map((item) => (
+                        <li key={item} className="flex gap-3 text-sm text-slate-600 leading-relaxed">
+                          <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-slate-400" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </article>
+                </Reveal>
               ))}
             </div>
-            <div className="mt-10 rounded-2xl bg-slate-50 border border-slate-200 p-6 sm:p-8">
-              <div className="flex items-start gap-3 mb-3">
-                <FiMonitor className="text-clinic-400 flex-shrink-0 mt-1" size={22} />
+
+            <Reveal className="mt-8">
+              <div className="flex flex-col sm:flex-row gap-6 rounded-xl border border-slate-200 bg-slate-50/50 p-8">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600">
+                  <FiMonitor size={20} />
+                </div>
                 <div>
-                  <h4 className="font-bold text-slate-900 mb-2">Administratori i klinikës & tekniku i laboratorit</h4>
-                  <ul className="space-y-2 text-slate-600 text-sm leading-relaxed">
+                  <h4 className="font-semibold text-slate-900 mb-3">Administratori i klinikës & tekniku i laboratorit</h4>
+                  <ul className="space-y-2 text-sm text-slate-600 leading-relaxed">
                     {adminBullets.map((b) => (
-                      <li key={b}>• {b}</li>
+                      <li key={b}>{b}</li>
                     ))}
                   </ul>
                 </div>
               </div>
-            </div>
+            </Reveal>
           </div>
         </section>
 
-        {/* Deep feature grid — premium cards */}
-        <section className="relative  py-20 sm:py-28 overflow-hidden border-t border-slate-200/80">
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-100 via-[#eef6f9] to-slate-50" />
-          <div className="absolute inset-0 opacity-40 [background-image:radial-gradient(circle_at_1px_1px,rgb(148_163_184_/_22%)_1px,transparent_0)] [background-size:24px_24px]" />
-          <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
-            <div className="text-center max-w-2xl mx-auto mb-14 sm:mb-20">
-              <span className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-clinic-400 mb-3">
-                Platforma juaj
-              </span>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">
-                Funksionalitete në detaj
-              </h2>
-              <p className="text-slate-600 text-lg leading-relaxed">
-                Çdo veçori më poshtë është pjesë e panelit të punës — dizajnuar për t’u lexuar lehtë dhe për t’ju kujtuar vlerën që merrni me iKlinika.
-              </p>
+        {/* ── Deep features + image split ── */}
+        <section className="py-24 lg:py-32 bg-slate-950 text-white overflow-hidden">
+          <div className={shell}>
+            <div className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-center mb-20">
+              <Reveal>
+                <SectionLabel dark>Platforma juaj</SectionLabel>
+                <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
+                  Funksionalitete në detaj
+                </h2>
+                <p className="text-slate-400 text-lg leading-relaxed">
+                  Çdo veçori më poshtë është pjesë e panelit të punës — dizajnuar për t’u lexuar lehtë dhe për t’ju kujtuar vlerën që merrni me iKlinika.
+                </p>
+              </Reveal>
+              <Reveal scale className="rounded-xl overflow-hidden border border-white/10 aspect-[16/10]">
+                <img
+                  src={IMAGES.platform}
+                  alt={IMAGES.platformAlt}
+                  className="w-full h-full object-cover opacity-90 hover:opacity-100 hover:scale-[1.02] transition-all duration-700"
+                  loading="lazy"
+                />
+              </Reveal>
             </div>
-            <div className="grid sm:grid-cols-1 lg:grid-cols-3 xl:grid-cols-3 gap-6 sm:gap-7">
-              {deepFeatures.map(({ icon: Icon, title, text, bar, iconBg, glow }) => (
-                <div
-                  key={title}
-                  className={`
-                    group relative flex flex-col rounded-2xl bg-white/90 backdrop-blur-sm
-                    border border-white shadow-lg ${glow}
-                    hover:shadow-2xl hover:-translate-y-2 hover:border-clinic-400/25
-                    transition-all duration-500 ease-out
-                  `}
-                >
-                  <div
-                    className={`h-1.5 w-full rounded-t-2xl bg-gradient-to-r ${bar} shrink-0`}
-                    aria-hidden
-                  />
-                  <div className="p-6 sm:p-7 flex flex-col flex-1 pt-6">
-                    <div
-                      className={`
-                        mb-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl
-                        bg-gradient-to-br ${iconBg} text-white shadow-lg
-                        ring-4 ring-white/80 group-hover:scale-105 group-hover:rotate-3
-                        transition-transform duration-500
-                      `}
-                    >
-                      <Icon size={26} strokeWidth={1.75} />
+
+            <div className="grid sm:grid-cols-2 gap-px bg-white/10 rounded-xl overflow-hidden border border-white/10">
+              {deepFeatures.map(({ icon: Icon, title, text }, i) => (
+                <Reveal key={title} delay={(i % 4) + 1}>
+                  <div className="group flex gap-5 bg-slate-950 p-7 sm:p-8 hover:bg-slate-900/80 transition-colors duration-300">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/10 bg-white/5 text-slate-400 group-hover:text-clinic-300 group-hover:border-clinic-500/30 transition-colors">
+                      <Icon size={16} />
                     </div>
-                    <h3 className="font-bold text-slate-900 mb-3 text-base sm:text-lg leading-snug group-hover:text-[#5a7a94] transition-colors">
-                      {title}
-                    </h3>
-                    <p className="text-slate-600 text-sm leading-relaxed flex-1 border-t border-slate-100/80 pt-4 mt-auto">
-                      {text}
-                    </p>
+                    <div>
+                      <h3 className="font-semibold text-white mb-1.5 text-[15px]">{title}</h3>
+                      <p className="text-sm text-slate-400 leading-relaxed">{text}</p>
+                    </div>
                   </div>
-                  <div
-                    className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-white/0 via-clinic-400/[0.04] to-cyan-500/[0.06]"
-                    aria-hidden
-                  />
-                </div>
+                </Reveal>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Pricing — Albanian */}
-        <section id="cmime" className="scroll-mt-20 py-20 sm:py-24 bg-white border-t border-slate-200/80">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6">
-            <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-14">
-              <span className="inline-flex items-center gap-2 text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-4 py-1.5 rounded-full mb-4">
-                <FiTag className="text-emerald-600" size={16} />
+        {/* ── Pricing ── */}
+        <section id="cmime" className="scroll-mt-20 py-24 lg:py-32 bg-[#f7f8fa]">
+          <div className={`${shell} max-w-5xl`}>
+            <Reveal className="text-center max-w-2xl mx-auto mb-16">
+              <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">
+                <FiTag size={14} />
                 Ofertë e qartë
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-semibold text-slate-900 tracking-tight mb-4">
                 Çmime & provë falas
               </h2>
               <p className="text-slate-600 text-lg leading-relaxed">
                 Filloni pa stres: prova nuk kërkon kartë bankare. Pas provës, zgjidhni planin që ju përshtatet — me mbështetje të vazhdueshme dhe pagesë të drejtpërdrejtë, jo abonim automatik me kartë në aplikacion.
               </p>
-            </div>
+            </Reveal>
 
-            {/* Trial banner */}
-            <div className="mb-10 rounded-3xl border-2 border-dashed border-clinic-400/40 bg-gradient-to-br from-clinic-400/[0.08] via-cyan-50/80 to-white p-8 sm:p-10 text-center shadow-inner">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-clinic-400 to-teal-600 text-white shadow-lg shadow-clinic-400/30 mb-4">
-                <FiCalendar size={28} strokeWidth={1.5} />
+            <Reveal className="mb-10 rounded-xl border border-slate-200 bg-white p-8 sm:p-10 text-center">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-slate-900 text-white mb-5">
+                <FiCalendar size={22} />
               </div>
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2">
+              <h3 className="text-2xl sm:text-3xl font-semibold text-slate-900 mb-3">
                 2 muaj falas për të provuar
               </h3>
-              <p className="text-slate-700 text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
+              <p className="text-slate-600 text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
                 Përdorni të gjitha funksionet e platformës për <strong>dy muaj</strong>, pa pagesë dhe{" "}
                 <strong>pa nevojë për kartë bankare</strong> për të filluar. Testoni me ekipin tuaj para se të vendosni.
               </p>
-            </div>
+            </Reveal>
 
-            <div className="grid md:grid-cols-2 gap-6 lg:gap-8 items-stretch">
-              {/* Annual — featured */}
-              <div className="relative rounded-3xl border-2 border-clinic-400 bg-gradient-to-b from-white to-slate-50/90 p-8 sm:p-10 shadow-xl shadow-clinic-400/15 flex flex-col">
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-clinic-400 to-teal-600 text-white text-xs font-bold uppercase tracking-wide shadow-md">
-                  Më i zgjedhur
-                </span>
-                <h3 className="text-xl font-bold text-slate-900 mt-4 mb-1">Abonim vjetor</h3>
-                <p className="text-slate-500 text-sm mb-6">Një vit i plotë me mbështetje gjatë gjithë kohës</p>
-                <div className="flex items-baseline gap-1 mb-2">
-                  <span className="text-5xl sm:text-6xl font-extrabold text-slate-900 tracking-tight">120</span>
-                  <span className="text-2xl font-bold text-slate-700">€</span>
-                  <span className="text-slate-600 font-medium ml-1">/ vit</span>
+            <div className="grid md:grid-cols-2 gap-6">
+              <Reveal delay={1}>
+                <div className="relative h-full flex flex-col rounded-xl border-2 border-slate-900 bg-white p-8 sm:p-10">
+                  <span className="absolute top-4 right-4 text-[10px] font-bold uppercase tracking-wider text-white bg-slate-900 px-2.5 py-1 rounded">
+                    Më i zgjedhur
+                  </span>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-1">Abonim vjetor</h3>
+                  <p className="text-slate-500 text-sm mb-8">Një vit i plotë me mbështetje gjatë gjithë kohës</p>
+                  <div className="flex items-baseline gap-1 mb-2">
+                    <span className="text-5xl font-semibold text-slate-900 tracking-tight">120</span>
+                    <span className="text-xl font-semibold text-slate-700">€</span>
+                    <span className="text-slate-500 text-sm ml-1">/ vit</span>
+                  </div>
+                  <p className="text-slate-600 text-sm mb-8 leading-relaxed">
+                    Pas periudhës së provës, <strong>120 euro në vit</strong> për një vit përdorimi, me{" "}
+                    <strong>mbështetje teknike dhe këshillim gjatë gjithë kohës</strong> — për çdo pyetje ose ndihmë me platformën.
+                  </p>
+                  <ul className="space-y-3 text-sm text-slate-700 mb-8 flex-1">
+                    <li className="flex gap-2.5"><FiCheckCircle className="text-slate-900 shrink-0 mt-0.5" size={16} />Çmim i fiksuar për 12 muaj</li>
+                    <li className="flex gap-2.5"><FiCheckCircle className="text-slate-900 shrink-0 mt-0.5" size={16} />Mbështetje e vazhdueshme përgjatë vitit</li>
+                    <li className="flex gap-2.5"><FiCheckCircle className="text-slate-900 shrink-0 mt-0.5" size={16} />Pagesë e drejtpërdrejtë (jo me kartë të lidhur në app)</li>
+                  </ul>
+                  <Link to="/apply" className="flex h-11 items-center justify-center rounded-lg bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition-colors">
+                    Aplikoni dhe na kontaktoni
+                  </Link>
                 </div>
-                <p className="text-slate-600 text-sm mb-8 leading-relaxed">
-                  Pas periudhës së provës, <strong>120 euro në vit</strong> për një vit përdorimi, me{" "}
-                  <strong>mbështetje teknike dhe këshillim gjatë gjithë kohës</strong> — për çdo pyetje ose ndihmë me platformën.
-                </p>
-                <ul className="space-y-3 text-slate-700 text-sm mb-8 flex-1">
-                  <li className="flex gap-2">
-                    <FiCheckCircle className="text-emerald-500 flex-shrink-0 mt-0.5" size={18} />
-                    Çmim i fiksuar për 12 muaj
-                  </li>
-                  <li className="flex gap-2">
-                    <FiCheckCircle className="text-emerald-500 flex-shrink-0 mt-0.5" size={18} />
-                    Mbështetje e vazhdueshme përgjatë vitit
-                  </li>
-                  <li className="flex gap-2">
-                    <FiCheckCircle className="text-emerald-500 flex-shrink-0 mt-0.5" size={18} />
-                    Pagesë e drejtpërdrejtë (jo me kartë të lidhur në app)
-                  </li>
-                </ul>
-                <Link
-                  to="/apply"
-                  className="inline-flex items-center justify-center w-full py-3.5 rounded-xl bg-gradient-to-r from-clinic-400 to-clinic-500 text-white font-bold hover:shadow-lg transition-shadow"
-                >
-                  Aplikoni dhe na kontaktoni
-                </Link>
-              </div>
+              </Reveal>
 
-              {/* Monthly */}
-              <div className="rounded-3xl border border-slate-200 bg-white p-8 sm:p-10 shadow-lg flex flex-col hover:border-slate-300 transition-colors">
-                <h3 className="text-xl font-bold text-slate-900 mb-1">Abonim mujor</h3>
-                <p className="text-slate-500 text-sm mb-6">Fleksibilitet, një muaj në një kohë</p>
-                <div className="flex items-baseline gap-1 mb-2">
-                  <span className="text-5xl sm:text-6xl font-extrabold text-slate-900 tracking-tight">25</span>
-                  <span className="text-2xl font-bold text-slate-700">€</span>
-                  <span className="text-slate-600 font-medium ml-1">/ muaj</span>
+              <Reveal delay={2}>
+                <div className="h-full flex flex-col rounded-xl border border-slate-200 bg-white p-8 sm:p-10 hover:border-slate-300 transition-colors">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-1">Abonim mujor</h3>
+                  <p className="text-slate-500 text-sm mb-8">Fleksibilitet, një muaj në një kohë</p>
+                  <div className="flex items-baseline gap-1 mb-2">
+                    <span className="text-5xl font-semibold text-slate-900 tracking-tight">25</span>
+                    <span className="text-xl font-semibold text-slate-700">€</span>
+                    <span className="text-slate-500 text-sm ml-1">/ muaj</span>
+                  </div>
+                  <p className="text-slate-600 text-sm mb-8 leading-relaxed">
+                    Nëse preferoni të paguani <strong>25 euro në muaj</strong>, mund ta përdorni këtë opsion. I njëjti parim:{" "}
+                    <strong>pagesa bëhet drejtpërdrejt</strong> (sipas marrëveshjes — faturë, transfertë ose në zyrë), jo përmes kartës së ruajtur në aplikacion.
+                  </p>
+                  <ul className="space-y-3 text-sm text-slate-700 mb-8 flex-1">
+                    <li className="flex gap-2.5"><FiCheckCircle className="text-slate-400 shrink-0 mt-0.5" size={16} />Pa angazhim të fshehur me kartë</li>
+                    <li className="flex gap-2.5"><FiCheckCircle className="text-slate-400 shrink-0 mt-0.5" size={16} />Mbështetje gjatë përdorimit</li>
+                    <li className="flex gap-2.5"><FiCheckCircle className="text-slate-400 shrink-0 mt-0.5" size={16} />Transparencë në çmime</li>
+                  </ul>
+                  <Link to="/apply" className="flex h-11 items-center justify-center rounded-lg border border-slate-200 text-slate-800 text-sm font-semibold hover:border-slate-400 hover:bg-slate-50 transition-colors">
+                    Mësoni më shumë duke aplikuar
+                  </Link>
                 </div>
-                <p className="text-slate-600 text-sm mb-8 leading-relaxed">
-                  Nëse preferoni të paguani <strong>25 euro në muaj</strong>, mund ta përdorni këtë opsion. I njëjti parim:{" "}
-                  <strong>pagesa bëhet drejtpërdrejt</strong> (sipas marrëveshjes — faturë, transfertë ose në zyrë), jo përmes kartës së ruajtur në aplikacion.
-                </p>
-                <ul className="space-y-3 text-slate-700 text-sm mb-8 flex-1">
-                  <li className="flex gap-2">
-                    <FiCheckCircle className="text-clinic-400 flex-shrink-0 mt-0.5" size={18} />
-                    Pa angazhim të fshehur me kartë
-                  </li>
-                  <li className="flex gap-2">
-                    <FiCheckCircle className="text-clinic-400 flex-shrink-0 mt-0.5" size={18} />
-                    Mbështetje gjatë përdorimit
-                  </li>
-                  <li className="flex gap-2">
-                    <FiCheckCircle className="text-clinic-400 flex-shrink-0 mt-0.5" size={18} />
-                    Transparencë në çmime
-                  </li>
-                </ul>
-                <Link
-                  to="/apply"
-                  className="inline-flex items-center justify-center w-full py-3.5 rounded-xl border-2 border-slate-200 text-slate-800 font-bold hover:border-clinic-400 hover:bg-slate-50 transition-colors"
-                >
-                  Mësoni më shumë duke aplikuar
-                </Link>
-              </div>
+              </Reveal>
             </div>
 
-            <div className="mt-10 rounded-2xl bg-slate-900 text-slate-300 px-6 py-5 sm:px-8 sm:py-6 text-center text-sm sm:text-base leading-relaxed">
-              <p className="max-w-3xl mx-auto">
-                <strong className="text-white">Pagesa “live” (e drejtpërdrejtë):</strong> nuk ofrojmë pagesë automatike me kartë brenda aplikacionit.
-                Faturimi dhe pagesa rregullohen drejtpërdrejt me ju — për shembull me faturë, transfertë bankare ose në takim — që të keni kontroll të plotë dhe transparencë.
-              </p>
-            </div>
+            <Reveal className="mt-8">
+              <div className="rounded-xl border border-slate-200 bg-white px-6 py-5 sm:px-8 sm:py-6 text-center text-sm sm:text-base text-slate-600 leading-relaxed">
+                <p className="max-w-3xl mx-auto">
+                  <strong className="text-slate-900">Pagesa “live” (e drejtpërdrejtë):</strong> nuk ofrojmë pagesë automatike me kartë brenda aplikacionit.
+                  Faturimi dhe pagesa rregullohen drejtpërdrejt me ju — për shembull me faturë, transfertë bankare ose në takim — që të keni kontroll të plotë dhe transparencë.
+                </p>
+              </div>
+            </Reveal>
           </div>
         </section>
 
-        {/* CTA strip */}
-        <section className="py-16 sm:py-20 px-4 sm:px-6">
-          <div className="max-w-4xl mx-auto rounded-[2rem] bg-gradient-to-br from-slate-900 via-slate-800 to-[#2d4a5e] px-8 sm:px-12 py-12 sm:py-16 text-center shadow-2xl shadow-slate-900/20">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
-              Gati të filloni?
-            </h2>
-            <p className="text-slate-300 mb-8 max-w-lg mx-auto">
-              Hyni me llogarinë tuaj ose aplikoni për të hapur një klinikë të re në platformë. Ekipi shqyrton aplikimin dhe ju njofton.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link
-                to="/login"
-                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-white text-slate-900 font-bold hover:bg-slate-100 transition-colors"
-              >
-                Hyr në sistem
-              </Link>
-              <Link
-                to="/apply"
-                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border-2 border-white/30 text-white font-bold hover:bg-white/10 transition-colors"
-              >
-                Aplikoni për klinikë
-              </Link>
-            </div>
+        {/* ── CTA ── */}
+        <section className="relative py-28 lg:py-36 overflow-hidden">
+          <img
+            src={IMAGES.cta}
+            alt={IMAGES.ctaAlt}
+            className="absolute inset-0 w-full h-full object-cover"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-slate-950/85" />
+          <div className={`relative ${shell} max-w-3xl mx-auto text-center`}>
+            <Reveal>
+              <h2 className="text-3xl sm:text-4xl font-semibold text-white mb-4 tracking-tight">
+                Gati të filloni?
+              </h2>
+              <p className="text-slate-300 mb-10 text-lg leading-relaxed">
+                Hyni me llogarinë tuaj ose aplikoni për të hapur një klinikë të re në platformë. Ekipi shqyrton aplikimin dhe ju njofton.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Link
+                  to="/login"
+                  className="inline-flex h-12 items-center justify-center px-8 rounded-lg bg-white text-slate-900 text-sm font-semibold hover:bg-slate-100 transition-colors"
+                >
+                  Hyr në sistem
+                </Link>
+                <Link
+                  to="/apply"
+                  className="inline-flex h-12 items-center justify-center px-8 rounded-lg border border-white/25 text-white text-sm font-semibold hover:bg-white/10 transition-colors"
+                >
+                  Aplikoni për klinikë
+                </Link>
+              </div>
+            </Reveal>
           </div>
         </section>
       </main>
 
-      <footer className="relative z-10 border-t border-slate-200 bg-white/80 backdrop-blur py-10 px-4 sm:px-6">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-500">
+      <footer className="bg-white border-t border-slate-200 py-10">
+        <div className={`${shell} flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-500`}>
           <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-800">iKlinika</span>
+            <span className="font-semibold text-slate-800">iKlinika</span>
             <span>© {new Date().getFullYear()}</span>
           </div>
-          <div className="flex flex-wrap justify-center gap-6">
-            <a href="#funksionalitete" className="hover:text-clinic-400 font-medium transition-colors">
-              Funksionalitete
-            </a>
-            <Link to="/login" className="hover:text-clinic-400 font-medium transition-colors">
-              Hyr
-            </Link>
-            <Link to="/apply" className="hover:text-clinic-400 font-medium transition-colors">
-              Aplikoni
-            </Link>
-            <a href="#cmime" className="hover:text-clinic-400 font-medium transition-colors">
-              Çmimet
-            </a>
+          <div className="flex flex-wrap justify-center gap-8">
+            <a href="#funksionalitete" className="hover:text-slate-900 transition-colors">Funksionalitete</a>
+            <Link to="/login" className="hover:text-slate-900 transition-colors">Hyr</Link>
+            <Link to="/apply" className="hover:text-slate-900 transition-colors">Aplikoni</Link>
+            <a href="#cmime" className="hover:text-slate-900 transition-colors">Çmimet</a>
           </div>
         </div>
       </footer>

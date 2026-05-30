@@ -1,6 +1,5 @@
-import React, { useState } from "react";
+import React from "react";
 import { Outlet, Navigate, useLocation } from "react-router-dom";
-import Sidebar from "./Sidebar";
 import Topbar from "./TopBar";
 import LoadingSpinner from "../ui/LoadingSpinner";
 import { useDashboardPanel } from "../../context/DashboardPanelContext";
@@ -12,7 +11,6 @@ function DashboardLayoutInner() {
   const { user } = useAuth();
   const { requiresPanel, activePanel, initialized, roleLower } = useDashboardPanel();
   const isPanelRoute = location.pathname === "/dashboard/panel";
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const hasClinic = !!(user?.clinicId ?? user?.ClinicId);
 
   if (!initialized) {
@@ -28,10 +26,7 @@ function DashboardLayoutInner() {
   }
 
   const menuCtx = { roleLower, activePanel, hasClinic };
-  if (
-    !isPanelRoute &&
-    !isDashboardPathAllowed(location.pathname, menuCtx)
-  ) {
+  if (!isPanelRoute && !isDashboardPathAllowed(location.pathname, menuCtx)) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -44,19 +39,12 @@ function DashboardLayoutInner() {
   }
 
   return (
-    <div className="h-screen flex dashboard-bg overflow-hidden">
-      <Sidebar
-        mobileOpen={mobileNavOpen}
-        onMobileClose={() => setMobileNavOpen(false)}
-      />
+    <div className="h-screen flex flex-col dashboard-bg overflow-hidden">
+      <Topbar />
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <Topbar onMenuClick={() => setMobileNavOpen(true)} />
-
-        <main className="dashboard-main">
-          <Outlet />
-        </main>
-      </div>
+      <main className="dashboard-main">
+        <Outlet />
+      </main>
     </div>
   );
 }
