@@ -10,6 +10,7 @@ import {
 import Notification from "../../../components/ui/Notification";
 import PageHeader from "../../../components/ui/PageHeader";
 import LoadingSpinner from "../../../components/ui/LoadingSpinner";
+import EmptyState from "../../../components/ui/EmptyState";
 import { listServices, createService, updateService, deleteService } from "../../../api/service";
 import { useAuth } from "../../../context/AuthContext";
 import { useDashboardPanel, PANEL_SUPERADMIN } from "../../../context/DashboardPanelContext";
@@ -192,41 +193,37 @@ export default function Services() {
         }
       />
 
-      <div className="card p-5 mb-6">
-        <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-          <FiPlus size={20} />
+      <div className="card p-5 sm:p-6 mb-6">
+        <h2 className="section-heading mb-4 flex items-center gap-2">
+          <FiPlus size={18} className="text-clinic-600" />
           Shto shërbim
         </h2>
         <form onSubmit={handleAdd} className="flex flex-col sm:flex-row sm:items-end gap-4 flex-wrap">
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Emri</label>
+            <label className="label">Emri</label>
             <input
               type="text"
               value={addForm.name}
               onChange={(e) => setAddForm((p) => ({ ...p, name: e.target.value }))}
               maxLength={NAME_MAX + 1}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-clinic-400 focus:border-transparent"
+              className="input"
               placeholder="p.sh. Kontrolle + Analiza"
             />
-            <p className="text-xs text-slate-500 mt-0.5">{addForm.name.length}/{NAME_MAX}</p>
+            <p className="text-xs text-slate-500 mt-1">{addForm.name.length}/{NAME_MAX}</p>
           </div>
           <div className="w-full sm:w-32">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Çmimi</label>
+            <label className="label">Çmimi</label>
             <input
               type="number"
               step="0.01"
               min={PRICE_MIN}
               value={addForm.price}
               onChange={(e) => setAddForm((p) => ({ ...p, price: e.target.value }))}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-clinic-400 focus:border-transparent"
+              className="input"
               placeholder="0"
             />
           </div>
-          <button
-            type="submit"
-            disabled={addSubmitting}
-            className="px-5 py-2.5 bg-clinic-400 text-white font-medium rounded-lg hover:bg-clinic-500 disabled:opacity-50 transition-colors"
-          >
+          <button type="submit" disabled={addSubmitting} className="btn-primary btn-md">
             {addSubmitting ? "Duke shtuar…" : "Shto"}
           </button>
         </form>
@@ -239,36 +236,24 @@ export default function Services() {
         )}
       </div>
 
-      {/* List */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="table-shell">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-16">
-            <div className="animate-spin h-10 w-10 border-2 border-clinic-400 border-t-transparent rounded-full mb-3" />
-            <p className="text-slate-500 text-sm">Duke ngarkuar…</p>
-          </div>
+          <LoadingSpinner className="py-16" label="Duke ngarkuar…" />
         ) : services.length === 0 ? (
-          <div className="text-center py-16 px-6">
-            <FiPackage className="text-slate-300 mx-auto mb-4" size={48} />
-            <p className="text-slate-600 font-medium">Nuk ka shërbime ende</p>
-            <p className="text-slate-500 text-sm mt-1">Shtoni një shërbim më sipër.</p>
-          </div>
+          <EmptyState
+            icon={FiPackage}
+            title="Nuk ka shërbime ende"
+            description="Shtoni një shërbim më sipër."
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50">
-                  <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Emri
-                  </th>
-                  <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Çmimi
-                  </th>
-                  <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Data
-                  </th>
-                  <th className="w-28 text-right py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Veprime
-                  </th>
+                <tr className="table-head-row">
+                  <th className="table-th">Emri</th>
+                  <th className="table-th">Çmimi</th>
+                  <th className="table-th">Data</th>
+                  <th className="table-th text-right w-28">Veprime</th>
                 </tr>
               </thead>
               <tbody>
@@ -278,29 +263,29 @@ export default function Services() {
                   const price = s.price ?? s.Price;
                   const createdAt = s.createdAt ?? s.CreatedAt;
                   return (
-                    <tr key={id} className="border-b border-slate-100 hover:bg-slate-50/80">
-                      <td className="py-3 px-4 font-medium text-slate-900">{name}</td>
-                      <td className="py-3 px-4 text-slate-700">
+                    <tr key={id} className="table-row">
+                      <td className="table-td font-medium text-slate-900">{name}</td>
+                      <td className="table-td tabular-nums">
                         {typeof price === "number" ? price.toFixed(2) : price}
                       </td>
-                      <td className="py-3 px-4 text-sm text-slate-500">{formatDate(createdAt)}</td>
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="table-td text-slate-500">{formatDate(createdAt)}</td>
+                      <td className="table-td text-right">
+                        <div className="flex items-center justify-end gap-1">
                           <button
                             type="button"
                             onClick={() => openEdit(s)}
-                            className="p-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                            className="btn-icon"
                             title="Ndrysho"
                           >
-                            <FiEdit2 size={18} />
+                            <FiEdit2 size={16} />
                           </button>
                           <button
                             type="button"
                             onClick={() => setDeleteConfirmId(id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="btn-icon-danger"
                             title="Fshi"
                           >
-                            <FiTrash2 size={18} />
+                            <FiTrash2 size={16} />
                           </button>
                         </div>
                       </td>
@@ -313,41 +298,40 @@ export default function Services() {
         )}
       </div>
 
-      {/* Edit modal */}
       {editingId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => !editSubmitting && setEditingId(null)}>
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-slate-900">Ndrysho shërbimin</h2>
+        <div className="modal-overlay" onClick={() => !editSubmitting && setEditingId(null)}>
+          <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="section-heading">Ndrysho shërbimin</h2>
               <button
                 type="button"
                 onClick={() => !editSubmitting && setEditingId(null)}
-                className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg"
+                className="btn-icon"
               >
-                <FiX size={20} />
+                <FiX size={18} />
               </button>
             </div>
             <form onSubmit={handleEdit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Emri</label>
+                <label className="label">Emri</label>
                 <input
                   type="text"
                   value={editForm.name}
                   onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))}
                   maxLength={NAME_MAX + 1}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-clinic-400 focus:border-transparent"
+                  className="input"
                 />
-                <p className="text-xs text-slate-500 mt-0.5">{editForm.name.length}/{NAME_MAX}</p>
+                <p className="text-xs text-slate-500 mt-1">{editForm.name.length}/{NAME_MAX}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Çmimi</label>
+                <label className="label">Çmimi</label>
                 <input
                   type="number"
                   step="0.01"
                   min={PRICE_MIN}
                   value={editForm.price}
                   onChange={(e) => setEditForm((p) => ({ ...p, price: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-clinic-400 focus:border-transparent"
+                  className="input"
                 />
               </div>
               {editErrors.length > 0 && (
@@ -361,15 +345,11 @@ export default function Services() {
                 <button
                   type="button"
                   onClick={() => !editSubmitting && setEditingId(null)}
-                  className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50"
+                  className="btn-secondary btn-md"
                 >
                   Anulo
                 </button>
-                <button
-                  type="submit"
-                  disabled={editSubmitting}
-                  className="px-4 py-2 bg-clinic-400 text-white rounded-lg hover:bg-clinic-500 disabled:opacity-50"
-                >
+                <button type="submit" disabled={editSubmitting} className="btn-primary btn-md">
                   {editSubmitting ? "Duke ruajtur…" : "Ruaj"}
                 </button>
               </div>
@@ -378,11 +358,10 @@ export default function Services() {
         </div>
       )}
 
-      {/* Delete confirm modal */}
       {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => !deleteSubmitting && setDeleteConfirmId(null)}>
-          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6" onClick={(e) => e.stopPropagation()}>
-            <p className="text-slate-700 mb-4">
+        <div className="modal-overlay" onClick={() => !deleteSubmitting && setDeleteConfirmId(null)}>
+          <div className="modal-panel-sm" onClick={(e) => e.stopPropagation()}>
+            <p className="text-sm text-slate-700 leading-relaxed mb-5">
               A jeni të sigurt që dëshironi ta fshini këtë shërbim? Nuk do të shfaqet më në listë.
             </p>
             <div className="flex gap-2 justify-end">
@@ -390,7 +369,7 @@ export default function Services() {
                 type="button"
                 onClick={() => !deleteSubmitting && setDeleteConfirmId(null)}
                 disabled={deleteSubmitting}
-                className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 disabled:opacity-50"
+                className="btn-secondary btn-md"
               >
                 Anulo
               </button>
@@ -398,7 +377,7 @@ export default function Services() {
                 type="button"
                 onClick={handleDeleteConfirm}
                 disabled={deleteSubmitting}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                className="btn-danger btn-md bg-red-600 text-white border-red-600 hover:bg-red-700 hover:border-red-700"
               >
                 {deleteSubmitting ? "Duke fshirë…" : "Fshi"}
               </button>

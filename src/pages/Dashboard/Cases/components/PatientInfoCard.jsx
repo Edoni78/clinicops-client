@@ -21,15 +21,13 @@ export default function PatientInfoCard({
   const badgeClass = STATUS_BADGE[normalized] || "bg-slate-100 text-slate-700 border-slate-200";
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 shadow-sm mb-6 overflow-hidden">
-      <div className="px-5 py-3 border-b border-slate-200 bg-slate-50/80 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-          <FiUser className="text-clinic-400" size={16} aria-hidden />
+    <div className="card mb-6 overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-slate-200 bg-slate-50/60 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-xs font-semibold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+          <FiUser className="text-clinic-600" size={15} aria-hidden />
           Të dhënat e pacientit
         </h2>
-        <span
-          className={`inline-flex px-3 py-1 text-xs font-semibold rounded-md border ${badgeClass}`}
-        >
+        <span className={`badge border ${badgeClass}`}>
           {getCaseStatusLabel(caseStatus)}
         </span>
       </div>

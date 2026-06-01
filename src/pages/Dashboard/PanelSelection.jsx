@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiActivity, FiFileText, FiShield, FiLogOut } from "react-icons/fi";
+import { FiActivity, FiFileText, FiShield, FiLogOut, FiChevronRight } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import {
   useDashboardPanel,
@@ -16,27 +16,18 @@ const cards = [
     title: "Paneli i infermierit",
     subtitle: "Pacientët, rastet, shenjat jetësore, laboratori",
     icon: FiActivity,
-    accent: "from-teal-500 to-teal-600",
-    border: "border-teal-200",
-    ring: "hover:ring-teal-200",
   },
   {
     panel: PANEL_DOCTOR,
     title: "Paneli i mjekut",
     subtitle: "Rastet, raportet, profili i mjekut, laboratori",
     icon: FiFileText,
-    accent: "from-violet-500 to-violet-600",
-    border: "border-violet-200",
-    ring: "hover:ring-violet-200",
   },
   {
     panel: PANEL_SUPERADMIN,
     title: "Paneli i super administratorit",
     subtitle: "Aplikimet, stafi, shërbimet, menaxhim i plotë",
     icon: FiShield,
-    accent: "from-slate-700 to-slate-800",
-    border: "border-slate-200",
-    ring: "hover:ring-slate-300",
   },
 ];
 
@@ -85,60 +76,75 @@ export default function PanelSelection() {
         onClose={() => setNotif((p) => ({ ...p, visible: false }))}
       />
 
-      <header className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-200/80 bg-white/90 backdrop-blur sticky top-0 z-10">
+      <header className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-slate-200/80 bg-white/95 backdrop-blur-md sticky top-0 z-10 shadow-topbar">
         <div className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-clinic-400 text-white font-bold text-sm">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-clinic-600 text-white font-semibold text-sm shadow-sm">
             iK
           </span>
-          <span className="font-bold text-lg text-slate-900 tracking-tight">iKlinika</span>
+          <span className="font-semibold text-base text-slate-900 tracking-tight">iKlinika</span>
         </div>
-        <button type="button" onClick={() => { logout(); navigate("/login", { replace: true }); }} className="btn-danger btn-sm">
+        <button
+          type="button"
+          onClick={() => {
+            logout();
+            navigate("/login", { replace: true });
+          }}
+          className="btn-danger btn-sm"
+        >
           <FiLogOut size={16} />
           Dilni
         </button>
       </header>
 
       <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-10">
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center mb-2">
+        <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 text-center mb-2">
           Zgjidhni panelin
         </h1>
-        <p className="text-slate-600 text-center max-w-lg mb-10 text-sm sm:text-base">
+        <p className="text-slate-500 text-center max-w-lg mb-8 text-sm leading-relaxed">
           Hapni panelin që përputhet me rolin tuaj. Vetëm paneli i duhur është i aktivizuar për llogarinë
           tuaj.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 w-full max-w-5xl">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-4xl">
           {cards
             .filter(({ panel }) => roleLower === "superadmin" || canEnterPanel(panel))
-            .map(({ panel, title, subtitle, icon: Icon, accent, border, ring }) => {
-            const allowed = canEnterPanel(panel);
-            return (
-              <button
-                key={panel}
-                type="button"
-                onClick={() => handleSelect(panel)}
-                className={`
-                  text-left rounded-2xl border-2 p-6 transition-all shadow-card
-                  ring-2 ring-transparent
-                  ${allowed
-                    ? `bg-white ${border} ${ring} hover:shadow-card-md hover:scale-[1.01] cursor-pointer`
-                    : "bg-slate-50/80 border-slate-200 opacity-90 hover:bg-slate-100 cursor-pointer"
-                  }
-                `}
-              >
-                <div className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${accent} text-white mb-4 shadow-sm`}>
-                  <Icon size={26} />
-                </div>
-                <h2 className="text-lg font-semibold text-slate-900 mb-2">{title}</h2>
-                <p className="text-sm text-slate-600 leading-relaxed">{subtitle}</p>
-                {!allowed && (
-                  <p className="mt-4 text-xs text-amber-700 font-medium bg-amber-50 rounded-lg px-3 py-2">
-                    Klikoni për mesazh — nuk keni akses me këtë rol
-                  </p>
-                )}
-              </button>
-            );
-          })}
+            .map(({ panel, title, subtitle, icon: Icon }) => {
+              const allowed = canEnterPanel(panel);
+              return (
+                <button
+                  key={panel}
+                  type="button"
+                  onClick={() => handleSelect(panel)}
+                  className={`
+                    text-left card p-5 transition-all group
+                    ${allowed
+                      ? "hover:shadow-card-md hover:border-slate-300/80 cursor-pointer"
+                      : "opacity-75 hover:bg-slate-50 cursor-pointer"
+                    }
+                  `}
+                >
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <span className="icon-chip-lg">
+                      <Icon size={20} aria-hidden />
+                    </span>
+                    {allowed && (
+                      <FiChevronRight
+                        size={18}
+                        className="text-slate-300 group-hover:text-clinic-600 transition-colors shrink-0 mt-1"
+                        aria-hidden
+                      />
+                    )}
+                  </div>
+                  <h2 className="text-base font-semibold text-slate-900 mb-1.5">{title}</h2>
+                  <p className="text-sm text-slate-500 leading-relaxed">{subtitle}</p>
+                  {!allowed && (
+                    <p className="mt-3 text-xs text-slate-600 font-medium bg-slate-100 rounded-lg px-3 py-2">
+                      Klikoni për mesazh — nuk keni akses me këtë rol
+                    </p>
+                  )}
+                </button>
+              );
+            })}
         </div>
       </div>
     </div>

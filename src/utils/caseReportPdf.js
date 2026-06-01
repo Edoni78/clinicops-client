@@ -197,16 +197,30 @@ function drawPatientCard(doc, data, margin, pageWidth, yRef) {
   yRef.current = y + 4;
 }
 
+function getRecordedPdfVitalRows(vitals) {
+  const rows = [];
+  if (vitals.weight != null && vitals.weight !== "—") {
+    rows.push(["Pesha", vitals.weight, "kg"]);
+  }
+  const hasBp =
+    (vitals.sys != null && vitals.sys !== "—") || (vitals.dia != null && vitals.dia !== "—");
+  if (hasBp) {
+    rows.push(["Presioni", `${vitals.sys}/${vitals.dia}`, "mmHg"]);
+  }
+  if (vitals.temp != null && vitals.temp !== "—") {
+    rows.push(["Temperatura", vitals.temp, "°C"]);
+  }
+  if (vitals.hr != null && vitals.hr !== "—") {
+    rows.push(["Rrahjet e zemrës", vitals.hr, "bpm"]);
+  }
+  return rows;
+}
+
 function drawVitalsCard(doc, data, margin, pageWidth, yRef) {
+  const vitals = getRecordedPdfVitalRows(data.vitals);
+  if (vitals.length === 0) return;
+
   drawSectionTitle(doc, "Shenjat vitale", margin, pageWidth, yRef, colors.indigo600);
-  const vitals = [
-    ["Temperatura", data.vitals.temp, "°C"],
-    ["Tensioni", `${data.vitals.sys}/${data.vitals.dia}`, "mmHg"],
-    ["Pulsi", data.vitals.hr, "bpm"],
-    ["O₂", data.vitals.o2, "%"],
-    ["Frymëmarrja", data.vitals.resp, "/min"],
-    ["Pesha / Gjatësia", `${data.vitals.weight} / ${data.vitals.height}`, "kg / cm"],
-  ];
   const cellW = (pageWidth - 2 * margin - 12) / 3;
   const cellH = 14;
   doc.setFontSize(8);
@@ -286,7 +300,9 @@ export function downloadCaseReportPdf(caseData, clinicHeader = null, doctorInfo 
 
   drawHeader(doc, data, margin, pageWidth, yRef);
   drawPatientCard(doc, data, margin, pageWidth, yRef);
-  drawVitalsCard(doc, data, margin, pageWidth, yRef);
+  if (getRecordedPdfVitalRows(data.vitals).length > 0) {
+    drawVitalsCard(doc, data, margin, pageWidth, yRef);
+  }
   if (data.anamneza) {
     drawTextBox(doc, "Anamneza", data.anamneza, margin, pageWidth, yRef, colors.teal600);
   }

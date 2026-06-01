@@ -1,8 +1,15 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { FiUserCheck, FiUserPlus, FiMail, FiRefreshCw, FiTrash2 } from "react-icons/fi";
+import { FiUserCheck, FiUserPlus, FiUser, FiRefreshCw, FiTrash2 } from "react-icons/fi";
 import Notification from "../../ui/Notification";
 import PageHeader from "../../ui/PageHeader";
+import LoadingSpinner from "../../ui/LoadingSpinner";
+import EmptyState from "../../ui/EmptyState";
 import { listClinicUsers, createClinicUser, deleteClinicUser } from "../../../api/clinicUser";
+import {
+  getClinicUserDisplayName,
+  getClinicUserEmail,
+  getClinicUserRoleLabel,
+} from "../../../utils/clinicUserDisplay";
 import { useAuth } from "../../../context/AuthContext";
 import { useDashboardPanel, PANEL_SUPERADMIN } from "../../../context/DashboardPanelContext";
 import { getClinicId } from "../../../utils/clinicId";
@@ -34,7 +41,7 @@ export default function Staff() {
   const [loading, setLoading] = useState(true);
   const [roleFilter, setRoleFilter] = useState("");
   const [notif, setNotif] = useState({ visible: false, type: "info", message: "" });
-  const [form, setForm] = useState({ email: "", password: "", role: "Doctor" });
+  const [form, setForm] = useState({ displayName: "", email: "", password: "", role: "Doctor" });
   const [submitting, setSubmitting] = useState(false);
   const [deletingUserId, setDeletingUserId] = useState(null);
 
@@ -83,11 +90,20 @@ export default function Staff() {
     setSubmitting(true);
     try {
       await createClinicUser(
-        { email: form.email, password: form.password, role: form.role },
+        {
+          displayName: form.displayName.trim(),
+          email: form.email.trim(),
+          password: form.password,
+          role: form.role,
+        },
         isSuperAdmin ? getClinicId() : undefined
       );
-      setNotif({ visible: true, type: "success", message: "Përdoruesi i stafit u krijua. Mund të identifikohen me këtë email dhe fjalëkalim." });
-      setForm({ email: "", password: "", role: roleOptions[0]?.value || "Doctor" });
+      setNotif({
+        visible: true,
+        type: "success",
+        message: "Anëtari i stafit u krijua. Mund të identifikohet me email dhe fjalëkalim.",
+      });
+      setForm({ displayName: "", email: "", password: "", role: roleOptions[0]?.value || "Doctor" });
       fetchUsers();
     } catch (err) {
       setNotif({
@@ -100,8 +116,8 @@ export default function Staff() {
     }
   };
 
-  const handleDeleteUser = async (id, email) => {
-    const ok = window.confirm(`Fshij përdoruesin e stafit "${email}"?`);
+  const handleDeleteUser = async (id, displayName) => {
+    const ok = window.confirm(`Fshij anëtarin e stafit "${displayName}"?`);
     if (!ok) return;
     setDeletingUserId(id);
     try {
@@ -154,11 +170,23 @@ export default function Staff() {
         />
 
         <div className="card p-5 sm:p-6 mb-6">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-            <FiUserPlus className="text-clinic-400" size={20} />
+          <h2 className="section-heading mb-4 flex items-center gap-2">
+            <FiUserPlus className="text-clinic-600" size={18} />
             Shto anëtar stafi
           </h2>
-          <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+          <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+            <div>
+              <label className="label">Emri *</label>
+              <input
+                type="text"
+                value={form.displayName}
+                onChange={(e) => setForm((p) => ({ ...p, displayName: e.target.value }))}
+                required
+                maxLength={200}
+                placeholder="p.sh. Dr. Ana Krasniqi"
+                className="input"
+              />
+            </div>
             <div>
               <label className="label">Email *</label>
               <input
@@ -206,12 +234,11 @@ export default function Staff() {
           </form>
         </div>
 
-        {/* Role filter */}
-        <div className="mb-4 flex flex-wrap gap-2">
+        <div className="mb-4 filter-bar">
           <button
             type="button"
             onClick={() => setRoleFilter("")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium ${!roleFilter ? "bg-clinic-400 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+            className={!roleFilter ? "tab-active" : "tab-inactive"}
           >
             Të gjitha
           </button>
@@ -220,60 +247,53 @@ export default function Staff() {
               key={r.value}
               type="button"
               onClick={() => setRoleFilter(r.value)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${roleFilter === r.value ? "bg-clinic-400 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+              className={roleFilter === r.value ? "tab-active" : "tab-inactive"}
             >
               {r.label}
             </button>
           ))}
         </div>
 
-        {/* User list */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="list-shell">
           {loading ? (
-            <div className="flex justify-center py-16">
-              <svg className="animate-spin h-8 w-8 text-clinic-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-              </svg>
-            </div>
+            <LoadingSpinner className="py-16" label="Duke ngarkuar stafin…" />
           ) : users.length === 0 ? (
-            <div className="text-center py-16 text-slate-500">
-              <FiUserCheck className="mx-auto mb-4 text-slate-300" size={48} />
-              <p>Ende nuk ka përdorues stafi. Krijo një më sipër.</p>
-            </div>
+            <EmptyState
+              icon={FiUserCheck}
+              title="Ende nuk ka përdorues stafi"
+              description="Krijo një përdorues më sipër."
+            />
           ) : (
-            <ul className="divide-y divide-slate-100">
+            <ul>
               {users.map((u) => {
                 const id = u.id ?? u.Id;
-                const email = u.email ?? u.Email ?? "—";
+                const displayName = getClinicUserDisplayName(u);
+                const email = getClinicUserEmail(u);
                 const userRole = u.role ?? u.Role ?? "—";
                 const isActive = u.isActive ?? u.IsActive ?? true;
                 const createdAt = u.createdAt ?? u.CreatedAt;
                 return (
-                  <li key={id} className="flex flex-wrap items-center gap-4 px-6 py-4 hover:bg-slate-50">
+                  <li key={id} className="list-row">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="w-10 h-10 rounded-full bg-clinic-400/10 flex items-center justify-center">
-                        <FiMail className="text-clinic-400" size={20} />
-                      </div>
-                      <div>
-                        <p className="font-medium text-slate-900 truncate">{email}</p>
-                        <p className="text-sm text-slate-500">
-                          {userRole} · {formatDate(createdAt)}
+                      <span className="icon-chip">
+                        <FiUser size={16} />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm text-slate-900 truncate">{displayName}</p>
+                        <p className="text-xs text-slate-500 mt-0.5 truncate">
+                          {getClinicUserRoleLabel(userRole)} · {email}
                         </p>
+                        <p className="text-xs text-slate-400 mt-0.5">{formatDate(createdAt)}</p>
                       </div>
                     </div>
-                    <span
-                      className={`px-2 py-1 text-xs font-medium rounded ${
-                        isActive ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"
-                      }`}
-                    >
+                    <span className={isActive ? "badge-success" : "badge-neutral"}>
                       {isActive ? "Aktiv" : "Joaktiv"}
                     </span>
                     <button
                       type="button"
-                      onClick={() => handleDeleteUser(id, email)}
+                      onClick={() => handleDeleteUser(id, displayName)}
                       disabled={deletingUserId === id}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 disabled:opacity-60"
+                      className="btn-danger btn-sm"
                     >
                       <FiTrash2 size={14} />
                       {deletingUserId === id ? "Duke fshirë..." : "Fshij"}

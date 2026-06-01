@@ -5,12 +5,12 @@ export default function EmptyState({ icon: Icon, title, description, action }) {
     <div className="empty-state">
       {Icon && (
         <div className="empty-state-icon">
-          <Icon size={28} aria-hidden />
+          <Icon size={24} aria-hidden />
         </div>
       )}
-      {title && <p className="text-slate-700 font-medium">{title}</p>}
-      {description && <p className="text-slate-500 text-sm mt-1 max-w-md">{description}</p>}
-      {action && <div className="mt-5">{action}</div>}
+      {title && <p className="text-slate-800 font-medium text-sm">{title}</p>}
+      {description && <p className="text-slate-500 text-sm mt-1 max-w-md leading-relaxed">{description}</p>}
+      {action && <div className="mt-4">{action}</div>}
     </div>
   );
 }

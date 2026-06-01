@@ -15,6 +15,7 @@ import { getPatientCases, getLabResults, uploadLabResult, downloadLabResultFile 
 import Notification from "../../components/ui/Notification";
 import PageHeader from "../../components/ui/PageHeader";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import EmptyState from "../../components/ui/EmptyState";
 import { useAuth } from "../../context/AuthContext";
 import { CLINIC_MODE_SOLO_DOCTOR } from "../../utils/clinicMode";
 
@@ -191,33 +192,33 @@ export default function Laboratory() {
         }
       />
 
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-4 flex-wrap">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium text-slate-600">Filtro sipas date:</span>
+      <div className="card p-4 sm:p-5 mb-6 flex flex-col sm:flex-row sm:items-center gap-4 flex-wrap">
+        <div className="filter-bar">
+          <span className="text-xs font-medium uppercase tracking-wider text-slate-500 mr-1">Data:</span>
           <button
             type="button"
             onClick={() => { setDateFilter(DATE_FILTER_ALL); setSearchDate(""); }}
-            className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${dateFilter === DATE_FILTER_ALL && !searchDate ? "bg-amber-500 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
+            className={dateFilter === DATE_FILTER_ALL && !searchDate ? "tab-active" : "tab-inactive"}
           >
             Të gjitha
           </button>
           <button
             type="button"
             onClick={() => { setDateFilter(DATE_FILTER_TODAY); setSearchDate(""); }}
-            className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${dateFilter === DATE_FILTER_TODAY && !searchDate ? "bg-amber-500 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
+            className={dateFilter === DATE_FILTER_TODAY && !searchDate ? "tab-active" : "tab-inactive"}
           >
             Sot
           </button>
           <button
             type="button"
             onClick={() => { setDateFilter(DATE_FILTER_YESTERDAY); setSearchDate(""); }}
-            className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${dateFilter === DATE_FILTER_YESTERDAY && !searchDate ? "bg-amber-500 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
+            className={dateFilter === DATE_FILTER_YESTERDAY && !searchDate ? "tab-active" : "tab-inactive"}
           >
             Dje
           </button>
         </div>
         <div className="flex items-center gap-2 sm:ml-auto">
-          <FiSearch className="text-slate-400" size={18} />
+          <FiSearch className="text-slate-400" size={16} />
           <input
             type="date"
             value={searchDate}
@@ -226,16 +227,11 @@ export default function Laboratory() {
               setSearchDate(v);
               if (v) setDateFilter(DATE_FILTER_ALL);
             }}
-            className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-            placeholder="Data"
+            className="input py-2 w-auto"
             title="Kërko sipas date"
           />
           {searchDate && (
-            <button
-              type="button"
-              onClick={() => setSearchDate("")}
-              className="text-sm text-slate-500 hover:text-slate-700"
-            >
+            <button type="button" onClick={() => setSearchDate("")} className="btn-ghost btn-sm">
               Pastro
             </button>
           )}
@@ -243,37 +239,41 @@ export default function Laboratory() {
       </div>
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-20">
-          <div className="animate-spin h-10 w-10 border-2 border-amber-500 border-t-transparent rounded-full mb-4" />
-          <p className="text-slate-500 text-sm">Duke ngarkuar rastet…</p>
-        </div>
+        <LoadingSpinner className="py-20" label="Duke ngarkuar rastet…" />
       ) : cases.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
-          <FiFolder className="text-slate-300 mx-auto mb-4" size={48} />
-          <p className="text-slate-600 font-medium">Nuk ka raste</p>
-          <p className="text-slate-500 text-sm mt-1">Rastet do të shfaqen këtu kur të ekzistojnë.</p>
-          <Link
-            to="/dashboard/cases"
-            className="inline-flex items-center gap-2 mt-4 px-4 py-2.5 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 transition-colors"
-          >
-            <FiFolder size={18} />
-            Shiko rastet
-          </Link>
+        <div className="card">
+          <EmptyState
+            icon={FiFolder}
+            title="Nuk ka raste"
+            description="Rastet do të shfaqen këtu kur të ekzistojnë."
+            action={
+              <Link to="/dashboard/cases" className="btn-primary btn-md">
+                <FiFolder size={16} />
+                Shiko rastet
+              </Link>
+            }
+          />
         </div>
       ) : filteredCases.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
-          <FiCalendar className="text-slate-300 mx-auto mb-4" size={48} />
-          <p className="text-slate-600 font-medium">Nuk ka raste për këtë date</p>
-          <p className="text-slate-500 text-sm mt-1">
-            {searchDate ? `Nuk u gjet asnjë rast për ${searchDate}.` : "Ndryshoni filtrim ose zgjidhni një datë tjetër."}
-          </p>
-          <button
-            type="button"
-            onClick={() => { setDateFilter(DATE_FILTER_ALL); setSearchDate(""); }}
-            className="mt-4 px-4 py-2.5 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 transition-colors"
-          >
-            Shfaq të gjitha
-          </button>
+        <div className="card">
+          <EmptyState
+            icon={FiCalendar}
+            title="Nuk ka raste për këtë date"
+            description={
+              searchDate
+                ? `Nuk u gjet asnjë rast për ${searchDate}.`
+                : "Ndryshoni filtrim ose zgjidhni një datë tjetër."
+            }
+            action={
+              <button
+                type="button"
+                onClick={() => { setDateFilter(DATE_FILTER_ALL); setSearchDate(""); }}
+                className="btn-primary btn-md"
+              >
+                Shfaq të gjitha
+              </button>
+            }
+          />
         </div>
       ) : (
         <div className="space-y-4">
@@ -287,45 +287,40 @@ export default function Laboratory() {
             const isUploading = uploadingCaseId === caseId;
 
             return (
-              <div
-                key={caseId}
-                className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden border-l-4 border-l-amber-500"
-              >
-                <div className="p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100">
+              <div key={caseId} className="card overflow-hidden border-l-[3px] border-l-clinic-500">
+                <div className="px-4 sm:px-5 py-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100">
                   <div className="flex flex-wrap items-center gap-3">
                     <Link
                       to={`/dashboard/cases/${caseId}`}
-                      className="font-semibold text-slate-900 hover:text-amber-600 transition-colors"
+                      className="text-sm font-semibold text-slate-900 hover:text-clinic-700 transition-colors"
                     >
                       {patientName || "Pacient"}
                     </Link>
-                    <span className="text-sm text-slate-500 flex items-center gap-1">
-                      <FiClock size={14} />
+                    <span className="text-xs text-slate-500 flex items-center gap-1">
+                      <FiClock size={13} />
                       {formatDate(c.createdAt ?? c.CreatedAt)}
                     </span>
-                    <span
-                      className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${statusBadgeClass(status)}`}
-                    >
+                    <span className={`badge ${statusBadgeClass(status)}`}>
                       {getStatusLabel(status)}
                     </span>
                   </div>
                   <Link
                     to={`/dashboard/cases/${caseId}`}
-                    className="text-sm font-medium text-amber-700 hover:text-amber-800"
+                    className="text-xs font-medium text-clinic-600 hover:text-clinic-700"
                   >
                     Hap rastin →
                   </Link>
                 </div>
 
-                <div className="p-4 sm:p-5 bg-slate-50/50">
-                  <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                    <FiDroplet className="text-amber-600" size={16} />
+                <div className="px-4 sm:px-5 py-4 bg-slate-50/50">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2">
+                    <FiDroplet size={14} className="text-clinic-600" />
                     Rezultatet e laboratorit
                   </h3>
 
                   <div className="flex flex-wrap items-center gap-3 mb-3">
-                    <label className="flex items-center gap-2 px-3 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg cursor-pointer hover:bg-amber-600 transition-colors disabled:opacity-50">
-                      <FiUpload size={16} />
+                    <label className="btn-primary btn-sm cursor-pointer">
+                      <FiUpload size={14} />
                       {isUploading ? "Duke ngarkuar…" : "Shto PDF"}
                       <input
                         type="file"
@@ -348,11 +343,11 @@ export default function Laboratory() {
                       {labs.map((lab) => (
                         <li
                           key={lab.id ?? lab.Id}
-                          className="flex flex-wrap items-center justify-between gap-2 py-2 px-3 rounded-lg bg-white border border-slate-200"
+                          className="flex flex-wrap items-center justify-between gap-2 py-2.5 px-3 rounded-lg bg-white border border-slate-200/80"
                         >
-                          <span className="flex items-center gap-2 text-slate-800 text-sm">
-                            <FiFile className="text-amber-600 flex-shrink-0" />
-                            {lab.fileName ?? lab.FileName ?? "lab-result.pdf"}
+                          <span className="flex items-center gap-2 text-slate-800 text-sm min-w-0">
+                            <FiFile className="text-clinic-600 flex-shrink-0" size={15} />
+                            <span className="truncate">{lab.fileName ?? lab.FileName ?? "lab-result.pdf"}</span>
                           </span>
                           <span className="text-xs text-slate-500">
                             {lab.uploadedAt ?? lab.UploadedAt
@@ -367,7 +362,7 @@ export default function Laboratory() {
                                 lab.fileName ?? lab.FileName ?? "lab-result.pdf"
                               )
                             }
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-amber-700 bg-amber-100 hover:bg-amber-200 rounded-lg transition-colors"
+                            className="btn-secondary btn-sm"
                           >
                             <FiDownload size={14} />
                             Shkarko

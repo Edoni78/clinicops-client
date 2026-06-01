@@ -6,19 +6,10 @@ import { FiUserPlus, FiCalendar, FiPhone, FiFileText, FiUsers, FiActivity } from
 import { Link, useNavigate } from "react-router-dom";
 import PageHeader from "../../components/ui/PageHeader";
 import { listClinicUsers } from "../../api/clinicUser";
+import { getClinicUserDisplayName } from "../../utils/clinicUserDisplay";
 
 function getDoctorLabel(doctor) {
-  return (
-    doctor?.displayName ??
-    doctor?.DisplayName ??
-    doctor?.fullName ??
-    doctor?.FullName ??
-    doctor?.name ??
-    doctor?.Name ??
-    doctor?.email ??
-    doctor?.Email ??
-    "Mjek"
-  );
+  return getClinicUserDisplayName(doctor) === "—" ? "Mjek" : getClinicUserDisplayName(doctor);
 }
 
 const Patients = () => {
@@ -187,7 +178,7 @@ const Patients = () => {
         onClose={() => setNotif((prev) => ({ ...prev, visible: false }))}
       />
 
-      <div className="max-w-4xl mx-auto w-full">
+      <div className="page-shell max-w-4xl">
         <PageHeader
           title="Regjistro pacient të ri"
           subtitle="Shto një pacient të ri në sistemin e klinikës. Plotësoni të gjitha fushat e kërkuara më poshtë."

@@ -4,7 +4,6 @@ import Notification from "../../components/ui/Notification";
 import {
   FiUsers,
   FiRefreshCw,
-  FiSearch,
   FiUserPlus,
   FiPhone,
   FiTrash2,
@@ -13,6 +12,7 @@ import { Link } from "react-router-dom";
 import PageHeader from "../../components/ui/PageHeader";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import EmptyState from "../../components/ui/EmptyState";
+import ListFiltersBar from "../../components/ui/ListFiltersBar";
 import { useAuth } from "../../context/AuthContext";
 import { deletePatient } from "../../api/patient";
 import { isClinicAdminRole } from "../../utils/dashboardMenu";
@@ -140,38 +140,33 @@ const PatientsList = () => {
           subtitle="Shiko dhe menaxho të gjitha të dhënat e pacientëve në klinikën tuaj."
           icon={FiUsers}
           actions={
-            <Link to="/dashboard/patients" className="btn-primary btn-md">
-              <FiUserPlus size={18} />
-              Regjistro pacient të ri
-            </Link>
+            <>
+              <button
+                type="button"
+                onClick={fetchPatients}
+                disabled={patientsLoading}
+                className="btn-secondary btn-md"
+              >
+                <FiRefreshCw className={patientsLoading ? "animate-spin" : ""} size={18} />
+                Rifresko
+              </button>
+              <Link to="/dashboard/patients" className="btn-primary btn-md">
+                <FiUserPlus size={18} />
+                Regjistro pacient të ri
+              </Link>
+            </>
           }
         />
 
-        <div className="card p-4 sm:p-5 mb-6">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="input-icon-wrap flex-1">
-              <FiSearch className="input-icon" size={18} />
-              <input
-                type="text"
-                placeholder="Kërko sipas emrit ose telefonit..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="input-with-icon"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={fetchPatients}
-              disabled={patientsLoading}
-              className="btn-secondary btn-md"
-            >
-              <FiRefreshCw className={patientsLoading ? "animate-spin" : ""} size={18} />
-              Rifresko
-            </button>
-          </div>
-        </div>
+        <div className="table-shell">
+          <ListFiltersBar
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Kërko sipas emrit ose telefonit…"
+            resultCount={filteredPatients.length}
+            resultLabel="pacient"
+          />
 
-        <div className="table-shell p-4 sm:p-6">
           {patientsLoading ? (
             <LoadingSpinner className="py-12" label="Duke ngarkuar pacientët…" />
           ) : filteredPatients.length === 0 ? (
@@ -282,11 +277,6 @@ const PatientsList = () => {
                     ))}
                   </tbody>
                 </table>
-              </div>
-
-              <div className="mt-4 text-sm text-slate-600">
-                Duke shfaqur {filteredPatients.length} nga {patients.length} pacientë
-                {searchQuery && ` që përputhen me "${searchQuery}"`}
               </div>
             </>
           )}

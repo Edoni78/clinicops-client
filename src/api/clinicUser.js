@@ -11,7 +11,7 @@ export async function listClinicUsers(params = {}) {
 
 /**
  * Create clinic user – POST /api/ClinicUser
- * Body: { email, password, role: "Doctor" | "Nurse" | "LabTechnician" }
+ * Body: { displayName, email, password, role: "Doctor" | "Nurse" | "LabTechnician" }
  * Query (SuperAdmin only): clinicId
  */
 export async function createClinicUser(body, clinicId) {

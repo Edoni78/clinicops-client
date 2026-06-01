@@ -25,6 +25,11 @@ import {
   STATUS_FLOW,
   normalizeCaseStatus,
 } from "./caseStatus";
+import {
+  buildVitalsSubmitBody,
+  parseVitalPreferences,
+} from "../../../utils/vitalPreferences";
+import { fmtEmrDateOnly, getGenderLabel } from "../../../utils/emrDisplay";
 import PatientInfoCard from "./components/PatientInfoCard";
 import NurseSection from "./components/NurseSection";
 import DoctorSection from "./components/DoctorSectionSimple";
@@ -230,16 +235,16 @@ export default function CaseDetail() {
     setNotif({ visible: true, type, message });
   };
 
+  const vitalPreferences = parseVitalPreferences(caseData);
+
   const handleSubmitVitals = async (e) => {
     e.preventDefault();
-    const body = {};
-    if (vitals.weightKg !== "") body.weightKg = Number(vitals.weightKg);
-    if (vitals.systolicPressure !== "") body.systolicPressure = Number(vitals.systolicPressure);
-    if (vitals.diastolicPressure !== "") body.diastolicPressure = Number(vitals.diastolicPressure);
-    if (vitals.temperatureC !== "") body.temperatureC = Number(vitals.temperatureC);
-    if (vitals.heartRate !== "") body.heartRate = Number(vitals.heartRate);
-    if (Object.keys(body).length === 0) {
-      showNotif("error", "Vendosni të paktën një shenjë jetësore për të ruajtur.");
+    const body = buildVitalsSubmitBody(vitals, vitalPreferences);
+    if (!body) {
+      showNotif(
+        "error",
+        "Plotësoni të paktën një shenjë vitale të aktivizuar, ose përdorni «Pa shenja vitale»."
+      );
       return;
     }
     setVitalsSubmitting(true);
@@ -264,6 +269,13 @@ export default function CaseDetail() {
       );
     } finally {
       setVitalsSubmitting(false);
+    }
+  };
+
+  const handleSkipVitals = () => {
+    showNotif("info", "Rasti vazhdon pa shenja vitale të ruajtura.");
+    if (isNurse || view === "nurse") {
+      navigate("/dashboard/patients");
     }
   };
 
@@ -446,7 +458,7 @@ export default function CaseDetail() {
   // Backend may send nested (patient.Phone/Gender) or flat (caseData.patientPhone/patientGender); support both
   const patientPhone =
     patient.phone ?? patient.Phone ?? caseData.patientPhone ?? caseData.PatientPhone ?? "—";
-  const patientGender =
+  const patientGenderRaw =
     patient.gender ??
     patient.Gender ??
     patient.sex ??
@@ -456,7 +468,8 @@ export default function CaseDetail() {
     caseData.patientSex ??
     caseData.PatientSex ??
     (caseData.Patient && (caseData.Patient.gender ?? caseData.Patient.Gender)) ??
-    "—";
+    "";
+  const patientGender = getGenderLabel(patientGenderRaw);
   const patientDob =
     patient.dateOfBirth ?? patient.DateOfBirth ?? caseData.patientDateOfBirth ?? caseData.PatientDateOfBirth;
   const signaturePath = doctorProfile?.signatureUrl ?? doctorProfile?.SignatureUrl;
@@ -467,18 +480,7 @@ export default function CaseDetail() {
     caseData?.assignedDoctorName ?? caseData?.AssignedDoctorName ?? "";
   const attachedServiceName = caseData?.serviceName ?? caseData?.ServiceName ?? "";
   const attachedServicePrice = caseData?.servicePrice ?? caseData?.ServicePrice;
-  const formatDateDisplay = (dateString) => {
-    if (!dateString) return "—";
-    try {
-      return new Date(dateString).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    } catch {
-      return String(dateString);
-    }
-  };
+  const formatDateDisplay = fmtEmrDateOnly;
 
   return (
     <>
@@ -523,8 +525,10 @@ export default function CaseDetail() {
             vitals={vitals}
             setVitals={setVitals}
             handleSubmitVitals={handleSubmitVitals}
+            handleSkipVitals={handleSkipVitals}
             vitalsSubmitting={vitalsSubmitting}
             latestVitals={latestVitals}
+            vitalPreferences={vitalPreferences}
             nurseNextStatuses={nurseNextStatuses}
             statusSubmitting={statusSubmitting}
             handleStatusChange={handleStatusChange}
@@ -535,6 +539,7 @@ export default function CaseDetail() {
           <DoctorSection
             isSoloDoctorClinic={isSoloDoctorClinic}
             latestVitals={latestVitals}
+            vitalPreferences={vitalPreferences}
             doctorNextStatuses={doctorNextStatuses}
             statusSubmitting={statusSubmitting}
             handleStatusChange={handleStatusChange}

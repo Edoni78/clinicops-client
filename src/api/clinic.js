@@ -36,6 +36,15 @@ export async function updateClinicProfile(body) {
   if (body.phone != null) payload.Phone = body.phone;
   if (body.logoUrl != null) payload.LogoUrl = body.logoUrl;
   if (body.description != null) payload.Description = body.description;
+  if (body.vitalPreferences != null) {
+    const v = body.vitalPreferences;
+    payload.VitalPreferences = {
+      EnableWeight: !!v.enableWeight,
+      EnableBloodPressure: !!v.enableBloodPressure,
+      EnableTemperature: !!v.enableTemperature,
+      EnableHeartRate: !!v.enableHeartRate,
+    };
+  }
   const { data } = await api.put("/api/Clinic/profile", payload);
   return data;
 }

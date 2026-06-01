@@ -91,7 +91,7 @@ function MobileNav({ items, open, onClose }) {
         onClick={onClose}
         aria-label="Mbyll menunë"
       />
-      <div className="lg:hidden relative z-50 border-t border-slate-200 bg-white shadow-lg max-h-[min(75vh,32rem)] overflow-y-auto">
+      <div className="lg:hidden relative z-50 border-t border-slate-200 bg-white shadow-card-md max-h-[min(75vh,32rem)] overflow-y-auto">
         <nav className="p-3 space-y-1" aria-label="Navigimi mobil">
           {items.map((item) => (
             <NavLinkItem key={`${item.path}-${item.label}`} {...item} mobile onClick={onClose} />
@@ -158,11 +158,11 @@ const Topbar = () => {
   const closeMobileNav = () => setMobileNavOpen(false);
 
   return (
-    <header className="bg-white shrink-0 sticky top-0 z-30 shadow-sm shadow-slate-900/[0.04] border-b border-slate-200/90">
-      <div className="flex items-center gap-3 lg:gap-4 min-h-[4rem] sm:min-h-[4.25rem] px-4 sm:px-6 lg:px-8 py-2">
+    <header className="bg-white/95 backdrop-blur-md shrink-0 sticky top-0 z-30 shadow-topbar border-b border-slate-200/80">
+      <div className="flex items-center gap-3 lg:gap-4 min-h-[3.75rem] px-4 sm:px-6 lg:px-8 py-2">
         <Link
           to="/dashboard"
-          className="flex items-center gap-2.5 shrink-0 min-w-0 max-w-[11rem] sm:max-w-[13rem] group"
+          className="flex items-center gap-2.5 shrink-0 min-w-0 max-w-[11rem] sm:max-w-[13rem]"
         >
           {hasClinic ? (
             <>
@@ -170,24 +170,24 @@ const Topbar = () => {
                 <img
                   src={clinicLogoUrl}
                   alt=""
-                  className="h-9 w-9 sm:h-10 sm:w-10 shrink-0 rounded-lg object-contain bg-slate-50 border border-slate-200/80"
+                  className="h-9 w-9 sm:h-10 sm:w-10 shrink-0 rounded-lg object-contain bg-white border border-slate-200/80 shadow-sm"
                 />
               ) : (
-                <span className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg bg-clinic-500 text-white font-bold text-xs">
+                <span className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg bg-clinic-600 text-white font-semibold text-xs shadow-sm">
                   {getClinicInitials(clinicDisplayName || "K")}
                 </span>
               )}
-              <span className="font-semibold text-sm sm:text-base text-slate-900 truncate hidden sm:block">
+              <span className="font-semibold text-sm text-slate-900 truncate hidden sm:block">
                 {clinicDisplayName || "Klinika"}
               </span>
             </>
           ) : (
             <>
-              <span className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg bg-clinic-500 text-white font-bold text-xs">
-                CO
+              <span className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg bg-clinic-600 text-white font-semibold text-xs shadow-sm">
+                iK
               </span>
-              <span className="font-semibold text-sm sm:text-base text-slate-900 truncate hidden sm:block">
-                ClinicOps
+              <span className="font-semibold text-sm text-slate-900 truncate hidden sm:block">
+                iKlinika
               </span>
             </>
           )}

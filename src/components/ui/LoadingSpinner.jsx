@@ -10,7 +10,7 @@ export default function LoadingSpinner({ size = "md", className = "", label }) {
   return (
     <div className={`flex flex-col items-center justify-center gap-3 ${className}`} role="status">
       <svg
-        className={`animate-spin text-clinic-400 ${sizes[size] || sizes.md}`}
+        className={`animate-spin text-clinic-600 ${sizes[size] || sizes.md}`}
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"

@@ -12,8 +12,8 @@ export default function PageHeader({
       <div className="min-w-0 flex-1">
         <h1 className="page-title flex items-center gap-3 flex-wrap">
           {Icon && (
-            <span className="inline-flex p-2 rounded-xl bg-clinic-100 text-clinic-600 shrink-0">
-              <Icon size={26} aria-hidden />
+            <span className="icon-chip-lg">
+              <Icon size={20} aria-hidden />
             </span>
           )}
           <span>{title}</span>
