@@ -2,7 +2,7 @@ import api from "./axios";
 import { pickCaseServiceFields } from "../utils/caseServiceFields";
 
 /**
- * @param {string} [status] - Waiting | InProgress | InConsultation | Completed | Finished
+ * @param {string} [status] - Waiting | InConsultation | Finished | Mbyllur
  * @returns {Promise<Array<{ id, patientId, patientFirstName, patientLastName, status, createdAt, serviceId?, serviceName?, servicePrice? }>>}
  */
 export async function getPatientCases(status) {
@@ -94,9 +94,22 @@ export async function submitReport(id, body) {
 }
 
 /**
+ * Set or update unique protocol number for a case.
+ * PATCH /api/PatientCase/{id}/protocol
+ * @param {string} id - case id
+ * @param {string} protocolNumber - free-form text, unique per clinic
+ */
+export async function updateCaseProtocol(id, protocolNumber) {
+  const { data } = await api.patch(`/api/PatientCase/${id}/protocol`, {
+    ProtocolNumber: String(protocolNumber ?? "").trim(),
+  });
+  return data;
+}
+
+/**
  * Update case status
  * @param {string} id - case id
- * @param {string} status - InConsultation | InProgress | Completed | Finished | Waiting
+ * @param {string} status - Waiting | InConsultation | Finished | Mbyllur
  */
 export async function updateCaseStatus(id, status) {
   await api.patch(`/api/PatientCase/${id}/status`, null, {

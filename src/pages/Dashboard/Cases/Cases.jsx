@@ -5,6 +5,7 @@ import { getPatientCases, deletePatientCase, updateCaseStatus } from "../../../a
 import { useSignalR } from "../../../context/SignalRContext";
 import { useAuth } from "../../../context/AuthContext";
 import Notification from "../../../components/ui/Notification";
+import { useConfirmModal } from "../../../components/ui/ConfirmModal";
 import PageHeader from "../../../components/ui/PageHeader";
 import LoadingSpinner from "../../../components/ui/LoadingSpinner";
 import EmptyState from "../../../components/ui/EmptyState";
@@ -26,6 +27,7 @@ const STATUS_LABELS = {
   InConsultation: "Në konsultim",
   Completed: "Përfunduar",
   Finished: "Përfunduar",
+  Mbyllur: "Mbyllur",
 };
 
 function getStatusLabel(status) {
@@ -65,6 +67,7 @@ function statusBadgeClass(status) {
     InConsultation: "bg-sky-100 text-sky-800",
     Completed: "bg-indigo-100 text-indigo-800",
     Finished: "bg-emerald-100 text-emerald-800",
+    Mbyllur: "bg-slate-200 text-slate-800",
   };
   return map[status] || "bg-gray-100 text-gray-800";
 }
@@ -82,6 +85,7 @@ export default function Cases() {
   const [continuingCaseId, setContinuingCaseId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notif, setNotif] = useState({ visible: false, type: "info", message: "" });
+  const { confirm, ConfirmDialog } = useConfirmModal();
   /** Në vazhdim | përfunduar / mbyllur */
   const [casesTab, setCasesTab] = useState("active");
   /** Preset date filter when no custom D/M/Y is set */
@@ -102,7 +106,8 @@ export default function Cases() {
 
   const filteredCases = useMemo(() => {
     return cases.filter((c) => {
-      const status = c.status ?? c.Status;
+      const status = normalizeCaseStatus(c.status ?? c.Status);
+      if (isDoctor && status === "Waiting") return false;
       const terminal = isTerminalCaseStatus(status);
       if (casesTab === "active" && terminal) return false;
       if (casesTab === "completed" && !terminal) return false;
@@ -113,7 +118,7 @@ export default function Cases() {
       if (casesQuickDate === "yesterday") return isYesterday(created);
       return true;
     });
-  }, [cases, casesTab, nameSearch, customDate, casesQuickDate]);
+  }, [cases, casesTab, nameSearch, customDate, casesQuickDate, isDoctor]);
 
   const getCaseOpenPath = useCallback(
     (c) => {
@@ -166,13 +171,19 @@ export default function Cases() {
   // Auto-update list via SignalR and show notification when status changes (e.g. nurse sends case to doctor)
   useEffect(() => {
     if (!connection) return;
-    const unsubV = onVitalsUpdated(() => fetchCases(true));
+    const unsubV = isDoctor ? () => {} : onVitalsUpdated(() => fetchCases(true));
     const unsubR = onReportUpdated(() => fetchCases(true));
     const unsubS = onCaseStatusChanged((patientCaseId, newStatus) => {
       fetchCases(true);
-      const statusStr = String(newStatus || "").toLowerCase();
-      if (statusStr === "waiting") {
-        setNotif({ visible: true, type: "success", message: "Një pacient i ri është në pritje te mjeku. Lista u përditësua." });
+      const statusKey = normalizeCaseStatus(newStatus);
+      if (isDoctor && statusKey === "InConsultation") {
+        setNotif({
+          visible: true,
+          type: "success",
+          message: "Infermieri dërgoi një pacient për konsultim. Lista u përditësua.",
+        });
+      } else if (!isDoctor && statusKey === "InConsultation") {
+        setNotif({ visible: true, type: "info", message: "Rasti u dërgua te mjeku." });
       } else {
         setNotif({ visible: true, type: "info", message: "Statusi i rastit u përditësua. Lista u rifreskua." });
       }
@@ -182,14 +193,17 @@ export default function Cases() {
       unsubR();
       unsubS();
     };
-  }, [connection, fetchCases, onVitalsUpdated, onReportUpdated, onCaseStatusChanged]);
+  }, [connection, fetchCases, onVitalsUpdated, onReportUpdated, onCaseStatusChanged, isDoctor]);
 
   const handleContinueCase = async (c) => {
     const caseId = c?.id ?? c?.Id;
     if (!caseId) return;
     setContinuingCaseId(caseId);
     try {
-      await updateCaseStatus(caseId, "InConsultation");
+      const status = normalizeCaseStatus(c?.status ?? c?.Status);
+      if (status !== "InConsultation") {
+        await updateCaseStatus(caseId, "InConsultation");
+      }
       navigate(`/dashboard/cases/${caseId}/doctor`);
     } catch (err) {
       setNotif({
@@ -202,11 +216,19 @@ export default function Cases() {
     }
   };
 
-  const handleDeleteCase = async (c) => {
+  const requestDeleteCase = async (c) => {
     const caseId = c?.id ?? c?.Id;
     if (!caseId) return;
     const name = `${c?.patientFirstName ?? c?.PatientFirstName ?? ""} ${c?.patientLastName ?? c?.PatientLastName ?? ""}`.trim();
-    const ok = window.confirm(`Fshij rastin ${name ? `të ${name}` : ""}?`);
+    const ok = await confirm({
+      title: "Fshij rastin",
+      message: name
+        ? `Fshij rastin e pacientit ${name}? Të gjitha të dhënat e lidhura do të hiqen.`
+        : "Fshij këtë rast? Të gjitha të dhënat e lidhura do të hiqen.",
+      confirmLabel: "Fshij",
+      cancelLabel: "Anulo",
+      variant: "danger",
+    });
     if (!ok) return;
     setDeletingCaseId(caseId);
     try {
@@ -226,6 +248,7 @@ export default function Cases() {
 
   return (
     <div className="page-shell">
+      <ConfirmDialog />
       <Notification
         visible={notif.visible}
         type={notif.type}
@@ -260,8 +283,8 @@ export default function Cases() {
 
       <div className="mb-5 card px-4 py-3 text-sm text-slate-600 flex flex-wrap gap-2 items-center">
         <span className="font-semibold text-slate-700">Rrjedha e punës:</span>
-        <span className="px-2.5 py-1 rounded-full bg-slate-100">1) Infermieri: shenjat jetësore</span>
-        <span className="px-2.5 py-1 rounded-full bg-slate-100">2) Mjeku: zgjedh rastin (Vazhdo Rastin)</span>
+        <span className="px-2.5 py-1 rounded-full bg-slate-100">1) Infermieri: shenjat + «Vazhdo te mjeku»</span>
+        <span className="px-2.5 py-1 rounded-full bg-slate-100">2) Mjeku: hap rastin dhe konsulto</span>
         <span className="px-2.5 py-1 rounded-full bg-slate-100">3) Mjeku: raport + përfundo vizitën</span>
       </div>
 
@@ -369,7 +392,7 @@ export default function Cases() {
                           </td>
                           <td className="py-3 px-4 text-right">
                             <div className="flex flex-wrap items-center justify-end gap-2">
-                              {isDoctor && normalizeCaseStatus(status) === "Waiting" && (
+                              {isDoctor && normalizeCaseStatus(status) === "InConsultation" && (
                                 <button
                                   type="button"
                                   onClick={() => handleContinueCase(c)}
@@ -392,7 +415,7 @@ export default function Cases() {
                             <td className="py-3 px-4 text-right">
                               <button
                                 type="button"
-                                onClick={() => handleDeleteCase(c)}
+                                onClick={() => requestDeleteCase(c)}
                                 disabled={deletingCaseId === caseId}
                                 className="inline-flex items-center gap-1 px-2.5 py-1.5 text-sm font-medium text-red-700 bg-red-50 rounded-lg border border-red-200 hover:bg-red-100 disabled:opacity-60"
                               >

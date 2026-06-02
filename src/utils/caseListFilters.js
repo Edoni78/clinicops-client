@@ -66,10 +66,20 @@ export function normalizeStatusKey(s) {
     .replace(/\s+/g, "");
 }
 
-/** Doctor “përfunduar” + clinic “mbyllur”. */
+/** Doctor finished or nurse closed (not active queue). */
 export function isTerminalCaseStatus(s) {
   const n = normalizeStatusKey(s);
-  return n === "completed" || n === "finished";
+  return n === "completed" || n === "finished" || n === "mbyllur";
+}
+
+/** Awaiting nurse «Mbyll» in Reports after doctor finished. */
+export function isAwaitingNurseCloseStatus(s) {
+  return normalizeStatusKey(s) === "finished";
+}
+
+/** Fully closed by nurse. */
+export function isClosedCaseStatus(s) {
+  return normalizeStatusKey(s) === "mbyllur";
 }
 
 /** Match patient name search (handles first/last API shapes). */

@@ -10,12 +10,9 @@ import {
   FiFileText,
   FiImage,
   FiUpload,
-  FiActivity,
+  FiSettings,
 } from "react-icons/fi";
-import {
-  parseVitalPreferences,
-  DEFAULT_VITAL_PREFERENCES,
-} from "../../../utils/vitalPreferences";
+import ClinicPreferencesModal from "./components/ClinicPreferencesModal";
 import Notification from "../../../components/ui/Notification";
 import PageHeader from "../../../components/ui/PageHeader";
 import LoadingSpinner from "../../../components/ui/LoadingSpinner";
@@ -74,7 +71,7 @@ export default function ClinicProfile() {
     phone: "",
     description: "",
   });
-  const [vitalPrefs, setVitalPrefs] = useState({ ...DEFAULT_VITAL_PREFERENCES });
+  const [prefsModalOpen, setPrefsModalOpen] = useState(false);
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -92,7 +89,6 @@ export default function ClinicProfile() {
       const p = data?.phone ?? data?.Phone ?? "";
       const d = data?.description ?? data?.Description ?? "";
       setForm({ name: n, address: a, phone: p, description: d });
-      setVitalPrefs(parseVitalPreferences(data));
     } catch (err) {
       const msg =
         err.response?.data?.message ??
@@ -141,7 +137,6 @@ export default function ClinicProfile() {
         address: form.address.trim() || undefined,
         phone: form.phone.trim() || undefined,
         description: form.description.trim() || undefined,
-        vitalPreferences: vitalPrefs,
       };
       if (Object.keys(payload).some((k) => payload[k] != null)) {
         const updated = await updateClinicProfile(payload);
@@ -169,7 +164,6 @@ export default function ClinicProfile() {
       const p = profile.phone ?? profile.Phone ?? "";
       const d = profile.description ?? profile.Description ?? "";
       setForm({ name: n, address: a, phone: p, description: d });
-      setVitalPrefs(parseVitalPreferences(profile));
     }
   };
 
@@ -182,15 +176,25 @@ export default function ClinicProfile() {
   const displayPhone = profile?.phone ?? profile?.Phone ?? "—";
   const displayDescription = profile?.description ?? profile?.Description ?? "";
 
-  const editAction = (
-    <button
-      type="button"
-      onClick={() => setEditing(true)}
-      className="btn-primary btn-md"
-    >
-      <FiEdit2 size={16} aria-hidden />
-      Ndrysho profilin
-    </button>
+  const headerActions = !loading && profile && !editing && (
+    <div className="flex flex-wrap gap-2">
+      <button
+        type="button"
+        onClick={() => setPrefsModalOpen(true)}
+        className="btn-secondary btn-md"
+      >
+        <FiSettings size={16} aria-hidden />
+        Preferencat
+      </button>
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        className="btn-primary btn-md"
+      >
+        <FiEdit2 size={16} aria-hidden />
+        Ndrysho profilin
+      </button>
+    </div>
   );
 
   return (
@@ -207,7 +211,18 @@ export default function ClinicProfile() {
           title="Profili i klinikës"
           subtitle="Identiteti dhe informacioni i kontaktit të klinikës — shfaqen në panel, raporte dhe dokumente."
           icon={FiBriefcase}
-          actions={!loading && profile && !editing ? editAction : undefined}
+          actions={headerActions}
+        />
+
+        <ClinicPreferencesModal
+          profile={profile}
+          open={prefsModalOpen}
+          onClose={() => setPrefsModalOpen(false)}
+          onSaved={(updated) => {
+            setProfile(updated);
+            showNotif("success", "Preferencat u ruajtën.");
+          }}
+          onError={(msg) => showNotif("error", msg)}
         />
 
         {loading ? (
@@ -301,42 +316,6 @@ export default function ClinicProfile() {
                   <p className="text-xs text-slate-500 mt-1.5">
                     {form.description.length}/2000 karaktere
                   </p>
-                </section>
-
-                <section>
-                  <h3 className="text-sm font-semibold text-slate-800 mb-2 flex items-center gap-2">
-                    <span className="inline-flex p-1.5 rounded-lg bg-clinic-100 text-clinic-600">
-                      <FiActivity size={14} aria-hidden />
-                    </span>
-                    Shenjat vitale (preferencat)
-                  </h3>
-                  <p className="text-xs text-slate-500 mb-4">
-                    Zgjidhni cilat shenja infermieri mund të regjistrojë. Mund të çaktivizoni p.sh.
-                    temperaturën kur termometri nuk funksionon.
-                  </p>
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    {[
-                      { key: "enableWeight", label: "Pesha" },
-                      { key: "enableBloodPressure", label: "Presioni i gjakut" },
-                      { key: "enableTemperature", label: "Temperatura" },
-                      { key: "enableHeartRate", label: "Rrahjet e zemrës" },
-                    ].map(({ key, label }) => (
-                      <label
-                        key={key}
-                        className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3 cursor-pointer hover:border-clinic-200"
-                      >
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 rounded border-slate-300 text-clinic-600 focus:ring-clinic-500"
-                          checked={!!vitalPrefs[key]}
-                          onChange={(e) =>
-                            setVitalPrefs((p) => ({ ...p, [key]: e.target.checked }))
-                          }
-                        />
-                        <span className="text-sm font-medium text-slate-800">{label}</span>
-                      </label>
-                    ))}
-                  </div>
                 </section>
 
                 <section>
@@ -461,36 +440,6 @@ export default function ClinicProfile() {
               <div className="grid sm:grid-cols-2 gap-4">
                 <InfoField icon={FiMapPin} label="Adresa" value={displayAddress} />
                 <InfoField icon={FiPhone} label="Telefoni" value={displayPhone} />
-              </div>
-            </div>
-
-            {/* Vital preferences */}
-            <div>
-              <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-3 px-0.5">
-                Shenjat vitale
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { key: "enableWeight", label: "Pesha" },
-                  { key: "enableBloodPressure", label: "Presioni" },
-                  { key: "enableTemperature", label: "Temperatura" },
-                  { key: "enableHeartRate", label: "Rrahjet" },
-                ].map(({ key, label }) => {
-                  const active = parseVitalPreferences(profile)[key];
-                  return (
-                    <span
-                      key={key}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${
-                        active
-                          ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                          : "bg-slate-100 text-slate-500 border-slate-200 line-through"
-                      }`}
-                    >
-                      <FiActivity size={12} aria-hidden />
-                      {label}
-                    </span>
-                  );
-                })}
               </div>
             </div>
 

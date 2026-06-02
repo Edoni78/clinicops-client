@@ -2,6 +2,7 @@ export const STATUS_LABELS = {
   Waiting: "Në pritje",
   InConsultation: "Në konsultim",
   Finished: "Përfunduar",
+  Mbyllur: "Mbyllur",
   // Legacy statuses kept only so older records still render a readable label.
   InProgress: "Në progres",
   Completed: "Përfunduar",
@@ -13,13 +14,13 @@ export function getCaseStatusLabel(status) {
 }
 
 /**
- * Simplified 3-step flow: Waiting → InConsultation → Finished.
- * (InProgress / Completed are no longer used.)
+ * Flow: Waiting → InConsultation → Finished (mjeku) → Mbyllur (infermieri në raporte).
  */
 export const STATUS_FLOW = {
   Waiting: ["InConsultation"],
   InConsultation: ["Finished"],
-  Finished: [],
+  Finished: ["Mbyllur"],
+  Mbyllur: [],
 };
 
 /** Normalize status string to canonical casing (backend may return enum string). */
@@ -31,6 +32,8 @@ export function normalizeCaseStatus(s) {
     inconsultation: "InConsultation",
     in_consultation: "InConsultation",
     finished: "Finished",
+    mbyllur: "Mbyllur",
+    closed: "Mbyllur",
     // Legacy mappings for backward compatibility with old records.
     inprogress: "InProgress",
     in_progress: "InProgress",

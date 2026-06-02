@@ -1,5 +1,6 @@
 import axios from "axios";
 import api from "./axios";
+import { normalizeThemeId } from "../utils/colorThemePreferences";
 
 function normalizeApiPath(url) {
   if (!url) return null;
@@ -43,6 +44,19 @@ export async function updateClinicProfile(body) {
       EnableBloodPressure: !!v.enableBloodPressure,
       EnableTemperature: !!v.enableTemperature,
       EnableHeartRate: !!v.enableHeartRate,
+    };
+  }
+  if (body.protocolPreferences != null) {
+    const p = body.protocolPreferences;
+    payload.ProtocolPreferences = {
+      UseProtocolNumber: !!p.useProtocolNumber,
+      AllowNurseToSet: !!p.allowNurseToSet,
+      AllowDoctorToSet: !!p.allowDoctorToSet,
+    };
+  }
+  if (body.colorThemePreferences != null) {
+    payload.ColorThemePreferences = {
+      ThemeId: normalizeThemeId(body.colorThemePreferences.themeId),
     };
   }
   const { data } = await api.put("/api/Clinic/profile", payload);

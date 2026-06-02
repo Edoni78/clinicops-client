@@ -10,6 +10,8 @@ import {
   FiEye,
   FiTrash2,
   FiLink,
+  FiChevronDown,
+  FiChevronUp,
 } from "react-icons/fi";
 import api from "../../../api/axios";
 import { getPatientEmr } from "../../../api/emr";
@@ -17,6 +19,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { submitReport, deletePatientCaseReport } from "../../../api/patientCase";
 import { getDoctorProfile } from "../../../api/doctorProfile";
 import Notification from "../../../components/ui/Notification";
+import { useConfirmModal } from "../../../components/ui/ConfirmModal";
 import PageHeader from "../../../components/ui/PageHeader";
 import LoadingSpinner from "../../../components/ui/LoadingSpinner";
 import EmptyState from "../../../components/ui/EmptyState";
@@ -64,6 +67,9 @@ export default function EMRs() {
   });
   const [reportForm, setReportForm] = useState({ anamneza: "", diagnosis: "", therapy: "" });
   const [notif, setNotif] = useState({ visible: false, type: "info", message: "" });
+  const [expandedConsultIds, setExpandedConsultIds] = useState(() => new Set());
+  const [patientHeaderOpen, setPatientHeaderOpen] = useState(false);
+  const { confirm, ConfirmDialog } = useConfirmModal();
 
   useEffect(() => {
     setDoctorView(isDoctor);
@@ -140,8 +146,28 @@ export default function EMRs() {
     } else {
       setEmr(null);
     }
+    setExpandedConsultIds(new Set());
+    setPatientHeaderOpen(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPatientId, doctorView, isDoctor, deletedReportCaseIds]);
+
+  const toggleConsultExpanded = (caseId) => {
+    setExpandedConsultIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(caseId)) next.delete(caseId);
+      else next.add(caseId);
+      return next;
+    });
+  };
+
+  const expandAllConsults = () => {
+    if (!emr?.history?.length) return;
+    setExpandedConsultIds(new Set(emr.history.map((h) => h.patientCaseId)));
+  };
+
+  const collapseAllConsults = () => {
+    setExpandedConsultIds(new Set());
+  };
 
   useEffect(() => {
     sessionStorage.setItem("deleted_report_case_ids", JSON.stringify(deletedReportCaseIds));
@@ -205,8 +231,14 @@ export default function EMRs() {
     }
   };
 
-  const handleDeleteReport = async (caseId) => {
-    const ok = window.confirm("Fshij raportin mjekësor për këtë konsultë?");
+  const requestDeleteReport = async (caseId) => {
+    const ok = await confirm({
+      title: "Fshij raportin",
+      message: "Fshij raportin mjekësor për këtë konsultë? Ky veprim nuk mund të zhbëhet.",
+      confirmLabel: "Fshij",
+      cancelLabel: "Anulo",
+      variant: "danger",
+    });
     if (!ok) return;
     setDeletingReportCaseId(caseId);
     try {
@@ -246,6 +278,7 @@ export default function EMRs() {
 
   return (
     <>
+      <ConfirmDialog />
       <Notification
         visible={notif.visible}
         type={notif.type}
@@ -368,31 +401,90 @@ export default function EMRs() {
                   </a>
                 </div>
 
-                <EmrPatientHeader emr={emr} lastUpdated={lastUpdated} showEmrId={false} />
+                <div className="mb-5 rounded-2xl border border-slate-200/80 overflow-hidden bg-white shadow-sm">
+                  <button
+                    type="button"
+                    onClick={() => setPatientHeaderOpen((v) => !v)}
+                    className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left bg-slate-50/80 hover:bg-slate-100/80 transition-colors"
+                    aria-expanded={patientHeaderOpen}
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 truncate">
+                        {emr.firstName} {emr.lastName}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {patientHeaderOpen
+                          ? "Klikoni për të mbyllur të dhënat e pacientit"
+                          : "Klikoni për të parë të dhënat e pacientit"}
+                      </p>
+                    </div>
+                    <span
+                      className={`inline-flex shrink-0 items-center justify-center h-9 w-9 rounded-lg border border-slate-200 text-slate-500 transition-transform duration-200 ${
+                        patientHeaderOpen ? "rotate-180 bg-clinic-50 border-clinic-200" : "bg-white"
+                      }`}
+                    >
+                      <FiChevronDown size={20} />
+                    </span>
+                  </button>
+                  {patientHeaderOpen && (
+                    <div className="p-4 sm:p-5 border-t border-slate-100">
+                      <EmrPatientHeader
+                        emr={emr}
+                        lastUpdated={lastUpdated}
+                        showEmrId={false}
+                        className="mb-0"
+                      />
+                    </div>
+                  )}
+                </div>
 
                 {!Array.isArray(emr.history) || emr.history.length === 0 ? (
                   <EmptyState icon={FiBookOpen} title="Nuk ka histori konsultash." />
                 ) : (
                   <>
-                    <div className="mb-5">
-                      <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
-                        Historia e konsultave
-                      </h3>
-                      <p className="text-xs text-slate-400 mt-1">
-                        {emr.history.length}{" "}
-                        {emr.history.length === 1 ? "konsultë" : "konsulta"} të regjistruara
-                      </p>
+                    <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+                      <div>
+                        <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
+                          Historia e konsultave
+                        </h3>
+                        <p className="text-xs text-slate-400 mt-1">
+                          {emr.history.length}{" "}
+                          {emr.history.length === 1 ? "konsultë" : "konsulta"} — klikoni për të hapur detajet
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={expandAllConsults}
+                          className="btn-ghost btn-sm text-xs"
+                        >
+                          <FiChevronDown size={14} />
+                          Hap të gjitha
+                        </button>
+                        <button
+                          type="button"
+                          onClick={collapseAllConsults}
+                          className="btn-ghost btn-sm text-xs"
+                        >
+                          <FiChevronUp size={14} />
+                          Mbyll të gjitha
+                        </button>
+                      </div>
                     </div>
-                    <div className="space-y-5">
+                    <div className="space-y-3">
                       {emr.history.map((h) => {
                         const doctorName = resolveDoctorName(h, doctorDisplayName);
                         const showActions = (isDoctor && doctorView) || canDeleteReports;
+                        const isExpanded = expandedConsultIds.has(h.patientCaseId);
                         return (
                           <EmrConsultCard
                             key={h.patientCaseId}
                             consult={h}
                             doctorName={doctorName}
                             variant="full"
+                            collapsible
+                            expanded={isExpanded}
+                            onToggle={() => toggleConsultExpanded(h.patientCaseId)}
                             showMeta={doctorView && isDoctor}
                             actions={
                               showActions ? (
@@ -410,7 +502,7 @@ export default function EMRs() {
                                   {canDeleteReports && (
                                     <button
                                       type="button"
-                                      onClick={() => handleDeleteReport(h.patientCaseId)}
+                                      onClick={() => requestDeleteReport(h.patientCaseId)}
                                       disabled={deletingReportCaseId === h.patientCaseId}
                                       className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 disabled:opacity-60"
                                     >

@@ -8,6 +8,7 @@ const STATUS_BADGE = {
   InConsultation: "bg-sky-50 text-sky-800 border-sky-200",
   Completed: "bg-indigo-50 text-indigo-800 border-indigo-200",
   Finished: "bg-emerald-50 text-emerald-800 border-emerald-200",
+  Mbyllur: "bg-slate-100 text-slate-800 border-slate-300",
 };
 
 export default function PatientInfoCard({
@@ -16,6 +17,7 @@ export default function PatientInfoCard({
   patientPhone,
   caseStatus,
   assignedDoctorName,
+  protocolNumber,
 }) {
   const normalized = normalizeCaseStatus(caseStatus);
   const badgeClass = STATUS_BADGE[normalized] || "bg-slate-100 text-slate-700 border-slate-200";
@@ -47,6 +49,12 @@ export default function PatientInfoCard({
           </p>
           <p className="mt-1 text-sm font-semibold text-slate-900 tabular-nums">{patientPhone}</p>
         </div>
+        {protocolNumber?.trim() && (
+          <div>
+            <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Nr. protokollit</p>
+            <p className="mt-1 text-sm font-semibold text-slate-900 tabular-nums">{protocolNumber.trim()}</p>
+          </div>
+        )}
         {assignedDoctorName && (
           <div>
             <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Mjeku përgjegjës</p>

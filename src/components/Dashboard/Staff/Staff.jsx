@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { FiUserCheck, FiUserPlus, FiUser, FiRefreshCw, FiTrash2 } from "react-icons/fi";
 import Notification from "../../ui/Notification";
+import { useConfirmModal } from "../../ui/ConfirmModal";
 import PageHeader from "../../ui/PageHeader";
 import LoadingSpinner from "../../ui/LoadingSpinner";
 import EmptyState from "../../ui/EmptyState";
@@ -44,6 +45,7 @@ export default function Staff() {
   const [form, setForm] = useState({ displayName: "", email: "", password: "", role: "Doctor" });
   const [submitting, setSubmitting] = useState(false);
   const [deletingUserId, setDeletingUserId] = useState(null);
+  const { confirm, ConfirmDialog } = useConfirmModal();
 
   const isClinicAdmin = isClinicAdminRole(role);
   const isSuperAdmin = role && role.toString().toLowerCase() === "superadmin";
@@ -116,8 +118,14 @@ export default function Staff() {
     }
   };
 
-  const handleDeleteUser = async (id, displayName) => {
-    const ok = window.confirm(`Fshij anëtarin e stafit "${displayName}"?`);
+  const requestDeleteUser = async (id, displayName) => {
+    const ok = await confirm({
+      title: "Fshij përdoruesin",
+      message: `Fshij anëtarin e stafit «${displayName}»? Llogaria nuk do të ketë më akses në sistem.`,
+      confirmLabel: "Fshij",
+      cancelLabel: "Anulo",
+      variant: "danger",
+    });
     if (!ok) return;
     setDeletingUserId(id);
     try {
@@ -149,6 +157,7 @@ export default function Staff() {
 
   return (
     <>
+      <ConfirmDialog />
       <Notification
         visible={notif.visible}
         type={notif.type}
@@ -291,7 +300,7 @@ export default function Staff() {
                     </span>
                     <button
                       type="button"
-                      onClick={() => handleDeleteUser(id, displayName)}
+                      onClick={() => requestDeleteUser(id, displayName)}
                       disabled={deletingUserId === id}
                       className="btn-danger btn-sm"
                     >

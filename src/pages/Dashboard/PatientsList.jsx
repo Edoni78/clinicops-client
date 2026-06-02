@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import api from "../../api/axios";
 import Notification from "../../components/ui/Notification";
+import { useConfirmModal } from "../../components/ui/ConfirmModal";
 import {
   FiUsers,
   FiRefreshCw,
@@ -30,6 +31,7 @@ const PatientsList = () => {
     type: "info",
     message: "",
   });
+  const { confirm, ConfirmDialog } = useConfirmModal();
 
   useEffect(() => {
     fetchPatients();
@@ -54,10 +56,16 @@ const PatientsList = () => {
     }
   };
 
-  const handleDeletePatient = async (patient) => {
+  const requestDeletePatient = async (patient) => {
     const id = patient.id || patient.patientId || patient.Id;
     const name = `${patient.firstName || ""} ${patient.lastName || ""}`.trim() || "pacientin";
-    const ok = window.confirm(`Fshij ${name}?`);
+    const ok = await confirm({
+      title: "Fshij pacientin",
+      message: `Fshij ${name}? Të dhënat e pacientit do të hiqen nga klinika.`,
+      confirmLabel: "Fshij",
+      cancelLabel: "Anulo",
+      variant: "danger",
+    });
     if (!ok) return;
     setDeletingPatientId(id);
     try {
@@ -127,6 +135,7 @@ const PatientsList = () => {
 
   return (
     <>
+      <ConfirmDialog />
       <Notification
         visible={notif.visible}
         type={notif.type}
@@ -262,7 +271,7 @@ const PatientsList = () => {
                           <td className="py-4 px-4 text-right">
                             <button
                               type="button"
-                              onClick={() => handleDeletePatient(patient)}
+                              onClick={() => requestDeletePatient(patient)}
                               disabled={deletingPatientId === (patient.id || patient.patientId || patient.Id)}
                               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 disabled:opacity-60"
                             >

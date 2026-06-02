@@ -3,15 +3,18 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
+import { ClinicThemeProvider } from "./context/ClinicThemeContext";
 import { SignalRProvider } from "./context/SignalRContext";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
     <AuthProvider>
-      <SignalRProvider>
-        <App />
-      </SignalRProvider>
+      <ClinicThemeProvider>
+        <SignalRProvider>
+          <App />
+        </SignalRProvider>
+      </ClinicThemeProvider>
     </AuthProvider>
   </React.StrictMode>
 );

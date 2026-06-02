@@ -7,11 +7,13 @@ import {
   FiPrinter,
   FiRefreshCw,
   FiTrash2,
+  FiLock,
 } from "react-icons/fi";
 import {
   getPatientCases,
   enrichPatientCasesWithService,
   deletePatientCaseReport,
+  updateCaseStatus,
 } from "../../../api/patientCase";
 import { getDoctorProfile } from "../../../api/doctorProfile";
 import { useAuth } from "../../../context/AuthContext";
@@ -21,6 +23,7 @@ import {
   printCaseReportPdfFromBackend,
 } from "../../../utils/caseReportPdf";
 import Notification from "../../../components/ui/Notification";
+import { useConfirmModal } from "../../../components/ui/ConfirmModal";
 import PageHeader from "../../../components/ui/PageHeader";
 import LoadingSpinner from "../../../components/ui/LoadingSpinner";
 import ListFiltersBar from "../../../components/ui/ListFiltersBar";
@@ -29,9 +32,10 @@ import {
   isYesterday,
   isInThisWeek,
   isSameCalendarDay,
-  normalizeStatusKey,
   caseMatchesNameQuery,
+  isAwaitingNurseCloseStatus,
 } from "../../../utils/caseListFilters";
+import { getCaseStatusLabel, normalizeCaseStatus } from "../Cases/caseStatus";
 import { isClinicAdminRole } from "../../../utils/dashboardMenu";
 
 const DATE_FILTERS = [
@@ -43,30 +47,21 @@ const DATE_FILTERS = [
 
 const STATUS_TABS = [
   { value: "all", label: "Të gjitha" },
-  { value: "Finished", label: "Përfunduar" },
+  { value: "pendingClose", label: "Për të mbyllur" },
+  { value: "Mbyllur", label: "Mbyllur" },
 ];
 
-const STATUS_LABELS = {
-  Waiting: "Në pritje",
-  InProgress: "Në progres",
-  InConsultation: "Në konsultim",
-  Completed: "Përfunduar",
-  Finished: "Përfunduar",
-};
-
-function getStatusLabel(status) {
-  return STATUS_LABELS[status] || status || "—";
-}
-
 function statusBadgeClass(status) {
+  const key = normalizeCaseStatus(status);
   const map = {
     Waiting: "bg-amber-100 text-amber-800",
     InProgress: "bg-blue-100 text-blue-800",
     InConsultation: "bg-sky-100 text-sky-800",
     Completed: "bg-indigo-100 text-indigo-800",
     Finished: "bg-emerald-100 text-emerald-800",
+    Mbyllur: "bg-slate-200 text-slate-800",
   };
-  return map[status] || "bg-gray-100 text-gray-800";
+  return map[key] || "bg-gray-100 text-gray-800";
 }
 
 function formatDate(dateString) {
@@ -107,6 +102,8 @@ export default function Reports() {
   const roleLower = String(role || "").toLowerCase();
   const canDeleteReports =
     isClinicAdminRole(roleLower) || roleLower === "doctor" || roleLower === "superadmin";
+  const canCloseCase =
+    roleLower === "nurse" || isClinicAdminRole(roleLower) || roleLower === "superadmin";
   const isDoctor = String(role || "").toLowerCase() === "doctor";
   const [doctorDisplayName, setDoctorDisplayName] = useState("");
   const [reports, setReports] = useState([]);
@@ -119,6 +116,7 @@ export default function Reports() {
   const [downloadingId, setDownloadingId] = useState(null);
   const [printingId, setPrintingId] = useState(null);
   const [deletingReportId, setDeletingReportId] = useState(null);
+  const [closingCaseId, setClosingCaseId] = useState(null);
   const [deletedReportCaseIds, setDeletedReportCaseIds] = useState(() => {
     try {
       const raw = sessionStorage.getItem("deleted_report_case_ids");
@@ -129,6 +127,7 @@ export default function Reports() {
     }
   });
   const [notif, setNotif] = useState({ visible: false, type: "info", message: "" });
+  const { confirm, ConfirmDialog } = useConfirmModal();
 
   const handleDatePreset = (value) => {
     setDateFilter(value);
@@ -143,9 +142,14 @@ export default function Reports() {
   const fetchReports = useCallback(async () => {
     setLoading(true);
     try {
-      // Simplified flow: a completed visit is "Finished".
-      const finished = await getPatientCases("Finished");
-      const combined = [...(Array.isArray(finished) ? finished : [])];
+      const [finished, closed] = await Promise.all([
+        getPatientCases("Finished"),
+        getPatientCases("Mbyllur"),
+      ]);
+      const combined = [
+        ...(Array.isArray(finished) ? finished : []),
+        ...(Array.isArray(closed) ? closed : []),
+      ];
       const byId = new Map();
       combined.forEach((c) => {
         const id = c.id ?? c.Id;
@@ -180,9 +184,9 @@ export default function Reports() {
       const caseId = r.id ?? r.Id;
       if (deletedReportCaseIds.includes(caseId)) return false;
       const status = r.status ?? r.Status;
-      const sk = normalizeStatusKey(status);
-      if (reportStatusTab === "Completed" && sk !== "completed") return false;
-      if (reportStatusTab === "Finished" && sk !== "finished") return false;
+      const sk = normalizeCaseStatus(status);
+      if (reportStatusTab === "pendingClose" && !isAwaitingNurseCloseStatus(sk)) return false;
+      if (reportStatusTab === "Mbyllur" && sk !== "Mbyllur") return false;
       if (!caseMatchesNameQuery(r, nameSearch)) return false;
       const updated = r.updatedAt ?? r.UpdatedAt ?? r.createdAt ?? r.CreatedAt;
       if (customDate) return isSameCalendarDay(updated, customDate);
@@ -223,8 +227,43 @@ export default function Reports() {
     }
   };
 
-  const handleDeleteReport = async (caseId) => {
-    const ok = window.confirm("Fshij raportin mjekësor (EMR) për këtë rast?");
+  const requestCloseCase = async (caseId) => {
+    const ok = await confirm({
+      title: "Mbyll rastin",
+      message:
+        "Pas mbylljes, rasti kalon në status «Mbyllur» dhe nuk kërkon më veprime në raporte.",
+      confirmLabel: "Mbyll",
+      cancelLabel: "Anulo",
+      variant: "primary",
+    });
+    if (!ok) return;
+    setClosingCaseId(caseId);
+    try {
+      await updateCaseStatus(caseId, "Mbyllur");
+      setNotif({ visible: true, type: "success", message: "Rasti u mbyll." });
+      fetchReports();
+    } catch (err) {
+      setNotif({
+        visible: true,
+        type: "error",
+        message:
+          err.response?.data?.message ??
+          err.response?.data ??
+          "Mbyllja e rastit dështoi.",
+      });
+    } finally {
+      setClosingCaseId(null);
+    }
+  };
+
+  const requestDeleteReport = async (caseId) => {
+    const ok = await confirm({
+      title: "Fshij raportin",
+      message: "Fshij raportin mjekësor (EMR) për këtë rast? Ky veprim nuk mund të zhbëhet.",
+      confirmLabel: "Fshij",
+      cancelLabel: "Anulo",
+      variant: "danger",
+    });
     if (!ok) return;
     setDeletingReportId(caseId);
     try {
@@ -254,6 +293,7 @@ export default function Reports() {
 
   return (
     <div className="page-shell max-w-6xl">
+      <ConfirmDialog />
       <Notification
         visible={notif.visible}
         type={notif.type}
@@ -262,7 +302,7 @@ export default function Reports() {
       />
       <PageHeader
         title="Raportet"
-        subtitle="Vizitat e përfunduara. Printoni ose shkarkoni raportet mjekësore."
+        subtitle="Pas përfundimit nga mjeku, infermieri mbyll rastin me «Mbyll». Pastaj printoni ose shkarkoni raportin."
         icon={FiFileText}
         actions={
           <button type="button" onClick={fetchReports} disabled={loading} className="btn-secondary btn-md">
@@ -388,7 +428,7 @@ export default function Reports() {
                         <span
                           className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full border border-current/10 ${statusBadgeClass(status)}`}
                         >
-                          {getStatusLabel(status)}
+                          {getCaseStatusLabel(status)}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-sm text-slate-700 whitespace-nowrap">
@@ -404,6 +444,22 @@ export default function Reports() {
                       </td>
                       <td className="py-3 px-4 text-right whitespace-nowrap">
                         <div className="inline-flex flex-wrap items-center justify-end gap-2">
+                          {canCloseCase && isAwaitingNurseCloseStatus(status) && (
+                            <button
+                              type="button"
+                              onClick={() => requestCloseCase(caseId)}
+                              disabled={
+                                closingCaseId === caseId ||
+                                deletingReportId === caseId ||
+                                downloadingId === caseId ||
+                                printingId === caseId
+                              }
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-white bg-slate-700 rounded-lg hover:bg-slate-800 disabled:opacity-50 transition-colors"
+                            >
+                              <FiLock size={16} />
+                              {closingCaseId === caseId ? "Duke mbyllur…" : "Mbyll"}
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => handlePrintPdf(caseId)}
@@ -437,7 +493,7 @@ export default function Reports() {
                           {canDeleteReports && (
                             <button
                               type="button"
-                              onClick={() => handleDeleteReport(caseId)}
+                              onClick={() => requestDeleteReport(caseId)}
                               disabled={deletingReportId === caseId}
                               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-700 bg-red-50 rounded-lg border border-red-200 hover:bg-red-100 disabled:opacity-60"
                             >

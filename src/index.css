@@ -1,3 +1,16 @@
+:root {
+  --color-clinic-50: 244 248 251;
+  --color-clinic-100: 232 240 246;
+  --color-clinic-200: 209 225 237;
+  --color-clinic-300: 168 196 217;
+  --color-clinic-400: 129 162 197;
+  --color-clinic-500: 107 148 179;
+  --color-clinic-600: 86 122 148;
+  --color-clinic-700: 69 98 118;
+  --color-clinic-800: 58 81 98;
+  --color-clinic-900: 51 68 83;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -285,7 +298,11 @@
 
   .dashboard-content-bg {
     background-image:
-      radial-gradient(ellipse 80% 50% at 50% -20%, rgb(129 162 197 / 0.08), transparent),
+      radial-gradient(
+        ellipse 80% 50% at 50% -20%,
+        rgb(var(--color-clinic-400) / 0.08),
+        transparent
+      ),
       linear-gradient(to bottom, #f8fafc, #f1f5f9);
   }
 
@@ -393,7 +410,7 @@
     background: linear-gradient(
       90deg,
       transparent,
-      rgb(129 162 197 / 0.35),
+      rgb(var(--color-clinic-400) / 0.35),
       transparent
     );
     background-size: 200% 100%;
@@ -402,7 +419,7 @@
 
   .landing-hero-dashboard {
     box-shadow:
-      0 25px 50px -12px rgb(69 98 118 / 0.18),
+      0 25px 50px -12px rgb(var(--color-clinic-700) / 0.18),
       0 0 0 1px rgb(148 163 184 / 0.08);
   }
 

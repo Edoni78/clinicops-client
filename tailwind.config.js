@@ -5,16 +5,16 @@ module.exports = {
     extend: {
       colors: {
         clinic: {
-          50: "#f4f8fb",
-          100: "#e8f0f6",
-          200: "#d1e1ed",
-          300: "#a8c4d9",
-          400: "#81a2c5",
-          500: "#6b94b3",
-          600: "#567a94",
-          700: "#456276",
-          800: "#3a5162",
-          900: "#334453",
+          50: "rgb(var(--color-clinic-50) / <alpha-value>)",
+          100: "rgb(var(--color-clinic-100) / <alpha-value>)",
+          200: "rgb(var(--color-clinic-200) / <alpha-value>)",
+          300: "rgb(var(--color-clinic-300) / <alpha-value>)",
+          400: "rgb(var(--color-clinic-400) / <alpha-value>)",
+          500: "rgb(var(--color-clinic-500) / <alpha-value>)",
+          600: "rgb(var(--color-clinic-600) / <alpha-value>)",
+          700: "rgb(var(--color-clinic-700) / <alpha-value>)",
+          800: "rgb(var(--color-clinic-800) / <alpha-value>)",
+          900: "rgb(var(--color-clinic-900) / <alpha-value>)",
         },
       },
       boxShadow: {

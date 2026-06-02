@@ -27,12 +27,18 @@ function InfoTile({ icon: Icon, label, children, accent }) {
   );
 }
 
-export default function EmrPatientHeader({ emr, lastUpdated, showEmrId = true, variant = "default" }) {
+export default function EmrPatientHeader({
+  emr,
+  lastUpdated,
+  showEmrId = true,
+  variant = "default",
+  className = "",
+}) {
   const initials = getPatientInitials(emr.firstName, emr.lastName);
   const isPublic = variant === "public";
 
   return (
-    <div className="rounded-2xl overflow-hidden border border-slate-200/80 shadow-card-md mb-6">
+    <div className={`rounded-2xl overflow-hidden border border-slate-200/80 shadow-card-md ${className}`}>
       <div
         className={`px-5 sm:px-7 py-6 sm:py-7 ${
           isPublic

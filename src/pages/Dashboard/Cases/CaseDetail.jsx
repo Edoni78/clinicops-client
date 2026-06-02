@@ -7,6 +7,7 @@ import {
   submitVitals,
   submitReport,
   updateCaseStatus,
+  updateCaseProtocol,
   attachServiceToCase,
   getLabResults,
   uploadLabResult,
@@ -29,11 +30,20 @@ import {
   buildVitalsSubmitBody,
   parseVitalPreferences,
 } from "../../../utils/vitalPreferences";
+import {
+  canEditProtocolOnCase,
+  getCaseProtocolNumber,
+  hasCaseProtocolNumber,
+  isProtocolRequired,
+  parseProtocolPreferences,
+  protocolMissingMessage,
+} from "../../../utils/protocolPreferences";
 import { fmtEmrDateOnly, getGenderLabel } from "../../../utils/emrDisplay";
 import PatientInfoCard from "./components/PatientInfoCard";
 import NurseSection from "./components/NurseSection";
 import DoctorSection from "./components/DoctorSectionSimple";
 import LabResultsSection from "./components/LabResultsSection";
+import CaseProtocolSection from "./components/CaseProtocolSection";
 
 export default function CaseDetail() {
   const { id, view } = useParams();
@@ -77,6 +87,8 @@ export default function CaseDetail() {
   const [servicesLoading, setServicesLoading] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [serviceSubmitting, setServiceSubmitting] = useState(false);
+  const [protocolInput, setProtocolInput] = useState("");
+  const [protocolSubmitting, setProtocolSubmitting] = useState(false);
 
   const fetchCase = useCallback(async () => {
     if (!id) return;
@@ -102,6 +114,7 @@ export default function CaseDetail() {
           therapy: r.therapy ?? r.Therapy ?? "",
         });
       }
+      setProtocolInput(getCaseProtocolNumber(data));
     } catch (e) {
       setNotif({
         visible: true,
@@ -145,9 +158,19 @@ export default function CaseDetail() {
     joinCase(id);
 
     const unsubVitals = onVitalsUpdated((patientCaseId, vitalsDto) => {
-      if (patientCaseId === id) {
-        const v = vitalsDto || {};
-        setCaseData((prev) => (prev ? { ...prev, latestVitals: v } : null));
+      if (patientCaseId !== id) return;
+      const v = vitalsDto || {};
+      setCaseData((prev) => {
+        if (!prev) return null;
+        if (
+          isDoctor &&
+          normalizeCaseStatus(prev.status ?? prev.Status) !== "InConsultation"
+        ) {
+          return prev;
+        }
+        return { ...prev, latestVitals: v };
+      });
+      if (!isDoctor) {
         setVitals((prev) => ({
           ...prev,
           weightKg: v.weightKg ?? v.WeightKg ?? prev.weightKg,
@@ -235,7 +258,53 @@ export default function CaseDetail() {
     setNotif({ visible: true, type, message });
   };
 
+  const rawStatus = caseData?.status ?? caseData?.Status;
+  const caseStatus = normalizeCaseStatus(rawStatus);
+
   const vitalPreferences = parseVitalPreferences(caseData);
+  const protocolPreferences = parseProtocolPreferences(
+    caseData?.protocolPreferences ?? caseData?.ProtocolPreferences ?? caseData
+  );
+  const protocolNumber = getCaseProtocolNumber(caseData);
+  const canEditProtocol =
+    caseData && canEditProtocolOnCase(protocolPreferences, currentRole);
+  const caseFinished = caseStatus === "Finished" || caseStatus === "Mbyllur";
+
+  const assertProtocolBeforeFinish = () => {
+    if (!isProtocolRequired(protocolPreferences)) return true;
+    if (hasCaseProtocolNumber(caseData)) return true;
+    showNotif("error", protocolMissingMessage());
+    return false;
+  };
+
+  const handleSaveProtocol = async (e) => {
+    e.preventDefault();
+    const value = protocolInput.trim();
+    if (!value) {
+      showNotif("error", "Shkruani numrin e protokollit.");
+      return;
+    }
+    setProtocolSubmitting(true);
+    try {
+      const res = await updateCaseProtocol(id, value);
+      const saved =
+        res?.protocolNumber ?? res?.ProtocolNumber ?? value;
+      setCaseData((prev) =>
+        prev ? { ...prev, protocolNumber: saved, ProtocolNumber: saved } : null
+      );
+      setProtocolInput(saved);
+      showNotif("success", "Numri i protokollit u ruajt.");
+    } catch (err) {
+      showNotif(
+        "error",
+        err.response?.data?.message ||
+          err.response?.data ||
+          "Dështoi ruajtja e numrit të protokollit."
+      );
+    } finally {
+      setProtocolSubmitting(false);
+    }
+  };
 
   const handleSubmitVitals = async (e) => {
     e.preventDefault();
@@ -258,10 +327,10 @@ export default function CaseDetail() {
         temperatureC: dto?.TemperatureC ?? dto?.temperatureC ?? "",
         heartRate: dto?.HeartRate ?? dto?.heartRate ?? "",
       });
-      showNotif("success", "Shenjat jetësore u ruajtën. Pacienti është në pritje te mjeku.");
-      if (isNurse || view === "nurse") {
-        navigate("/dashboard/patients");
-      }
+      showNotif(
+        "success",
+        "Shenjat jetësore u ruajtën. Kur të jeni gati, klikoni «Vazhdo te mjeku»."
+      );
     } catch (e) {
       showNotif(
         "error",
@@ -273,10 +342,10 @@ export default function CaseDetail() {
   };
 
   const handleSkipVitals = () => {
-    showNotif("info", "Rasti vazhdon pa shenja vitale të ruajtura.");
-    if (isNurse || view === "nurse") {
-      navigate("/dashboard/patients");
-    }
+    showNotif(
+      "info",
+      "Nuk u ruajtën shenja vitale. Klikoni «Vazhdo te mjeku» kur të jeni gati."
+    );
   };
 
   const handleSubmitReport = async (e) => {
@@ -293,6 +362,7 @@ export default function CaseDetail() {
         therapy: report.therapy.trim(),
       });
       if (isSoloDoctorClinic) {
+        if (!assertProtocolBeforeFinish()) return;
         // SoloDoctor workflow: close the case immediately after report save.
         // Try direct finish first; if backend enforces step flow, advance in sequence.
         let finished = false;
@@ -333,11 +403,17 @@ export default function CaseDetail() {
   };
 
   const handleStatusChange = async (newStatus) => {
+    if (newStatus === "Finished" && !assertProtocolBeforeFinish()) return;
     setStatusSubmitting(true);
     try {
       await updateCaseStatus(id, newStatus);
       setCaseData((prev) => (prev ? { ...prev, status: newStatus } : null));
       if (newStatus === "Finished") {
+        navigate("/dashboard/cases");
+        return;
+      }
+      if (newStatus === "InConsultation" && (isNurse || view === "nurse")) {
+        showNotif("success", "Pacienti u dërgua te mjeku.");
         navigate("/dashboard/cases");
         return;
       }
@@ -408,12 +484,14 @@ export default function CaseDetail() {
     }
   };
 
-  const canEditVitals = isAuthenticated;
+  const canEditVitals =
+    (isNurse || view === "nurse") && caseStatus === "Waiting" && isAuthenticated;
   const canEditReportAndStatus = isAuthenticated;
-  const rawStatus = caseData?.status ?? caseData?.Status;
-  const caseStatus = normalizeCaseStatus(rawStatus);
   const allowedNextStatuses = caseData ? (STATUS_FLOW[caseStatus] || []) : [];
-  const nurseNextStatuses = [];
+  const nurseNextStatuses =
+    (isNurse || view === "nurse") && caseStatus === "Waiting"
+      ? allowedNextStatuses.filter((s) => s === "InConsultation")
+      : [];
   const doctorNextStatuses = allowedNextStatuses.filter((s) => s === "Finished");
 
   if (loading && !caseData) {
@@ -517,6 +595,18 @@ export default function CaseDetail() {
           patientPhone={patientPhone}
           caseStatus={caseData.status ?? caseData.Status}
           assignedDoctorName={assignedDoctorName}
+          protocolNumber={protocolNumber}
+        />
+
+        <CaseProtocolSection
+          protocolPreferences={protocolPreferences}
+          protocolNumber={protocolNumber}
+          protocolInput={protocolInput}
+          setProtocolInput={setProtocolInput}
+          canEdit={canEditProtocol}
+          protocolSubmitting={protocolSubmitting}
+          onSave={handleSaveProtocol}
+          caseFinished={caseFinished}
         />
 
         {showNurseSection && (
