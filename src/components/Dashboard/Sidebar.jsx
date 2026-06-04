@@ -14,6 +14,7 @@ import {
   FiPackage,
   FiX,
   FiShield,
+  FiClock,
 } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import { useDashboardPanel } from "../../context/DashboardPanelContext";
@@ -43,6 +44,7 @@ const MENU_ICONS = {
   staff: FiUserCheck,
   applies: FiClipboard,
   auditLogs: FiShield,
+  history: FiClock,
   clinicProfile: FiBriefcase,
   doctorProfile: FiUserCheck,
 };

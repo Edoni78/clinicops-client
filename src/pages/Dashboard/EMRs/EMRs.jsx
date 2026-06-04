@@ -65,7 +65,7 @@ export default function EMRs() {
     caseStatus: "",
     vitals: [],
   });
-  const [reportForm, setReportForm] = useState({ anamneza: "", diagnosis: "", therapy: "" });
+  const [reportForm, setReportForm] = useState({ anamneza: "", ekzaminimi: "", diagnosis: "", therapy: "" });
   const [notif, setNotif] = useState({ visible: false, type: "info", message: "" });
   const [expandedConsultIds, setExpandedConsultIds] = useState(() => new Set());
   const [patientHeaderOpen, setPatientHeaderOpen] = useState(false);
@@ -194,6 +194,7 @@ export default function EMRs() {
     });
     setReportForm({
       anamneza: row.anamneza || "",
+      ekzaminimi: row.ekzaminimi || "",
       diagnosis: row.diagnosis || "",
       therapy: row.therapy || "",
     });
@@ -201,7 +202,7 @@ export default function EMRs() {
 
   const closeEditModal = () => {
     setEditModal({ open: false, caseId: "", consultDate: "" });
-    setReportForm({ anamneza: "", diagnosis: "", therapy: "" });
+    setReportForm({ anamneza: "", ekzaminimi: "", diagnosis: "", therapy: "" });
   };
 
   const saveReport = async () => {
@@ -214,6 +215,7 @@ export default function EMRs() {
     try {
       await submitReport(editModal.caseId, {
         anamneza: reportForm.anamneza,
+        ekzaminimi: reportForm.ekzaminimi,
         diagnosis: reportForm.diagnosis,
         therapy: reportForm.therapy,
       });
@@ -572,6 +574,14 @@ export default function EMRs() {
                   className="input min-h-[104px]"
                   value={reportForm.anamneza}
                   onChange={(e) => setReportForm((p) => ({ ...p, anamneza: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="label">Ekzaminimi</label>
+                <textarea
+                  className="input min-h-[104px]"
+                  value={reportForm.ekzaminimi}
+                  onChange={(e) => setReportForm((p) => ({ ...p, ekzaminimi: e.target.value }))}
                 />
               </div>
               <div>

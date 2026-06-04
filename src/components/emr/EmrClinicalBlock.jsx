@@ -10,6 +10,13 @@ const SECTIONS = [
     iconBg: "bg-violet-100 text-violet-700",
   },
   {
+    key: "ekzaminimi",
+    label: "Ekzaminimi",
+    icon: FiClipboard,
+    accent: "border-l-sky-500 bg-sky-50/40",
+    iconBg: "bg-sky-100 text-sky-700",
+  },
+  {
     key: "diagnosis",
     label: "Diagnoza",
     icon: FiClipboard,

@@ -17,6 +17,7 @@ import {
   FiBriefcase,
   FiPackage,
   FiShield,
+  FiClock,
 } from "react-icons/fi";
 import { getJwtPayload } from "../../utils/jwt";
 import { useAuth } from "../../context/AuthContext";
@@ -37,6 +38,7 @@ const MENU_ICONS = {
   staff: FiUserCheck,
   applies: FiClipboard,
   auditLogs: FiShield,
+  history: FiClock,
   clinicProfile: FiBriefcase,
   doctorProfile: FiUserCheck,
 };
@@ -50,7 +52,7 @@ function getClinicInitials(name) {
   return name.slice(0, 2).toUpperCase();
 }
 
-function NavLinkItem({ label, icon: Icon, path, onClick, mobile = false }) {
+function NavLinkItem({ label, icon: Icon, path, onClick, mobile = false, tourId }) {
   const activeCls = mobile ? "topnav-link-mobile-active" : "topnav-link-active";
   const inactiveCls = mobile ? "topnav-link-mobile-inactive" : "topnav-link-inactive";
 
@@ -59,6 +61,7 @@ function NavLinkItem({ label, icon: Icon, path, onClick, mobile = false }) {
       to={path}
       end={path === "/dashboard"}
       onClick={onClick}
+      data-tour={tourId || undefined}
       className={({ isActive }) => (isActive ? activeCls : inactiveCls)}
     >
       <Icon size={mobile ? 18 : 16} className="shrink-0 opacity-90" strokeWidth={1.75} />
@@ -74,7 +77,7 @@ function DesktopNav({ items }) {
       aria-label="Navigimi kryesor"
     >
       {items.map((item) => (
-        <NavLinkItem key={`${item.path}-${item.label}`} {...item} />
+        <NavLinkItem key={`${item.path}-${item.label}`} {...item} tourId={item.tourId} />
       ))}
     </nav>
   );
@@ -139,9 +142,11 @@ const Topbar = () => {
   const navItems = useMemo(() => {
     const menu = getSidebarMenuItems({ roleLower, activePanel, hasClinic });
     return menu.map(({ key, label, path }) => ({
+      key,
       label,
       path,
       icon: MENU_ICONS[key] || FiHome,
+      tourId: key === "clinicProfile" ? "clinic-profile" : key,
     }));
   }, [roleLower, activePanel, hasClinic]);
 

@@ -3,6 +3,7 @@ import { PANEL_NURSE, PANEL_DOCTOR, PANEL_SUPERADMIN } from "./dashboardPanels";
 export const MENU = {
   home: { key: "home", label: "Paneli", path: "/dashboard" },
   emrs: { key: "emrs", label: "EMRs", path: "/dashboard/emrs" },
+  history: { key: "history", label: "Historia", path: "/dashboard/history" },
   patients: { key: "patients", label: "Pacientët", path: "/dashboard/patients" },
   patientsList: {
     key: "patientsList",
@@ -40,6 +41,7 @@ function pick(...items) {
 const DOCTOR_MENU = pick(
   MENU.home,
   MENU.emrs,
+  MENU.history,
   MENU.patientsList,
   MENU.cases,
   MENU.reports,
@@ -61,6 +63,7 @@ const CLINIC_ADMIN_MENU = (hasClinic) =>
   pick(
     MENU.home,
     MENU.emrs,
+    MENU.history,
     MENU.patients,
     MENU.patientsList,
     MENU.cases,

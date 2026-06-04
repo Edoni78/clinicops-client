@@ -1,6 +1,7 @@
 import React from "react";
 import { Outlet, Navigate, useLocation } from "react-router-dom";
 import Topbar from "./TopBar";
+import ClinicAdminOnboardingTour from "../onboarding/ClinicAdminOnboardingTour";
 import LoadingSpinner from "../ui/LoadingSpinner";
 import { useDashboardPanel } from "../../context/DashboardPanelContext";
 import { useAuth } from "../../context/AuthContext";
@@ -41,6 +42,7 @@ function DashboardLayoutInner() {
   return (
     <div className="h-screen flex flex-col dashboard-bg overflow-hidden">
       <Topbar />
+      <ClinicAdminOnboardingTour />
 
       <main className="dashboard-main">
         <Outlet />

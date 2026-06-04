@@ -79,13 +79,14 @@ export async function submitVitals(id, body) {
 }
 
 /**
- * Doctor: submit anamneza, diagnosis and therapy. Backend expects PascalCase (Anamneza, Diagnosis, Therapy).
+ * Doctor: submit anamneza, ekzaminimi, diagnosis and therapy. Backend expects PascalCase.
  * @param {string} id - case id (GUID)
- * @param {{ anamneza?: string, diagnosis: string, therapy: string }} body
+ * @param {{ anamneza?: string, ekzaminimi?: string, diagnosis: string, therapy: string }} body
  */
 export async function submitReport(id, body) {
   const payload = {
     Anamneza: body.anamneza ?? "",
+    Ekzaminimi: body.ekzaminimi ?? "",
     Diagnosis: body.diagnosis,
     Therapy: body.therapy,
   };

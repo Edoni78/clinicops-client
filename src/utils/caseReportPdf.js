@@ -103,6 +103,7 @@ function getReportData(caseData, clinicHeader = {}, doctorInfo = {}) {
       height: height != null ? String(height) : "—",
     },
     anamneza: r?.anamneza ?? r?.Anamneza ?? "",
+    ekzaminimi: r?.ekzaminimi ?? r?.Ekzaminimi ?? "",
     diagnosis: r?.diagnosis ?? r?.Diagnosis ?? "—",
     therapy: r?.therapy ?? r?.Therapy ?? "—",
     notes: r?.notes ?? r?.Notes ?? "",
@@ -305,6 +306,9 @@ export function downloadCaseReportPdf(caseData, clinicHeader = null, doctorInfo 
   }
   if (data.anamneza) {
     drawTextBox(doc, "Anamneza", data.anamneza, margin, pageWidth, yRef, colors.teal600);
+  }
+  if (data.ekzaminimi) {
+    drawTextBox(doc, "Ekzaminimi", data.ekzaminimi, margin, pageWidth, yRef, colors.indigo600);
   }
   drawTextBox(doc, "Diagnoza", data.diagnosis, margin, pageWidth, yRef, colors.emerald600);
   drawTextBox(doc, "Terapia", data.therapy, margin, pageWidth, yRef, colors.violet600);

@@ -17,6 +17,7 @@ import {
 } from "../../../api/patientCase";
 import { getDoctorProfile } from "../../../api/doctorProfile";
 import { useAuth } from "../../../context/AuthContext";
+import { useSignalR } from "../../../context/SignalRContext";
 import { pickCaseServiceFields, formatCaseServicePriceEUR } from "../../../utils/caseServiceFields";
 import {
   downloadCaseReportPdfFromBackend,
@@ -37,6 +38,7 @@ import {
 } from "../../../utils/caseListFilters";
 import { getCaseStatusLabel, normalizeCaseStatus } from "../Cases/caseStatus";
 import { isClinicAdminRole } from "../../../utils/dashboardMenu";
+import { getRoleFromJwt } from "../../../utils/jwt";
 
 const DATE_FILTERS = [
   { value: "today", label: "Sot" },
@@ -104,12 +106,18 @@ export default function Reports() {
     isClinicAdminRole(roleLower) || roleLower === "doctor" || roleLower === "superadmin";
   const canCloseCase =
     roleLower === "nurse" || isClinicAdminRole(roleLower) || roleLower === "superadmin";
+  const isNurse = roleLower === "nurse";
   const isDoctor = String(role || "").toLowerCase() === "doctor";
+  const { connection, connectionState, onCaseStatusChanged, onReportUpdated } = useSignalR();
+  const signalRRefreshTimerRef = React.useRef(null);
   const [doctorDisplayName, setDoctorDisplayName] = useState("");
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
-  /** all | Completed | Finished — completed-visit type */
-  const [reportStatusTab, setReportStatusTab] = useState("all");
+  /** Nurses land on «Për të mbyllur»; others see all statuses. */
+  const [reportStatusTab, setReportStatusTab] = useState(() => {
+    const r = String(role ?? getRoleFromJwt() ?? "").toLowerCase();
+    return r === "nurse" ? "pendingClose" : "all";
+  });
   const [dateFilter, setDateFilter] = useState("today");
   const [nameSearch, setNameSearch] = useState("");
   const [customDate, setCustomDate] = useState("");
@@ -139,8 +147,8 @@ export default function Reports() {
     if (value) setDateFilter("");
   };
 
-  const fetchReports = useCallback(async () => {
-    setLoading(true);
+  const fetchReports = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const [finished, closed] = await Promise.all([
         getPatientCases("Finished"),
@@ -160,13 +168,90 @@ export default function Reports() {
     } catch {
       setReports([]);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     fetchReports();
   }, [fetchReports]);
+
+  const scheduleSignalRReportsRefresh = useCallback(() => {
+    if (signalRRefreshTimerRef.current) {
+      clearTimeout(signalRRefreshTimerRef.current);
+    }
+    signalRRefreshTimerRef.current = window.setTimeout(() => {
+      signalRRefreshTimerRef.current = null;
+      fetchReports(true);
+    }, 200);
+  }, [fetchReports]);
+
+  // Real-time updates when doctor finishes a visit or report/status changes.
+  useEffect(() => {
+    if (!connection) return;
+
+    const patchCaseStatus = (patientCaseId, newStatus) => {
+      if (!patientCaseId) return;
+      setReports((prev) => {
+        const idx = prev.findIndex((c) => (c.id ?? c.Id) === patientCaseId);
+        if (idx < 0) return prev;
+        const next = [...prev];
+        next[idx] = { ...next[idx], status: newStatus, Status: newStatus };
+        return next;
+      });
+    };
+
+    const unsubReport = onReportUpdated(scheduleSignalRReportsRefresh);
+    const unsubStatus = onCaseStatusChanged((patientCaseId, newStatus) => {
+      patchCaseStatus(patientCaseId, newStatus);
+      scheduleSignalRReportsRefresh();
+      const statusKey = normalizeCaseStatus(newStatus);
+      if (isNurse && statusKey === "Finished") {
+        setNotif({
+          visible: true,
+          type: "success",
+          message: "Mjeku përfundoi një vizitë. Rasti u shtua te «Për të mbyllur».",
+        });
+      } else if (isNurse && statusKey === "Mbyllur") {
+        setNotif({
+          visible: true,
+          type: "info",
+          message: "Statusi i rastit u përditësua.",
+        });
+      }
+    });
+
+    return () => {
+      unsubReport();
+      unsubStatus();
+      if (signalRRefreshTimerRef.current) {
+        clearTimeout(signalRRefreshTimerRef.current);
+        signalRRefreshTimerRef.current = null;
+      }
+    };
+  }, [
+    connection,
+    scheduleSignalRReportsRefresh,
+    onReportUpdated,
+    onCaseStatusChanged,
+    isNurse,
+  ]);
+
+  // Fallback sync when SignalR is down (e.g. newly finished cases).
+  useEffect(() => {
+    const refreshIfVisible = () => {
+      if (document.visibilityState === "visible") fetchReports(true);
+    };
+    const intervalMs = connectionState === "Connected" ? 30000 : 10000;
+    const intervalId = window.setInterval(refreshIfVisible, intervalMs);
+    window.addEventListener("focus", refreshIfVisible);
+    document.addEventListener("visibilitychange", refreshIfVisible);
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", refreshIfVisible);
+      document.removeEventListener("visibilitychange", refreshIfVisible);
+    };
+  }, [fetchReports, connectionState]);
 
   useEffect(() => {
     sessionStorage.setItem("deleted_report_case_ids", JSON.stringify(deletedReportCaseIds));

@@ -73,7 +73,7 @@ export default function CaseDetail() {
   const [vitalsSubmitting, setVitalsSubmitting] = useState(false);
 
   // Doctor: report form
-  const [report, setReport] = useState({ anamneza: "", diagnosis: "", therapy: "" });
+  const [report, setReport] = useState({ anamneza: "", ekzaminimi: "", diagnosis: "", therapy: "" });
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [statusSubmitting, setStatusSubmitting] = useState(false);
 
@@ -110,6 +110,7 @@ export default function CaseDetail() {
       if (r) {
         setReport({
           anamneza: r.anamneza ?? r.Anamneza ?? "",
+          ekzaminimi: r.ekzaminimi ?? r.Ekzaminimi ?? "",
           diagnosis: r.diagnosis ?? r.Diagnosis ?? "",
           therapy: r.therapy ?? r.Therapy ?? "",
         });
@@ -187,6 +188,7 @@ export default function CaseDetail() {
         setCaseData((prev) => (prev ? { ...prev, medicalReport: r } : null));
         setReport((prev) => ({
           anamneza: r.anamneza ?? r.Anamneza ?? prev.anamneza,
+          ekzaminimi: r.ekzaminimi ?? r.Ekzaminimi ?? prev.ekzaminimi,
           diagnosis: r.diagnosis ?? r.Diagnosis ?? prev.diagnosis,
           therapy: r.therapy ?? r.Therapy ?? prev.therapy,
         }));
@@ -358,6 +360,7 @@ export default function CaseDetail() {
     try {
       await submitReport(id, {
         anamneza: (report.anamneza || "").trim(),
+        ekzaminimi: (report.ekzaminimi || "").trim(),
         diagnosis: report.diagnosis.trim(),
         therapy: report.therapy.trim(),
       });

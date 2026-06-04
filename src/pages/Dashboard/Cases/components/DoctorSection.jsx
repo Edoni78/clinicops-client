@@ -88,6 +88,7 @@ export default function DoctorSection(props) {
         {canEditReportAndStatus && (
           <form onSubmit={handleSubmitReport} className="p-5 border-b border-slate-200 bg-slate-50 space-y-3">
             <div><label className="block text-xs font-medium text-slate-700 mb-1.5">Anamneza</label><textarea value={report.anamneza} onChange={(e) => setReport((p) => ({ ...p, anamneza: e.target.value }))} rows={2} className="w-full px-2.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-clinic-400 focus:border-transparent" placeholder="Historia e sëmundjes, anamneza..." /></div>
+            <div><label className="block text-xs font-medium text-slate-700 mb-1.5">Ekzaminimi</label><textarea value={report.ekzaminimi} onChange={(e) => setReport((p) => ({ ...p, ekzaminimi: e.target.value }))} rows={2} className="w-full px-2.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-clinic-400 focus:border-transparent" placeholder="Gjetjet e ekzaminimit..." /></div>
             <div><label className="block text-xs font-medium text-slate-700 mb-1.5">Diagnoza *</label><textarea value={report.diagnosis} onChange={(e) => setReport((p) => ({ ...p, diagnosis: e.target.value }))} rows={2} required className="w-full px-2.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-clinic-400 focus:border-transparent" placeholder="Vendosni diagnozën..." /></div>
             <div><label className="block text-xs font-medium text-slate-700 mb-1.5">Terapia *</label><textarea value={report.therapy} onChange={(e) => setReport((p) => ({ ...p, therapy: e.target.value }))} rows={2} required className="w-full px-2.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-clinic-400 focus:border-transparent" placeholder="Vendosni terapi / recetë..." /></div>
             <button type="submit" disabled={reportSubmitting} className="inline-flex items-center gap-2 px-5 py-2.5 bg-clinic-400 text-white font-semibold rounded-xl hover:bg-clinic-500 disabled:opacity-50 transition-colors shadow-sm">{reportSubmitting ? <span className="animate-pulse">Duke ruajtur…</span> : <><FiCheck size={18} /> Ruaj raportin</>}</button>
@@ -171,8 +172,8 @@ export default function DoctorSection(props) {
           <div style={{ border: "1px solid #e2e8f0", borderRadius: 14, overflow: "hidden", marginBottom: 20 }}>
             <div style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0", padding: "12px 16px", fontSize: 14, color: "#0f172a" }}>Shënime klinike</div>
             <div style={{ padding: "18px 16px" }}>
-              {[["Anamneza", report.anamneza || medicalReport?.anamneza || medicalReport?.Anamneza || "—"], ["Diagnoza", report.diagnosis || medicalReport?.diagnosis || medicalReport?.Diagnosis || "—"], ["Terapia / Rekomandimi", report.therapy || medicalReport?.therapy || medicalReport?.Therapy || "—"]].map(([k, v], idx) => (
-                <div key={k} style={{ marginBottom: idx === 2 ? 0 : 18 }}>
+              {[["Anamneza", report.anamneza || medicalReport?.anamneza || medicalReport?.Anamneza || "—"], ["Ekzaminimi", report.ekzaminimi || medicalReport?.ekzaminimi || medicalReport?.Ekzaminimi || "—"], ["Diagnoza", report.diagnosis || medicalReport?.diagnosis || medicalReport?.Diagnosis || "—"], ["Terapia / Rekomandimi", report.therapy || medicalReport?.therapy || medicalReport?.Therapy || "—"]].map(([k, v], idx) => (
+                <div key={k} style={{ marginBottom: idx === 3 ? 0 : 18 }}>
                   <div style={{ fontSize: 13, color: "#64748b", marginBottom: 6 }}>{k}</div>
                   <div style={{ fontSize: 14, color: "#0f172a", whiteSpace: "pre-wrap" }}>{v}</div>
                 </div>

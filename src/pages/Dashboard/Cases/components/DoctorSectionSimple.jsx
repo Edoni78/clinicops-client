@@ -121,6 +121,15 @@ export default function DoctorSectionSimple(props) {
                   />
                 </div>
                 <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Ekzaminimi</label>
+                  <textarea
+                    value={report.ekzaminimi}
+                    onChange={(e) => setReport((p) => ({ ...p, ekzaminimi: e.target.value }))}
+                    rows={3}
+                    className={inputClass}
+                  />
+                </div>
+                <div>
                   <label className="block text-xs font-medium text-slate-600 mb-1.5">
                     Diagnoza *
                   </label>
@@ -220,6 +229,12 @@ export default function DoctorSectionSimple(props) {
                   <p className="text-xs text-slate-500 mb-1">Anamneza</p>
                   <p className="text-sm text-slate-900 whitespace-pre-wrap">
                     {medicalReport?.anamneza ?? medicalReport?.Anamneza ?? "—"}
+                  </p>
+                </div>
+                <div className="px-5 py-3">
+                  <p className="text-xs text-slate-500 mb-1">Ekzaminimi</p>
+                  <p className="text-sm text-slate-900 whitespace-pre-wrap">
+                    {medicalReport?.ekzaminimi ?? medicalReport?.Ekzaminimi ?? "—"}
                   </p>
                 </div>
                 <div className="px-5 py-3">

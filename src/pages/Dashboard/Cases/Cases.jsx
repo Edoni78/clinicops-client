@@ -92,7 +92,9 @@ export default function Cases() {
   const [casesQuickDate, setCasesQuickDate] = useState("");
   const [nameSearch, setNameSearch] = useState("");
   const [customDate, setCustomDate] = useState("");
-  const { connection, connectionState, onVitalsUpdated, onReportUpdated, onCaseStatusChanged } = useSignalR();
+  const { connection, connectionState, onVitalsUpdated, onReportUpdated, onCaseStatusChanged } =
+    useSignalR();
+  const signalRRefreshTimerRef = React.useRef(null);
 
   const handleDatePreset = (value) => {
     setCasesQuickDate(value);
@@ -153,12 +155,13 @@ export default function Cases() {
 
   // Fallback real-time sync for newly created cases.
   // Some backends don't emit a dedicated "case created" SignalR event,
-  // so we silently refresh while this page is open.
+  // so we silently refresh while this page is open (less often when SignalR is up).
   useEffect(() => {
     const refreshIfVisible = () => {
       if (document.visibilityState === "visible") fetchCases(true);
     };
-    const intervalId = window.setInterval(refreshIfVisible, 8000);
+    const intervalMs = connectionState === "Connected" ? 30000 : 8000;
+    const intervalId = window.setInterval(refreshIfVisible, intervalMs);
     window.addEventListener("focus", refreshIfVisible);
     document.addEventListener("visibilitychange", refreshIfVisible);
     return () => {
@@ -166,15 +169,25 @@ export default function Cases() {
       window.removeEventListener("focus", refreshIfVisible);
       document.removeEventListener("visibilitychange", refreshIfVisible);
     };
+  }, [fetchCases, connectionState]);
+
+  const scheduleSignalRListRefresh = useCallback(() => {
+    if (signalRRefreshTimerRef.current) {
+      clearTimeout(signalRRefreshTimerRef.current);
+    }
+    signalRRefreshTimerRef.current = window.setTimeout(() => {
+      signalRRefreshTimerRef.current = null;
+      fetchCases(true);
+    }, 200);
   }, [fetchCases]);
 
   // Auto-update list via SignalR and show notification when status changes (e.g. nurse sends case to doctor)
   useEffect(() => {
     if (!connection) return;
-    const unsubV = isDoctor ? () => {} : onVitalsUpdated(() => fetchCases(true));
-    const unsubR = onReportUpdated(() => fetchCases(true));
+    const unsubV = isDoctor ? () => {} : onVitalsUpdated(scheduleSignalRListRefresh);
+    const unsubR = onReportUpdated(scheduleSignalRListRefresh);
     const unsubS = onCaseStatusChanged((patientCaseId, newStatus) => {
-      fetchCases(true);
+      scheduleSignalRListRefresh();
       const statusKey = normalizeCaseStatus(newStatus);
       if (isDoctor && statusKey === "InConsultation") {
         setNotif({
@@ -192,8 +205,19 @@ export default function Cases() {
       unsubV();
       unsubR();
       unsubS();
+      if (signalRRefreshTimerRef.current) {
+        clearTimeout(signalRRefreshTimerRef.current);
+        signalRRefreshTimerRef.current = null;
+      }
     };
-  }, [connection, fetchCases, onVitalsUpdated, onReportUpdated, onCaseStatusChanged, isDoctor]);
+  }, [
+    connection,
+    scheduleSignalRListRefresh,
+    onVitalsUpdated,
+    onReportUpdated,
+    onCaseStatusChanged,
+    isDoctor,
+  ]);
 
   const handleContinueCase = async (c) => {
     const caseId = c?.id ?? c?.Id;
@@ -280,13 +304,6 @@ export default function Cases() {
           </>
         }
       />
-
-      <div className="mb-5 card px-4 py-3 text-sm text-slate-600 flex flex-wrap gap-2 items-center">
-        <span className="font-semibold text-slate-700">Rrjedha e punës:</span>
-        <span className="px-2.5 py-1 rounded-full bg-slate-100">1) Infermieri: shenjat + «Vazhdo te mjeku»</span>
-        <span className="px-2.5 py-1 rounded-full bg-slate-100">2) Mjeku: hap rastin dhe konsulto</span>
-        <span className="px-2.5 py-1 rounded-full bg-slate-100">3) Mjeku: raport + përfundo vizitën</span>
-      </div>
 
       <div className="table-shell">
         {loading ? (
