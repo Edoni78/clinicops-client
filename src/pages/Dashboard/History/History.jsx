@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import {
   FiClock,
   FiRefreshCw,
@@ -7,7 +7,6 @@ import {
   FiChevronRight,
   FiUser,
   FiPhone,
-  FiExternalLink,
 } from "react-icons/fi";
 import api from "../../../api/axios";
 import { getPatientEmr } from "../../../api/emr";
@@ -360,19 +359,9 @@ export default function History() {
                               </p>
                             ) : (
                               <div className="space-y-4">
-                                <div className="flex flex-wrap items-center justify-between gap-3 pb-1">
-                                  <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">
-                                    Historia e vizitave
-                                  </h3>
-                                  <Link
-                                    to="/dashboard/emrs"
-                                    className="inline-flex items-center gap-1.5 text-sm font-medium text-clinic-600 hover:text-clinic-700"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    Hap në EMRs
-                                    <FiExternalLink size={14} />
-                                  </Link>
-                                </div>
+                                <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide pb-1">
+                                  Historia e vizitave
+                                </h3>
                                 <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
                                   <table className="w-full min-w-[640px] text-sm">
                                     <thead>
