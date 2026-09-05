@@ -150,5 +150,8 @@ export function isDashboardPathAllowed(pathname, ctx) {
   if (allowed.includes(MENU.cases.path) && path.startsWith("/dashboard/cases/")) {
     return true;
   }
+  if (path === "/dashboard/patients-import") {
+    return isClinicAdminRole(ctx.roleLower);
+  }
   return false;
 }

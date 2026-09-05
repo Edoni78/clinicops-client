@@ -8,6 +8,7 @@ import {
   FiUserPlus,
   FiPhone,
   FiTrash2,
+  FiUploadCloud,
 } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import PageHeader from "../../components/ui/PageHeader";
@@ -22,6 +23,7 @@ const PatientsList = () => {
   const { role } = useAuth();
   const roleLower = String(role || "").toLowerCase();
   const canDeletePatients = isClinicAdminRole(roleLower) || roleLower === "doctor" || roleLower === "superadmin";
+  const canImportPatients = isClinicAdminRole(roleLower);
   const [patientsLoading, setPatientsLoading] = useState(false);
   const [patients, setPatients] = useState([]);
   const [deletingPatientId, setDeletingPatientId] = useState(null);
@@ -159,6 +161,12 @@ const PatientsList = () => {
                 <FiRefreshCw className={patientsLoading ? "animate-spin" : ""} size={18} />
                 Rifresko
               </button>
+              {canImportPatients && (
+                <Link to="/dashboard/patients-import" className="btn-secondary btn-md">
+                  <FiUploadCloud size={18} />
+                  Importo pacientë
+                </Link>
+              )}
               <Link to="/dashboard/patients" className="btn-primary btn-md">
                 <FiUserPlus size={18} />
                 Regjistro pacient të ri

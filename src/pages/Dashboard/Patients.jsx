@@ -11,12 +11,15 @@ import {
   FiActivity,
   FiSearch,
   FiUserCheck,
+  FiUploadCloud,
 } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
 import PageHeader from "../../components/ui/PageHeader";
 import { listClinicUsers } from "../../api/clinicUser";
 import { getClinicUserDisplayName } from "../../utils/clinicUserDisplay";
 import { listPatients, registerPatient, openPatientCase } from "../../api/patient";
+import { useAuth } from "../../context/AuthContext";
+import { isClinicAdminRole } from "../../utils/dashboardMenu";
 
 const EMPTY_FORM = {
   firstName: "",
@@ -76,6 +79,8 @@ function navigateAfterCase(navigate, data) {
 
 const Patients = () => {
   const navigate = useNavigate();
+  const { role } = useAuth();
+  const canImportPatients = isClinicAdminRole(role);
   const [formData, setFormData] = useState({ ...EMPTY_FORM });
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [patients, setPatients] = useState([]);
@@ -348,10 +353,18 @@ const Patients = () => {
           subtitle="Zgjidhni një pacient ekzistues për të hapur rast të ri, ose shtoni një pacient të ri."
           icon={FiUserPlus}
           actions={
-            <Link to="/dashboard/patients-list" className="btn-secondary btn-md">
-              <FiUsers size={18} />
-              Shiko të gjithë pacientët
-            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              {canImportPatients && (
+                <Link to="/dashboard/patients-import" className="btn-secondary btn-md">
+                  <FiUploadCloud size={18} />
+                  Importo pacientë
+                </Link>
+              )}
+              <Link to="/dashboard/patients-list" className="btn-secondary btn-md">
+                <FiUsers size={18} />
+                Shiko të gjithë pacientët
+              </Link>
+            </div>
           }
         />
 

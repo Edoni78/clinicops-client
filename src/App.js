@@ -8,6 +8,7 @@ import { DashboardPanelProvider } from "./context/DashboardPanelContext";
 import PanelSelection from "./pages/Dashboard/PanelSelection";
 import Patients from "./pages/Dashboard/Patients";
 import PatientsList from "./pages/Dashboard/PatientsList";
+import PatientsImport from "./pages/Dashboard/PatientsImport";
 import DashboardHome from "./pages/Dashboard/DashboardHome";
 import Cases from "./pages/Dashboard/Cases/Cases";
 import CaseDetail from "./pages/Dashboard/Cases/CaseDetail";
@@ -48,6 +49,7 @@ function App() {
           <Route index element={<DashboardHome />} />
           <Route path="patients" element={<Patients />} />
           <Route path="patients-list" element={<PatientsList />} />
+          <Route path="patients-import" element={<PatientsImport />} />
           <Route path="cases" element={<Cases />} />
           <Route path="cases/:id/:view" element={<CaseDetail />} />
           <Route path="cases/:id" element={<CaseDetail />} />
