@@ -59,9 +59,8 @@ const Notification = ({
       className={`
         fixed top-4 right-4 left-4 sm:left-auto sm:max-w-md z-[100]
         ${style.bg} ${style.border} ${style.text}
-        border rounded-xl
-        px-4 py-3
-        shadow-card-md
+        border rounded-md
+        px-3 py-2.5
         min-w-0
         animate-slide-in
       `}

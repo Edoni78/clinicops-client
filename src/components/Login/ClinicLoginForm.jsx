@@ -233,11 +233,11 @@ const ClinicLoginForm = () => {
 
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-clinic-400 text-white font-bold shadow-sm">
+          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-slate-900 text-white font-semibold text-xs">
             iK
           </span>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Hyr në iKlinika</h1>
+            <h1 className="text-xl font-semibold text-slate-900">Hyr në iKlinika</h1>
             <p className="text-sm text-slate-500 mt-0.5">Paneli i menaxhimit të klinikës</p>
           </div>
         </div>
@@ -446,7 +446,7 @@ const ClinicLoginForm = () => {
       </form>
       )}
 
-      <p className="text-xs text-slate-400 mt-10">I sigurt • I shpejtë • iKlinika</p>
+      <p className="text-xs text-slate-400 mt-8">iKlinika</p>
     </>
   );
 };

@@ -6,8 +6,8 @@ const SECTIONS = [
     key: "anamneza",
     label: "Anamneza",
     icon: FiFileText,
-    accent: "border-l-violet-500 bg-violet-50/40",
-    iconBg: "bg-violet-100 text-violet-700",
+    accent: "border-l-slate-500 bg-slate-50",
+    iconBg: "bg-slate-100 text-slate-700",
   },
   {
     key: "ekzaminimi",

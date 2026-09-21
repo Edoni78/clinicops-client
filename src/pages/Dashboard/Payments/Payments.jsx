@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   FiDollarSign,
-  FiClock,
   FiCalendar,
   FiRefreshCw,
   FiX,
@@ -54,14 +53,14 @@ function getStatusLabel(status) {
 
 function statusBadgeClass(status) {
   const map = {
-    Waiting: "bg-amber-100 text-amber-800",
-    InProgress: "bg-blue-100 text-blue-800",
-    InConsultation: "bg-sky-100 text-sky-800",
-    Completed: "bg-indigo-100 text-indigo-800",
-    Finished: "bg-emerald-100 text-emerald-800",
-    Mbyllur: "bg-slate-100 text-slate-700",
+    Waiting: "bg-amber-50 text-amber-800 border-amber-200",
+    InProgress: "bg-sky-50 text-sky-800 border-sky-200",
+    InConsultation: "bg-sky-50 text-sky-800 border-sky-200",
+    Completed: "bg-emerald-50 text-emerald-800 border-emerald-200",
+    Finished: "bg-emerald-50 text-emerald-800 border-emerald-200",
+    Mbyllur: "bg-slate-50 text-slate-700 border-slate-200",
   };
-  return map[status] || "bg-gray-100 text-gray-800";
+  return map[status] || "bg-slate-50 text-slate-700 border-slate-200";
 }
 
 function formatDate(dateString) {
@@ -281,7 +280,7 @@ export default function Payments() {
           <p className="text-2xl font-bold tabular-nums text-slate-900">{formatEUR(totals.avg)}</p>
           <p className="text-xs text-slate-500 mt-1">Llogaritet vetëm për rreshtat me shumë të vendosur</p>
         </div>
-        <div className="rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50/90 to-white p-5 shadow-sm">
+        <div className="rounded-md border border-slate-200 bg-white p-4">
           <p className="text-slate-700 text-sm font-medium leading-snug">
             Filtrat më poshtë përditësojnë kartat dhe totalet në kohë reale. Për detaje klinike hapni rastin nga
             kolona e veprimeve.
@@ -477,28 +476,16 @@ export default function Payments() {
             </Link>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+              <div className="table-scroll">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/80">
-                  <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Pacienti
-                  </th>
-                  <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Data
-                  </th>
-                  <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Statusi
-                  </th>
-                  <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Shërbimi
-                  </th>
-                  <th className="text-right py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Shuma
-                  </th>
-                  <th className="text-right py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Veprime
-                  </th>
+                <tr className="table-head-row">
+                  <th className="table-th">Pacienti</th>
+                  <th className="table-th">Data</th>
+                  <th className="table-th">Statusi</th>
+                  <th className="table-th">Shërbimi</th>
+                  <th className="table-th text-right">Shuma</th>
+                  <th className="table-th text-right">Veprime</th>
                 </tr>
               </thead>
               <tbody>
@@ -518,40 +505,37 @@ export default function Payments() {
                   const { servicePrice } = pickCaseServiceFields(r);
                   const priceNum = toPriceNumber(servicePrice);
                   return (
-                    <tr key={caseId} className="border-b border-slate-100/90 hover:bg-slate-50 transition-colors">
-                      <td className="py-3 px-4">
+                    <tr key={caseId} className="table-row">
+                      <td className="table-td">
                         <Link
                           to={`/dashboard/cases/${caseId}`}
-                          className="font-medium text-slate-900 hover:text-clinic-400"
+                          className="font-medium text-slate-900 hover:text-sky-700"
                         >
                           {firstName} {lastName}
                         </Link>
                       </td>
-                      <td className="py-3 px-4 text-sm text-slate-600 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1.5">
-                          <FiClock size={13} className="flex-shrink-0 text-slate-400" />
+                      <td className="table-td tabular-nums text-xs text-slate-600 whitespace-nowrap">
                           {formatDate(updated)}
-                        </span>
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="table-td">
                         <span
-                          className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full border border-current/10 ${statusBadgeClass(status)}`}
+                          className={`status-pill ${statusBadgeClass(status)}`}
                         >
                           {getStatusLabel(status)}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-sm text-slate-700 max-w-[220px] sm:max-w-xs">
+                      <td className="table-td max-w-[220px] sm:max-w-xs">
                         <span className="line-clamp-2" title={serviceLabel !== "—" ? serviceLabel : undefined}>
                           {serviceLabel}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-sm text-slate-900 text-right whitespace-nowrap tabular-nums font-medium">
+                      <td className="table-td text-right whitespace-nowrap tabular-nums font-medium">
                         {formatEUR(priceNum)}
                       </td>
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                      <td className="table-td text-right whitespace-nowrap">
                         <Link
                           to={`/dashboard/cases/${caseId}`}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-clinic-400 bg-clinic-400/10 rounded-lg hover:bg-clinic-400/20 transition-colors border border-clinic-400/20"
+                          className="btn-secondary btn-sm"
                         >
                           Hap rastin
                         </Link>

@@ -153,5 +153,8 @@ export function isDashboardPathAllowed(pathname, ctx) {
   if (path === "/dashboard/patients-import") {
     return isClinicAdminRole(ctx.roleLower);
   }
+  if (path === "/dashboard/cases-import") {
+    return isClinicAdminRole(ctx.roleLower);
+  }
   return false;
 }

@@ -42,13 +42,13 @@ function formatDate(dateString) {
 
 function statusBadgeClass(status) {
   const map = {
-    Waiting: "bg-amber-100 text-amber-800",
-    InProgress: "bg-blue-100 text-blue-800",
-    InConsultation: "bg-violet-100 text-violet-800",
-    Completed: "bg-emerald-100 text-emerald-800",
-    Finished: "bg-slate-100 text-slate-700",
+    Waiting: "bg-amber-50 text-amber-800 border-amber-200",
+    InProgress: "bg-sky-50 text-sky-800 border-sky-200",
+    InConsultation: "bg-sky-50 text-sky-800 border-sky-200",
+    Completed: "bg-emerald-50 text-emerald-800 border-emerald-200",
+    Finished: "bg-slate-50 text-slate-700 border-slate-200",
   };
-  return map[status] || "bg-gray-100 text-gray-800";
+  return map[status] || "bg-slate-50 text-slate-700 border-slate-200";
 }
 
 /** Returns YYYY-MM-DD in local time for a case date (createdAt). */
@@ -300,7 +300,7 @@ export default function Laboratory() {
                       <FiClock size={13} />
                       {formatDate(c.createdAt ?? c.CreatedAt)}
                     </span>
-                    <span className={`badge ${statusBadgeClass(status)}`}>
+                    <span className={`status-pill ${statusBadgeClass(status)}`}>
                       {getStatusLabel(status)}
                     </span>
                   </div>

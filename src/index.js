@@ -5,15 +5,18 @@ import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
 import { ClinicThemeProvider } from "./context/ClinicThemeContext";
 import { SignalRProvider } from "./context/SignalRContext";
+import { UiDensityProvider } from "./context/UiDensityContext";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
     <AuthProvider>
       <ClinicThemeProvider>
-        <SignalRProvider>
-          <App />
-        </SignalRProvider>
+        <UiDensityProvider>
+          <SignalRProvider>
+            <App />
+          </SignalRProvider>
+        </UiDensityProvider>
       </ClinicThemeProvider>
     </AuthProvider>
   </React.StrictMode>

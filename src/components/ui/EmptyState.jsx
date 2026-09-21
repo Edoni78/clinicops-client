@@ -9,8 +9,8 @@ export default function EmptyState({ icon: Icon, title, description, action }) {
         </div>
       )}
       {title && <p className="text-slate-800 font-medium text-sm">{title}</p>}
-      {description && <p className="text-slate-500 text-sm mt-1 max-w-md leading-relaxed">{description}</p>}
-      {action && <div className="mt-4">{action}</div>}
+      {description && <p className="text-slate-500 text-xs mt-1 max-w-md leading-snug">{description}</p>}
+      {action && <div className="mt-3">{action}</div>}
     </div>
   );
 }

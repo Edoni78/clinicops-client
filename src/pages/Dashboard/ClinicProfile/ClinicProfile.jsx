@@ -391,25 +391,16 @@ export default function ClinicProfile() {
             {/* Identity hero */}
             <div className="card overflow-hidden">
               <div className="flex flex-col sm:flex-row">
-                <div className="relative shrink-0 sm:w-52 bg-gradient-to-br from-clinic-700 via-clinic-500 to-clinic-400 px-6 pt-8 pb-10 sm:py-10 flex items-center justify-center">
-                  <div
-                    className="absolute inset-0 opacity-[0.1] pointer-events-none"
-                    style={{
-                      backgroundImage:
-                        "radial-gradient(circle at 25% 75%, white 1px, transparent 1px), radial-gradient(circle at 75% 25%, white 1px, transparent 1px)",
-                      backgroundSize: "28px 28px",
-                    }}
-                    aria-hidden
-                  />
+                <div className="relative shrink-0 sm:w-40 bg-slate-50 border-b sm:border-b-0 sm:border-r border-slate-200 px-4 py-6 flex items-center justify-center">
                   {fullLogoUrl ? (
                     <img
                       src={fullLogoUrl}
                       alt={`Logotipi i ${displayName}`}
-                      className="relative z-10 w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover ring-4 ring-white/90 shadow-card-md"
+                      className="relative z-10 w-20 h-20 sm:w-24 sm:h-24 rounded-md object-cover border border-slate-200"
                     />
                   ) : (
-                    <div className="relative z-10 w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-white/95 flex items-center justify-center ring-4 ring-white/90 shadow-card-md">
-                      <span className="text-3xl font-bold text-clinic-600">
+                    <div className="relative z-10 w-20 h-20 sm:w-24 sm:h-24 rounded-md bg-white flex items-center justify-center border border-slate-200">
+                      <span className="text-xl font-semibold text-slate-700">
                         {getInitials(displayName)}
                       </span>
                     </div>
@@ -418,7 +409,7 @@ export default function ClinicProfile() {
 
                 <div className="flex-1 min-w-0 px-5 sm:px-8 py-6 sm:py-8 flex flex-col justify-center border-t sm:border-t-0 sm:border-l border-slate-100">
                   <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                    <h2 className="text-lg sm:text-xl font-semibold text-slate-900 tracking-tight">
                       {displayName}
                     </h2>
                     <span className="badge bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/80">

@@ -3,16 +3,16 @@ export const DEFAULT_COLOR_THEME_ID = "default";
 /** RGB triplets for Tailwind clinic-* (space-separated, no commas). */
 export const COLOR_THEME_PALETTES = {
   default: {
-    50: "244 248 251",
-    100: "232 240 246",
-    200: "209 225 237",
-    300: "168 196 217",
-    400: "129 162 197",
-    500: "107 148 179",
-    600: "86 122 148",
-    700: "69 98 118",
-    800: "58 81 98",
-    900: "51 68 83",
+    50: "240 249 255",
+    100: "224 242 254",
+    200: "186 230 253",
+    300: "125 211 252",
+    400: "56 189 248",
+    500: "14 165 233",
+    600: "2 132 199",
+    700: "3 105 161",
+    800: "7 89 133",
+    900: "12 74 110",
   },
   emerald: {
     50: "236 253 245",
@@ -68,8 +68,8 @@ export const COLOR_THEME_OPTIONS = [
   {
     id: "default",
     label: "Parazgjedhur",
-    description: "Blu-gri — pamja aktuale e sistemit",
-    swatch: "#567a94",
+    description: "Blu klinike, kontrast i lartë",
+    swatch: "#0284C7",
   },
   {
     id: "emerald",

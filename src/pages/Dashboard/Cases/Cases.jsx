@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FiFolder, FiRefreshCw, FiClock, FiTrash2 } from "react-icons/fi";
+import { FiFolder, FiRefreshCw, FiTrash2, FiUploadCloud } from "react-icons/fi";
 import { getPatientCases, deletePatientCase, updateCaseStatus } from "../../../api/patientCase";
 import { useSignalR } from "../../../context/SignalRContext";
 import { useAuth } from "../../../context/AuthContext";
@@ -20,19 +20,8 @@ import {
 import { normalizeCaseStatus } from "./caseStatus";
 import { getClinicId } from "../../../utils/clinicId";
 import { isClinicAdminRole } from "../../../utils/dashboardMenu";
-
-const STATUS_LABELS = {
-  Waiting: "Në pritje",
-  InProgress: "Në progres",
-  InConsultation: "Në konsultim",
-  Completed: "Përfunduar",
-  Finished: "Përfunduar",
-  Mbyllur: "Mbyllur",
-};
-
-function getStatusLabel(status) {
-  return STATUS_LABELS[status] || status;
-}
+import StatusBadge from "../../../components/ui/StatusBadge";
+import { formatUpdatedBy } from "../../../utils/relativeTime";
 
 function formatDate(dateString) {
   if (!dateString) return "—";
@@ -60,18 +49,6 @@ const CASE_DATE_PRESETS = [
   { value: "", label: "Të gjitha" },
 ];
 
-function statusBadgeClass(status) {
-  const map = {
-    Waiting: "bg-amber-100 text-amber-800",
-    InProgress: "bg-blue-100 text-blue-800",
-    InConsultation: "bg-sky-100 text-sky-800",
-    Completed: "bg-indigo-100 text-indigo-800",
-    Finished: "bg-emerald-100 text-emerald-800",
-    Mbyllur: "bg-slate-200 text-slate-800",
-  };
-  return map[status] || "bg-gray-100 text-gray-800";
-}
-
 export default function Cases() {
   const navigate = useNavigate();
   const { role } = useAuth();
@@ -80,6 +57,7 @@ export default function Cases() {
   const isNurse = currentRole === "nurse";
   const canDeleteCases =
     isClinicAdminRole(currentRole) || currentRole === "doctor" || currentRole === "superadmin";
+  const canImportCases = isClinicAdminRole(currentRole);
   const [cases, setCases] = useState([]);
   const [deletingCaseId, setDeletingCaseId] = useState(null);
   const [continuingCaseId, setContinuingCaseId] = useState(null);
@@ -287,7 +265,7 @@ export default function Cases() {
         actions={
           <>
             {connectionState === "Connected" && (
-              <span className="flex items-center gap-1.5 text-sm text-sky-700 bg-sky-50 border border-sky-200 px-3 py-1.5 rounded-xl font-medium">
+              <span className="flex items-center gap-1.5 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-md font-medium">
                 <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
                 Direkt
               </span>
@@ -301,6 +279,12 @@ export default function Cases() {
               <FiRefreshCw className={loading ? "animate-spin" : ""} size={18} />
               Rifresko
             </button>
+            {canImportCases && (
+              <Link to="/dashboard/cases-import" className="btn-primary btn-md">
+                <FiUploadCloud size={18} />
+                Importo raste
+              </Link>
+            )}
           </>
         }
       />
@@ -313,6 +297,13 @@ export default function Cases() {
             icon={FiFolder}
             title="Nuk ka raste"
             description="Nuk ka raste të regjistruara ende."
+            action={
+              isNurse || isClinicAdminRole(currentRole) || currentRole === "superadmin" ? (
+                <Link to="/dashboard/patients" className="btn-primary btn-md">
+                  Hap rast të ri
+                </Link>
+              ) : null
+            }
           />
         ) : (
           <>
@@ -333,9 +324,8 @@ export default function Cases() {
             />
 
             {filteredCases.length === 0 ? (
-              <div className="text-center py-16 px-6">
-                <FiFolder className="mx-auto text-slate-300 mb-4" size={48} />
-                <p className="text-slate-600">
+              <div className="text-center py-10 px-4">
+                <p className="text-sm text-slate-600">
                   {nameSearch.trim()
                     ? "Nuk u gjet asnjë rast për këtë kërkim."
                     : customDate
@@ -350,26 +340,16 @@ export default function Cases() {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="table-scroll">
                 <table className="w-full">
                   <thead>
                     <tr className="table-head-row">
-                      <th className="table-th">
-                        Pacienti
-                      </th>
-                      <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                        Data
-                      </th>
-                      <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                        Statusi
-                      </th>
-                      <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                        Mjeku
-                      </th>
-                      <th className="text-right py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500 min-w-[14rem]">
-                        Veprimet
-                      </th>
-                      {canDeleteCases && <th className="w-20" />}
+                      <th className="table-th">Pacienti</th>
+                      <th className="table-th">Data</th>
+                      <th className="table-th">Statusi</th>
+                      <th className="table-th">Mjeku</th>
+                      <th className="table-th text-right min-w-[12rem]">Veprimet</th>
+                      {canDeleteCases && <th className="w-16" />}
                     </tr>
                   </thead>
                   <tbody>
@@ -381,60 +361,56 @@ export default function Cases() {
                       const createdAt = c.createdAt ?? c.CreatedAt;
                       const assignedDoctorName =
                         c.assignedDoctorName ?? c.AssignedDoctorName ?? "";
+                      const updatedAt = c.updatedAt ?? c.UpdatedAt ?? createdAt;
                       return (
                         <tr key={caseId} className="table-row">
-                          <td className="py-3 px-4">
+                          <td className="table-td">
                             <Link
                               to={getCaseOpenPath(c)}
-                              className="font-medium text-slate-900 hover:text-clinic-400"
+                              className="font-medium text-slate-900 hover:text-sky-700"
                             >
                               {firstName} {lastName}
                             </Link>
+                            <p className="audit-meta mt-0.5">
+                              {formatUpdatedBy(updatedAt, assignedDoctorName)}
+                            </p>
                           </td>
-                          <td className="py-3 px-4 text-sm text-slate-600">
-                            <span className="inline-flex items-center gap-1.5">
-                              <FiClock size={13} className="flex-shrink-0" />
-                              {formatDate(createdAt)}
-                            </span>
+                          <td className="table-td tabular-nums text-xs text-slate-600">
+                            {formatDate(createdAt)}
                           </td>
-                          <td className="py-3 px-4">
-                            <span
-                              className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full border border-current/10 ${statusBadgeClass(status)}`}
-                            >
-                              {getStatusLabel(status)}
-                            </span>
+                          <td className="table-td">
+                            <StatusBadge status={status} />
                           </td>
-                          <td className="py-3 px-4 text-sm text-slate-600 whitespace-nowrap">
+                          <td className="table-td whitespace-nowrap">
                             {assignedDoctorName || "—"}
                           </td>
-                          <td className="py-3 px-4 text-right">
-                            <div className="flex flex-wrap items-center justify-end gap-2">
+                          <td className="table-td text-right">
+                            <div className="flex flex-wrap items-center justify-end gap-1.5">
                               {isDoctor && normalizeCaseStatus(status) === "InConsultation" && (
                                 <button
                                   type="button"
                                   onClick={() => handleContinueCase(c)}
                                   disabled={continuingCaseId === caseId}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-white bg-clinic-400 rounded-lg hover:bg-clinic-500 disabled:opacity-60 transition-colors"
+                                  className="btn-primary btn-sm"
                                 >
                                   {continuingCaseId === caseId ? "Duke hapur…" : "Vazhdo Rastin"}
                                 </button>
                               )}
                               <Link
                                 to={getCaseOpenPath(c)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-clinic-400 bg-clinic-400/10 rounded-lg hover:bg-clinic-400/20 transition-colors border border-clinic-400/20"
+                                className="btn-secondary btn-sm"
                               >
                                 Hap
-                                <span aria-hidden>→</span>
                               </Link>
                             </div>
                           </td>
                           {canDeleteCases && (
-                            <td className="py-3 px-4 text-right">
+                            <td className="table-td text-right">
                               <button
                                 type="button"
                                 onClick={() => requestDeleteCase(c)}
                                 disabled={deletingCaseId === caseId}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-sm font-medium text-red-700 bg-red-50 rounded-lg border border-red-200 hover:bg-red-100 disabled:opacity-60"
+                                className="btn-danger btn-sm"
                               >
                                 <FiTrash2 size={14} />
                                 {deletingCaseId === caseId ? "..." : "Fshij"}

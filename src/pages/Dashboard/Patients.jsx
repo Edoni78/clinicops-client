@@ -390,10 +390,10 @@ const Patients = () => {
               <button
                 type="button"
                 onClick={selectNewPatient}
-                className={`w-full text-left rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors ${
+                className={`w-full text-left rounded-md border px-3 py-2 text-sm font-medium ${
                   !selectedPatient
-                    ? "border-clinic-500 bg-clinic-50 text-clinic-800 ring-1 ring-clinic-300"
-                    : "border-slate-200 bg-slate-50/80 text-slate-700 hover:border-clinic-200"
+                    ? "border-slate-900 bg-slate-50 text-slate-900"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
                 }`}
               >
                 <span className="inline-flex items-center gap-2">
@@ -422,10 +422,10 @@ const Patients = () => {
                         <button
                           type="button"
                           onClick={() => selectExistingPatient(patient)}
-                          className={`w-full text-left rounded-xl px-3 py-2.5 transition-colors ${
+                          className={`w-full text-left rounded-md px-3 py-2 ${
                             active
-                              ? "bg-clinic-100 text-clinic-900 ring-1 ring-clinic-300"
-                              : "hover:bg-slate-50 text-slate-800"
+                              ? "bg-slate-50 text-slate-900 border border-slate-200"
+                              : "hover:bg-slate-50 text-slate-800 border border-transparent"
                           }`}
                         >
                           <span className="block text-sm font-medium truncate">

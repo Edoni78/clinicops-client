@@ -23,7 +23,7 @@ export default function ListFiltersBar({
   const hasDate = Array.isArray(datePresets) && datePresets.length > 0;
 
   return (
-    <div className="p-4 border-b border-slate-200 space-y-3 bg-slate-50/40">
+    <div className="p-3 border-b border-slate-200 space-y-2 bg-slate-50">
       <div className="input-icon-wrap">
         <FiSearch className="input-icon" size={17} aria-hidden />
         <input

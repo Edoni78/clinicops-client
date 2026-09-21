@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { FiX, FiActivity, FiHash, FiDroplet } from "react-icons/fi";
+import { FiActivity, FiHash, FiDroplet } from "react-icons/fi";
 import {
   DEFAULT_VITAL_PREFERENCES,
   parseVitalPreferences,
@@ -16,6 +16,7 @@ import {
 } from "../../../../utils/colorThemePreferences";
 import { updateClinicProfile } from "../../../../api/clinic";
 import { useClinicTheme } from "../../../../context/ClinicThemeContext";
+import Drawer from "../../../../components/ui/Drawer";
 
 const VITAL_OPTIONS = [
   { key: "enableWeight", label: "Pesha" },
@@ -70,27 +71,14 @@ export default function ClinicPreferencesModal({ profile, open, onClose, onSaved
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="card w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 sm:p-7">
-        <div className="flex items-start justify-between gap-3 mb-5">
-          <div>
-            <h3 className="text-xl font-semibold text-slate-900">Preferencat</h3>
-            <p className="text-sm text-slate-600 mt-0.5">
-              Shenjat vitale, numri i protokollit dhe ngjyrat e sistemit.
-            </p>
-          </div>
-          <button
-            type="button"
-            className="btn-ghost btn-sm"
-            onClick={handleClose}
-            disabled={submitting}
-            aria-label="Mbyll"
-          >
-            <FiX size={16} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSave} className="space-y-8">
+    <Drawer
+      open={open}
+      onClose={handleClose}
+      title="Preferencat"
+      subtitle="Shenjat vitale, numri i protokollit dhe ngjyrat e sistemit."
+      widthClass="max-w-lg"
+    >
+        <form onSubmit={handleSave} className="space-y-6">
           <section>
             <h4 className="text-sm font-semibold text-slate-800 mb-2 flex items-center gap-2">
               <span className="inline-flex p-1.5 rounded-lg bg-clinic-100 text-clinic-600">
@@ -100,7 +88,7 @@ export default function ClinicPreferencesModal({ profile, open, onClose, onSaved
             </h4>
             <p className="text-xs text-slate-500 mb-4">
               Zgjidhni paletën e ngjyrave për panelin, butonat dhe theksimet. Parazgjedhur është
-              pamja aktuale blu-gri.
+              pamja aktuale e sistemit.
             </p>
             <div className="grid gap-2">
               {COLOR_THEME_OPTIONS.map((opt) => {
@@ -258,7 +246,6 @@ export default function ClinicPreferencesModal({ profile, open, onClose, onSaved
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Drawer>
   );
 }

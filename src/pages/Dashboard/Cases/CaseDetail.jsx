@@ -573,34 +573,27 @@ export default function CaseDetail() {
       />
 
       <div className="page-shell">
-        <div className="mb-6 flex flex-wrap items-center gap-4 border-b border-slate-200 pb-5">
+        <div className="mb-4 flex flex-wrap items-center gap-3 border-b border-slate-200 pb-3">
           <button
             type="button"
             onClick={() => navigate("/dashboard/cases")}
-            className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors px-3 py-2 rounded-lg hover:bg-slate-50 border border-slate-200"
+            className="inline-flex items-center gap-1.5 text-slate-600 hover:text-slate-900 px-2.5 py-1.5 rounded-md hover:bg-slate-50 border border-slate-200 text-sm"
           >
             <FiArrowLeft size={18} />
             Rastet
           </button>
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 truncate">
+            <h1 className="text-base sm:text-lg font-semibold text-slate-900 truncate">
               {patientDisplayName}
             </h1>
-            <p className="text-xs text-slate-500 uppercase tracking-wider mt-0.5">
+            <p className="text-[11px] text-slate-500 uppercase tracking-wider mt-0.5">
               Kartela e rastit
             </p>
           </div>
         </div>
 
-        <PatientInfoCard
-          patientDisplayName={patientDisplayName}
-          patientGender={patientGender}
-          patientPhone={patientPhone}
-          caseStatus={caseData.status ?? caseData.Status}
-          assignedDoctorName={assignedDoctorName}
-          protocolNumber={protocolNumber}
-        />
-
+        <div className="grid xl:grid-cols-[minmax(0,1.85fr)_minmax(280px,1fr)] gap-3 items-start">
+          <div className="order-2 xl:order-1 min-w-0">
         <CaseProtocolSection
           protocolPreferences={protocolPreferences}
           protocolNumber={protocolNumber}
@@ -679,6 +672,18 @@ export default function CaseDetail() {
             downloadLabResultFile={downloadLabResultFile}
           />
         )}
+          </div>
+          <aside className="order-1 xl:order-2 xl:sticky xl:top-0">
+            <PatientInfoCard
+              patientDisplayName={patientDisplayName}
+              patientGender={patientGender}
+              patientPhone={patientPhone}
+              caseStatus={caseData.status ?? caseData.Status}
+              assignedDoctorName={assignedDoctorName}
+              protocolNumber={protocolNumber}
+            />
+          </aside>
+        </div>
       </div>
     </>
   );

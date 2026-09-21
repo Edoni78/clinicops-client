@@ -76,7 +76,7 @@ export default function PanelSelection() {
         onClose={() => setNotif((p) => ({ ...p, visible: false }))}
       />
 
-      <header className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-slate-200/80 bg-white/95 backdrop-blur-md sticky top-0 z-10 shadow-topbar">
+      <header className="flex items-center justify-between px-4 py-2.5 border-b border-slate-200 bg-white sticky top-0 z-10">
         <div className="flex items-center gap-2.5">
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-clinic-600 text-white font-semibold text-sm shadow-sm">
             iK
@@ -116,9 +116,9 @@ export default function PanelSelection() {
                   type="button"
                   onClick={() => handleSelect(panel)}
                   className={`
-                    text-left card p-5 transition-all group
+                    text-left card p-4
                     ${allowed
-                      ? "hover:shadow-card-md hover:border-slate-300/80 cursor-pointer"
+                      ? "hover:border-slate-300 cursor-pointer"
                       : "opacity-75 hover:bg-slate-50 cursor-pointer"
                     }
                   `}

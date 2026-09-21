@@ -23,7 +23,7 @@ function getActionBadgeClass(action) {
     PatientViewed: "bg-blue-100 text-blue-800",
     PatientUpdated: "bg-amber-100 text-amber-800",
     PatientDeleted: "bg-red-100 text-red-800",
-    PatientExported: "bg-violet-100 text-violet-800",
+    PatientExported: "bg-sky-50 text-sky-800 border-sky-200",
     PatientAnonymized: "bg-slate-200 text-slate-800",
     Login: "bg-emerald-100 text-emerald-800",
   };
@@ -33,7 +33,7 @@ function getActionBadgeClass(action) {
 function getSeverityBadgeClass(severity) {
   const key = String(severity || "Info").toLowerCase();
   if (key === "warning") return "bg-amber-100 text-amber-800";
-  if (key === "security") return "bg-violet-100 text-violet-800";
+  if (key === "security") return "bg-slate-800 text-white";
   if (key === "critical") return "bg-red-100 text-red-800";
   return "bg-blue-100 text-blue-800";
 }
@@ -89,7 +89,7 @@ export default function AuditLogTable({
         />
       ) : (
         <>
-          <div className="overflow-x-auto">
+          <div className="table-scroll">
             <table className="w-full">
               <thead>
                 <tr className="table-head-row">
@@ -111,43 +111,43 @@ export default function AuditLogTable({
                     className="table-row cursor-pointer"
                     onClick={() => onDetails(log)}
                   >
-                    <td className="py-4 px-4 whitespace-nowrap text-sm text-slate-700">
+                    <td className="table-td whitespace-nowrap">
                       {formatDateTime(log.createdAtUtc)}
                     </td>
-                    <td className="py-4 px-4 text-sm text-slate-700">
+                    <td className="table-td">
                       {log.userDisplayName || "Unknown user"}
                     </td>
-                    <td className="py-4 px-4 text-sm text-slate-700">
+                    <td className="table-td">
                       {log.userRole || "—"}
                     </td>
-                    <td className="py-4 px-4">
+                    <td className="table-td">
                       <span
                         className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full ${getActionBadgeClass(log.action)}`}
                       >
                         {log.action || "—"}
                       </span>
                     </td>
-                    <td className="py-4 px-4 text-sm text-slate-700 max-w-[320px]">
+                    <td className="table-td max-w-[320px]">
                       <span className="line-clamp-2" title={log.description || undefined}>
                         {log.description || "—"}
                       </span>
                     </td>
-                    <td className="py-4 px-4 text-sm text-slate-700">{log.ipAddress || "Unknown IP"}</td>
-                    <td className="py-4 px-4">
+                    <td className="table-td">{log.ipAddress || "Unknown IP"}</td>
+                    <td className="table-td">
                       <span
                         className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full ${getSeverityBadgeClass(log.severity)}`}
                       >
                         {log.severity || "Info"}
                       </span>
                     </td>
-                    <td className="py-4 px-4">
+                    <td className="table-td">
                       <span
                         className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(log.status)}`}
                       >
                         {log.status || "Success"}
                       </span>
                     </td>
-                    <td className="py-4 px-4 text-right">
+                    <td className="table-td text-right">
                       <button
                         type="button"
                         className="btn-secondary btn-sm"

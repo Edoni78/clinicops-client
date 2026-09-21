@@ -12,6 +12,7 @@ import PatientsImport from "./pages/Dashboard/PatientsImport";
 import DashboardHome from "./pages/Dashboard/DashboardHome";
 import Cases from "./pages/Dashboard/Cases/Cases";
 import CaseDetail from "./pages/Dashboard/Cases/CaseDetail";
+import CasesImport from "./pages/Dashboard/Cases/CasesImport";
 import Reports from "./pages/Dashboard/Reports/Reports";
 import Applies from "./pages/Dashboard/Applies/Applies";
 import ClinicProfile from "./pages/Dashboard/ClinicProfile/ClinicProfile";
@@ -51,6 +52,7 @@ function App() {
           <Route path="patients-list" element={<PatientsList />} />
           <Route path="patients-import" element={<PatientsImport />} />
           <Route path="cases" element={<Cases />} />
+          <Route path="cases-import" element={<CasesImport />} />
           <Route path="cases/:id/:view" element={<CaseDetail />} />
           <Route path="cases/:id" element={<CaseDetail />} />
           <Route path="reports" element={<Reports />} />

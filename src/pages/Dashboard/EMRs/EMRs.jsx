@@ -4,7 +4,6 @@ import {
   FiSearch,
   FiCopy,
   FiExternalLink,
-  FiX,
   FiSave,
   FiUser,
   FiEye,
@@ -23,6 +22,7 @@ import { useConfirmModal } from "../../../components/ui/ConfirmModal";
 import PageHeader from "../../../components/ui/PageHeader";
 import LoadingSpinner from "../../../components/ui/LoadingSpinner";
 import EmptyState from "../../../components/ui/EmptyState";
+import Drawer from "../../../components/ui/Drawer";
 import EmrPatientHeader from "../../../components/emr/EmrPatientHeader";
 import EmrConsultCard from "../../../components/emr/EmrConsultCard";
 import EmrVitalsGrid from "../../../components/emr/EmrVitalsGrid";
@@ -542,36 +542,32 @@ export default function EMRs() {
       </div>
 
       {editModal.open && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="card w-full max-w-2xl max-h-[90vh] flex flex-col shadow-card-lg overflow-hidden">
-            <div className="flex items-start justify-between gap-3 px-6 py-5 border-b border-slate-200/80 bg-gradient-to-r from-slate-50 to-clinic-50/40 shrink-0">
-              <div className="flex items-start gap-3">
-                <span className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-clinic-600 text-white">
-                  <FiBookOpen size={24} />
-                </span>
-                <div>
-                  <h3 className="text-xl font-semibold text-slate-900">Redakto raportin EMR</h3>
-                  <p className="text-sm text-slate-600 mt-0.5">
-                    Konsulta: {fmtEmrDate(editModal.consultDate)}
-                  </p>
-                  <p className="text-sm text-slate-600">
-                    Mjeku: {editModal.doctorName || "—"} · {editModal.caseStatus || "—"}
-                  </p>
-                </div>
-              </div>
-              <button type="button" className="btn-ghost rounded-xl p-2.5" onClick={closeEditModal}>
-                <FiX size={22} />
+        <Drawer
+          open
+          onClose={closeEditModal}
+          title="Redakto raportin EMR"
+          subtitle={`Konsulta: ${fmtEmrDate(editModal.consultDate)} · ${editModal.doctorName || "—"}`}
+          widthClass="max-w-xl"
+          footer={
+            <div className="flex justify-end gap-2">
+              <button type="button" className="btn-secondary btn-sm" onClick={closeEditModal}>
+                Anulo
+              </button>
+              <button type="button" className="btn-primary btn-sm" onClick={saveReport} disabled={saving}>
+                <FiSave size={16} />
+                {saving ? "Duke ruajtur..." : "Ruaj raportin"}
               </button>
             </div>
-
-            <div className="overflow-y-auto px-6 py-5 space-y-5">
+          }
+        >
               {Array.isArray(editModal.vitals) && editModal.vitals.length > 0 && (
                 <EmrVitalsGrid vitals={editModal.vitals} compact />
               )}
+              <div className="space-y-4 mt-4">
               <div>
                 <label className="label">Anamneza</label>
                 <textarea
-                  className="input min-h-[104px]"
+                  className="input min-h-[88px]"
                   value={reportForm.anamneza}
                   onChange={(e) => setReportForm((p) => ({ ...p, anamneza: e.target.value }))}
                 />
@@ -579,7 +575,7 @@ export default function EMRs() {
               <div>
                 <label className="label">Ekzaminimi</label>
                 <textarea
-                  className="input min-h-[104px]"
+                  className="input min-h-[88px]"
                   value={reportForm.ekzaminimi}
                   onChange={(e) => setReportForm((p) => ({ ...p, ekzaminimi: e.target.value }))}
                 />
@@ -587,7 +583,7 @@ export default function EMRs() {
               <div>
                 <label className="label">Diagnoza *</label>
                 <textarea
-                  className="input min-h-[104px]"
+                  className="input min-h-[88px]"
                   value={reportForm.diagnosis}
                   onChange={(e) => setReportForm((p) => ({ ...p, diagnosis: e.target.value }))}
                 />
@@ -595,24 +591,13 @@ export default function EMRs() {
               <div>
                 <label className="label">Terapia *</label>
                 <textarea
-                  className="input min-h-[104px]"
+                  className="input min-h-[88px]"
                   value={reportForm.therapy}
                   onChange={(e) => setReportForm((p) => ({ ...p, therapy: e.target.value }))}
                 />
               </div>
-            </div>
-
-            <div className="px-6 py-4 border-t border-slate-200/80 flex justify-end gap-2 shrink-0 bg-slate-50/50">
-              <button type="button" className="btn-secondary btn-sm" onClick={closeEditModal}>
-                Anulo
-              </button>
-              <button type="button" className="btn-primary btn-sm" onClick={saveReport} disabled={saving}>
-                <FiSave size={18} />
-                {saving ? "Duke ruajtur..." : "Ruaj raportin"}
-              </button>
-            </div>
-          </div>
-        </div>
+              </div>
+        </Drawer>
       )}
     </>
   );

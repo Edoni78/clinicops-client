@@ -92,11 +92,11 @@ export default function EmrConsultCard({
     </>
   );
 
-  const cardClass = `rounded-2xl border bg-white transition-all duration-200 ${
+  const cardClass = `rounded-md border bg-white ${
     selected
-      ? "border-clinic-300 ring-2 ring-clinic-500/20 shadow-card-md"
-      : "border-slate-200/80 shadow-sm hover:border-slate-300 hover:shadow-card-md"
-  } p-5 sm:p-6`;
+      ? "border-slate-900"
+      : "border-slate-200 hover:border-slate-300"
+  } p-4`;
 
   if (isTimeline && onSelect) {
     return (

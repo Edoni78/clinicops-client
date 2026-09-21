@@ -38,31 +38,29 @@ export default function PublicEmrView() {
     emr?.history?.[0]?.reportCreatedAt || emr?.history?.[0]?.consultDate;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-clinic-50/30">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
-        <header className="mb-6 rounded-2xl border border-slate-200/80 bg-white shadow-card-md overflow-hidden">
-          <div className="px-5 sm:px-6 py-5 flex flex-wrap items-center justify-between gap-4">
-            <div className="inline-flex items-center gap-4">
-              <span className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-br from-clinic-600 to-clinic-800 text-white shadow-md">
-                <FiBookOpen size={28} strokeWidth={2} />
+    <div className="min-h-screen bg-[#F8FAFC]">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
+        <header className="mb-4 rounded-md border border-slate-200 bg-white overflow-hidden">
+          <div className="px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+            <div className="inline-flex items-center gap-3">
+              <span className="inline-flex items-center justify-center h-9 w-9 rounded-md bg-slate-900 text-white">
+                <FiBookOpen size={18} strokeWidth={2} />
               </span>
               <div>
-                <h1 className="font-bold text-slate-900 text-xl sm:text-2xl tracking-tight">
+                <h1 className="font-semibold text-slate-900 text-base tracking-tight">
                   Kartela EMR
                 </h1>
-                <p className="text-sm text-slate-500 mt-0.5">
+                <p className="text-xs text-slate-500 mt-0.5">
                   Regjistër elektronik mjekësor për pacientin
                 </p>
               </div>
             </div>
-            <div className="inline-flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-              <span className="inline-flex items-center justify-center h-10 w-10 rounded-lg bg-emerald-100 text-emerald-700">
-                <FiShield size={22} strokeWidth={2} />
-              </span>
-              <div className="text-sm">
-                <p className="font-semibold text-emerald-900">E verifikuar & e sigurt</p>
-                <p className="text-emerald-700/90 text-xs flex items-center gap-1 mt-0.5">
-                  <FiLock size={12} />
+            <div className="inline-flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2">
+              <FiShield size={16} className="text-emerald-700" />
+              <div className="text-xs">
+                <p className="font-semibold text-emerald-900">E verifikuar</p>
+                <p className="text-emerald-700 flex items-center gap-1 mt-0.5">
+                  <FiLock size={11} />
                   Të dhëna të mbrojtura
                 </p>
               </div>

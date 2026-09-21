@@ -7,7 +7,7 @@ const ClinicLogin = () => {
     <div className="min-h-screen flex bg-slate-50 overflow-hidden">
       <div className="hidden lg:block lg:w-1/2 relative">
         <img src={entryImg} alt="Klinikë moderne" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-r from-clinic-900/40 to-transparent" />
+        <div className="absolute inset-0 bg-slate-900/35" />
         <div className="absolute bottom-8 left-8 right-8 text-white">
           <p className="text-sm font-medium text-white/80 mb-1">iKlinika</p>
           <p className="text-xl font-semibold max-w-sm">

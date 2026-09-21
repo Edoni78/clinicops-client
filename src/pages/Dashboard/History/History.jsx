@@ -298,14 +298,14 @@ export default function History() {
                         role="button"
                         aria-expanded={isOpen}
                       >
-                        <td className="py-4 px-3 text-slate-500">
+                        <td className="table-td text-slate-500">
                           {isOpen ? (
                             <FiChevronDown size={18} className="text-clinic-600" />
                           ) : (
                             <FiChevronRight size={18} />
                           )}
                         </td>
-                        <td className="py-4 px-4">
+                        <td className="table-td">
                           <div className="flex items-center gap-3">
                             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-clinic-100 text-clinic-700 text-xs font-semibold">
                               {getPatientInitials(
@@ -326,16 +326,16 @@ export default function History() {
                             </div>
                           </div>
                         </td>
-                        <td className="py-4 px-4 text-sm text-slate-700">
+                        <td className="table-td">
                           {fmtEmrDateOnly(patient.dateOfBirth ?? patient.DateOfBirth)}
                         </td>
-                        <td className="py-4 px-4 text-sm text-slate-700">
+                        <td className="table-td">
                           {calcAge(patient.dateOfBirth ?? patient.DateOfBirth)}
                         </td>
-                        <td className="py-4 px-4 text-sm text-slate-700">
+                        <td className="table-td">
                           {getGenderLabel(patient.gender ?? patient.Gender)}
                         </td>
-                        <td className="py-4 px-4 text-sm text-slate-700">
+                        <td className="table-td">
                           <span className="inline-flex items-center gap-1.5">
                             <FiPhone size={14} className="text-slate-400 shrink-0" />
                             {patient.phone ?? patient.Phone ?? "—"}

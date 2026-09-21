@@ -1,47 +1,12 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
-import {
-  FiRefreshCw,
-  FiLogOut,
-  FiMenu,
-  FiX,
-  FiHome,
-  FiUsers,
-  FiFolder,
-  FiFileText,
-  FiBookOpen,
-  FiActivity,
-  FiDollarSign,
-  FiUserCheck,
-  FiClipboard,
-  FiBriefcase,
-  FiPackage,
-  FiShield,
-  FiClock,
-} from "react-icons/fi";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { FiRefreshCw, FiLogOut, FiMenu, FiSearch } from "react-icons/fi";
 import { getJwtPayload } from "../../utils/jwt";
 import { useAuth } from "../../context/AuthContext";
 import { useDashboardPanel } from "../../context/DashboardPanelContext";
+import { useUiDensity } from "../../context/UiDensityContext";
 import { getClinicProfile, getLogoFullUrl } from "../../api/clinic";
-import { getSidebarMenuItems } from "../../utils/dashboardMenu";
-
-const MENU_ICONS = {
-  home: FiHome,
-  patients: FiUsers,
-  patientsList: FiUsers,
-  cases: FiFolder,
-  reports: FiFileText,
-  emrs: FiBookOpen,
-  laboratory: FiActivity,
-  services: FiPackage,
-  payments: FiDollarSign,
-  staff: FiUserCheck,
-  applies: FiClipboard,
-  auditLogs: FiShield,
-  history: FiClock,
-  clinicProfile: FiBriefcase,
-  doctorProfile: FiUserCheck,
-};
+import { getSearchShortcutLabel } from "../ui/CommandPalette";
 
 function getClinicInitials(name) {
   if (!name || !name.trim()) return "?";
@@ -52,68 +17,15 @@ function getClinicInitials(name) {
   return name.slice(0, 2).toUpperCase();
 }
 
-function NavLinkItem({ label, icon: Icon, path, onClick, mobile = false, tourId }) {
-  const activeCls = mobile ? "topnav-link-mobile-active" : "topnav-link-active";
-  const inactiveCls = mobile ? "topnav-link-mobile-inactive" : "topnav-link-inactive";
-
-  return (
-    <NavLink
-      to={path}
-      end={path === "/dashboard"}
-      onClick={onClick}
-      data-tour={tourId || undefined}
-      className={({ isActive }) => (isActive ? activeCls : inactiveCls)}
-    >
-      <Icon size={mobile ? 18 : 16} className="shrink-0 opacity-90" strokeWidth={1.75} />
-      {label}
-    </NavLink>
-  );
-}
-
-function DesktopNav({ items }) {
-  return (
-    <nav
-      className="hidden lg:flex items-center gap-1 flex-1 min-w-0 flex-wrap px-2"
-      aria-label="Navigimi kryesor"
-    >
-      {items.map((item) => (
-        <NavLinkItem key={`${item.path}-${item.label}`} {...item} tourId={item.tourId} />
-      ))}
-    </nav>
-  );
-}
-
-function MobileNav({ items, open, onClose }) {
-  if (!open) return null;
-
-  return (
-    <>
-      <button
-        type="button"
-        className="lg:hidden fixed inset-0 z-40 bg-slate-900/30 backdrop-blur-[2px]"
-        onClick={onClose}
-        aria-label="Mbyll menunë"
-      />
-      <div className="lg:hidden relative z-50 border-t border-slate-200 bg-white shadow-card-md max-h-[min(75vh,32rem)] overflow-y-auto">
-        <nav className="p-3 space-y-1" aria-label="Navigimi mobil">
-          {items.map((item) => (
-            <NavLinkItem key={`${item.path}-${item.label}`} {...item} mobile onClick={onClose} />
-          ))}
-        </nav>
-      </div>
-    </>
-  );
-}
-
-const Topbar = () => {
-  const location = useLocation();
+const Topbar = ({ onOpenMobileNav, onOpenSearch }) => {
   const payload = getJwtPayload();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const { requiresPanel, clearActivePanel, activePanel, roleLower } = useDashboardPanel();
+  const { requiresPanel, clearActivePanel } = useDashboardPanel();
+  const { density, toggleDensity } = useUiDensity();
   const hasClinic = !!(user?.clinicId ?? user?.ClinicId);
   const [clinicProfile, setClinicProfile] = useState(null);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const shortcut = getSearchShortcutLabel();
 
   useEffect(() => {
     if (!hasClinic) {
@@ -125,10 +37,6 @@ const Topbar = () => {
       .catch(() => setClinicProfile(null));
   }, [hasClinic]);
 
-  useEffect(() => {
-    setMobileNavOpen(false);
-  }, [location.pathname]);
-
   const clinicDisplayName =
     clinicProfile?.name ??
     clinicProfile?.Name ??
@@ -138,17 +46,6 @@ const Topbar = () => {
     user?.ClinicName ??
     null;
   const clinicLogoUrl = getLogoFullUrl(clinicProfile?.logoUrl ?? clinicProfile?.LogoUrl);
-
-  const navItems = useMemo(() => {
-    const menu = getSidebarMenuItems({ roleLower, activePanel, hasClinic });
-    return menu.map(({ key, label, path }) => ({
-      key,
-      label,
-      path,
-      icon: MENU_ICONS[key] || FiHome,
-      tourId: key === "clinicProfile" ? "clinic-profile" : key,
-    }));
-  }, [roleLower, activePanel, hasClinic]);
 
   const handleLogout = () => {
     logout();
@@ -160,59 +57,54 @@ const Topbar = () => {
     navigate("/dashboard/panel", { replace: true });
   };
 
-  const closeMobileNav = () => setMobileNavOpen(false);
-
   return (
-    <header className="bg-white/95 backdrop-blur-md shrink-0 sticky top-0 z-30 shadow-topbar border-b border-slate-200/80">
-      <div className="flex items-center gap-3 lg:gap-4 min-h-[3.75rem] px-4 sm:px-6 lg:px-8 py-2">
-        <Link
-          to="/dashboard"
-          className="flex items-center gap-2.5 shrink-0 min-w-0 max-w-[11rem] sm:max-w-[13rem]"
+    <header className="bg-white shrink-0 sticky top-0 z-30 border-b border-slate-200">
+      <div className="flex items-center gap-2 min-h-12 px-3 sm:px-4 py-1.5">
+        <button
+          type="button"
+          onClick={onOpenMobileNav}
+          className="md:hidden inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50"
+          aria-label="Hap menunë"
         >
-          {hasClinic ? (
-            <>
-              {clinicLogoUrl ? (
-                <img
-                  src={clinicLogoUrl}
-                  alt=""
-                  className="h-9 w-9 sm:h-10 sm:w-10 shrink-0 rounded-lg object-contain bg-white border border-slate-200/80 shadow-sm"
-                />
-              ) : (
-                <span className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg bg-clinic-600 text-white font-semibold text-xs shadow-sm">
-                  {getClinicInitials(clinicDisplayName || "K")}
-                </span>
-              )}
-              <span className="font-semibold text-sm text-slate-900 truncate hidden sm:block">
-                {clinicDisplayName || "Klinika"}
-              </span>
-            </>
+          <FiMenu size={18} />
+        </button>
+
+        <Link to="/dashboard" className="flex items-center gap-2 shrink-0 min-w-0 md:hidden">
+          {hasClinic && clinicLogoUrl ? (
+            <img
+              src={clinicLogoUrl}
+              alt=""
+              className="h-8 w-8 shrink-0 rounded-md object-contain bg-white border border-slate-200"
+            />
           ) : (
-            <>
-              <span className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg bg-clinic-600 text-white font-semibold text-xs shadow-sm">
-                iK
-              </span>
-              <span className="font-semibold text-sm text-slate-900 truncate hidden sm:block">
-                iKlinika
-              </span>
-            </>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-slate-900 text-white font-semibold text-[11px]">
+              {getClinicInitials(clinicDisplayName || "iK")}
+            </span>
           )}
         </Link>
 
-        <div className="hidden lg:block h-8 w-px bg-slate-200 shrink-0" aria-hidden />
-
-        <DesktopNav items={navItems} />
-
-        {/* Tablet: same row, wrap */}
-        <nav
-          className="hidden md:flex lg:hidden items-center gap-1 flex-1 min-w-0 flex-wrap"
-          aria-label="Navigimi kryesor"
+        <button
+          type="button"
+          onClick={onOpenSearch}
+          className="flex-1 max-w-md inline-flex items-center gap-2 h-8 px-2.5 rounded-md border border-slate-200 bg-slate-50 text-left text-xs text-slate-500 hover:bg-white hover:border-slate-300"
+          aria-label={`Kërko (${shortcut})`}
         >
-          {navItems.map((item) => (
-            <NavLinkItem key={`md-${item.path}-${item.label}`} {...item} />
-          ))}
-        </nav>
+          <FiSearch size={14} className="shrink-0" />
+          <span className="flex-1 truncate">Kërko pacientë, raste, faqe…</span>
+          <kbd className="kbd hidden sm:inline-flex">{shortcut}</kbd>
+        </button>
 
-        <div className="flex items-center gap-2 shrink-0 ml-auto lg:ml-0">
+        <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+          <button
+            type="button"
+            onClick={toggleDensity}
+            className="topnav-action-ghost"
+            title={density === "compact" ? "Kaloni në pamje të rehatshme" : "Kaloni në pamje kompakte"}
+            aria-pressed={density === "compact"}
+          >
+            {density === "compact" ? "Kompakte" : "E rehatshme"}
+          </button>
+
           {requiresPanel && (
             <button
               type="button"
@@ -220,33 +112,17 @@ const Topbar = () => {
               className="topnav-action-ghost hidden sm:inline-flex"
               title="Zgjidhni panel tjetër"
             >
-              <FiRefreshCw size={16} />
+              <FiRefreshCw size={14} />
               <span className="hidden xl:inline">Ndërro panelin</span>
             </button>
           )}
 
           <button type="button" onClick={handleLogout} className="topnav-action-danger">
-            <FiLogOut size={16} />
+            <FiLogOut size={14} />
             <span className="hidden sm:inline">Dilni</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setMobileNavOpen((o) => !o)}
-            className={`md:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl border transition-all ${
-              mobileNavOpen
-                ? "bg-clinic-50 border-clinic-200 text-clinic-700"
-                : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
-            }`}
-            aria-label={mobileNavOpen ? "Mbyll menunë" : "Hap menunë"}
-            aria-expanded={mobileNavOpen}
-          >
-            {mobileNavOpen ? <FiX size={20} /> : <FiMenu size={20} />}
           </button>
         </div>
       </div>
-
-      <MobileNav items={navItems} open={mobileNavOpen} onClose={closeMobileNav} />
     </header>
   );
 };

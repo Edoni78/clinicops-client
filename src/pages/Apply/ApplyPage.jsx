@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { FiArrowRight, FiCheckCircle, FiMenu, FiX } from "react-icons/fi";
 import navLogo from "../../assets/images/logo3.png";
@@ -8,36 +8,25 @@ import ClinicApply from "../../components/CreateClinic/ClinicApply";
 const shell = "max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10";
 
 const applyHighlights = [
-  "2 muaj provë falas — pa kartë bankare",
+  "2 muaj provë falas, pa kartë bankare",
   "Mbështetje teknike gjatë gjithë përdorimit",
   "Aktivizim pas shqyrtimit të aplikimit",
 ];
 
 export default function ApplyPage() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [navScrolled, setNavScrolled] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setNavScrolled(window.scrollY > 24);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   const closeMobileNav = () => setMobileNavOpen(false);
 
   return (
-    <div className="min-h-screen bg-[#f7f8fa] text-slate-800 overflow-x-hidden antialiased flex flex-col">
+    <div className="min-h-screen bg-[#F8FAFC] overflow-x-hidden antialiased flex flex-col">
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 ${
-          navScrolled
-            ? "bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-sm"
-            : "bg-white border-b border-slate-200/80"
-        }`}
+        className={`sticky top-0 z-50 bg-white border-b border-slate-200`}
       >
         <div className={`${shell} flex h-16 lg:h-[4.25rem] items-center justify-between gap-6`}>
           <Link to="/" className="flex items-center gap-3 shrink-0" onClick={closeMobileNav}>
             <img src={navLogo} alt="iKlinika" className="h-9 sm:h-10 w-auto object-contain" />
-            <span className="text-lg sm:text-xl font-semibold tracking-tight text-[#8db2c6]">iKlinika</span>
+            <span className="text-sm font-semibold tracking-tight text-slate-900">iKlinika</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">
@@ -94,10 +83,7 @@ export default function ApplyPage() {
         <div className={`${shell} py-12 sm:py-16 lg:py-20`}>
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 xl:gap-20 items-start">
             <div className="min-w-0 order-2 lg:order-1">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-clinic-600 mb-4">
-                Regjistrimi i klinikës
-              </p>
-              <h1 className="text-3xl sm:text-4xl font-semibold text-slate-900 tracking-tight mb-4">
+              <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight mb-3">
                 Aplikoni për iKlinika
               </h1>
               <p className="text-slate-600 text-lg leading-relaxed mb-8 max-w-lg">

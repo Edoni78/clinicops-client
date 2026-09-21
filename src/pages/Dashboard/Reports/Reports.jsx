@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   FiFileText,
-  FiClock,
   FiDownload,
   FiPrinter,
   FiRefreshCw,
@@ -56,14 +55,14 @@ const STATUS_TABS = [
 function statusBadgeClass(status) {
   const key = normalizeCaseStatus(status);
   const map = {
-    Waiting: "bg-amber-100 text-amber-800",
-    InProgress: "bg-blue-100 text-blue-800",
-    InConsultation: "bg-sky-100 text-sky-800",
-    Completed: "bg-indigo-100 text-indigo-800",
-    Finished: "bg-emerald-100 text-emerald-800",
-    Mbyllur: "bg-slate-200 text-slate-800",
+    Waiting: "bg-amber-50 text-amber-800 border-amber-200",
+    InProgress: "bg-sky-50 text-sky-800 border-sky-200",
+    InConsultation: "bg-sky-50 text-sky-800 border-sky-200",
+    Completed: "bg-emerald-50 text-emerald-800 border-emerald-200",
+    Finished: "bg-emerald-50 text-emerald-800 border-emerald-200",
+    Mbyllur: "bg-slate-50 text-slate-700 border-slate-200",
   };
-  return map[key] || "bg-gray-100 text-gray-800";
+  return map[key] || "bg-slate-50 text-slate-700 border-slate-200";
 }
 
 function formatDate(dateString) {
@@ -449,31 +448,17 @@ export default function Reports() {
             </Link>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="table-scroll">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/80">
-                  <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Pacienti
-                  </th>
-                  <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Data
-                  </th>
-                  <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Statusi
-                  </th>
-                  <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Mjeku
-                  </th>
-                  <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Shërbimi
-                  </th>
-                  <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Çmimi
-                  </th>
-                  <th className="text-right py-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Veprime
-                  </th>
+                <tr className="table-head-row">
+                  <th className="table-th">Pacienti</th>
+                  <th className="table-th">Data</th>
+                  <th className="table-th">Statusi</th>
+                  <th className="table-th">Mjeku</th>
+                  <th className="table-th">Shërbimi</th>
+                  <th className="table-th">Çmimi</th>
+                  <th className="table-th text-right">Veprime</th>
                 </tr>
               </thead>
               <tbody>
@@ -494,41 +479,38 @@ export default function Reports() {
                   const servicePriceLabel = formatCaseServicePriceEUR(servicePrice);
                   const serviceDisplay = serviceName || "—";
                   return (
-                    <tr key={caseId} className="border-b border-slate-100/90 hover:bg-slate-50 transition-colors">
-                      <td className="py-3 px-4">
+                    <tr key={caseId} className="table-row">
+                      <td className="table-td">
                         <Link
                           to={`/dashboard/cases/${caseId}`}
-                          className="font-medium text-slate-900 hover:text-clinic-400"
+                          className="font-medium text-slate-900 hover:text-sky-700"
                         >
                           {firstName} {lastName}
                         </Link>
                       </td>
-                      <td className="py-3 px-4 text-sm text-slate-600 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1.5">
-                          <FiClock size={13} className="flex-shrink-0 text-slate-400" />
+                      <td className="table-td tabular-nums text-xs text-slate-600 whitespace-nowrap">
                           {formatDate(updated)}
-                        </span>
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="table-td">
                         <span
-                          className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full border border-current/10 ${statusBadgeClass(status)}`}
+                          className={`status-pill ${statusBadgeClass(status)}`}
                         >
                           {getCaseStatusLabel(status)}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-sm text-slate-700 whitespace-nowrap">
+                      <td className="table-td whitespace-nowrap">
                         {doctorName || "—"}
                       </td>
-                      <td className="py-3 px-4 text-sm text-slate-700 max-w-[200px] sm:max-w-xs">
+                      <td className="table-td max-w-[200px] sm:max-w-xs">
                         <span className="line-clamp-2" title={serviceDisplay !== "—" ? serviceDisplay : undefined}>
                           {serviceDisplay}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-sm text-slate-700 whitespace-nowrap tabular-nums">
+                      <td className="table-td whitespace-nowrap tabular-nums">
                         {servicePriceLabel ?? "—"}
                       </td>
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
-                        <div className="inline-flex flex-wrap items-center justify-end gap-2">
+                      <td className="table-td text-right whitespace-nowrap">
+                        <div className="inline-flex flex-wrap items-center justify-end gap-1.5">
                           {canCloseCase && isAwaitingNurseCloseStatus(status) && (
                             <button
                               type="button"
@@ -539,7 +521,7 @@ export default function Reports() {
                                 downloadingId === caseId ||
                                 printingId === caseId
                               }
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-white bg-slate-700 rounded-lg hover:bg-slate-800 disabled:opacity-50 transition-colors"
+                              className="btn-primary btn-sm"
                             >
                               <FiLock size={16} />
                               {closingCaseId === caseId ? "Duke mbyllur…" : "Mbyll"}
@@ -549,7 +531,7 @@ export default function Reports() {
                             type="button"
                             onClick={() => handlePrintPdf(caseId)}
                             disabled={printingId === caseId || downloadingId === caseId}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-clinic-400 bg-clinic-400/10 rounded-lg hover:bg-clinic-400/20 transition-colors border border-clinic-400/20 disabled:opacity-50"
+                            className="btn-secondary btn-sm disabled:opacity-50"
                           >
                             {printingId === caseId ? (
                               <span className="animate-pulse px-1">…</span>
@@ -564,7 +546,7 @@ export default function Reports() {
                             type="button"
                             onClick={() => handleDownloadPdf(caseId)}
                             disabled={downloadingId === caseId || printingId === caseId}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 text-white text-sm font-medium rounded-lg hover:bg-slate-700 disabled:opacity-50 transition-colors"
+                            className="btn-primary btn-sm disabled:opacity-50"
                           >
                             {downloadingId === caseId ? (
                               <span className="animate-pulse px-1">…</span>
@@ -580,7 +562,7 @@ export default function Reports() {
                               type="button"
                               onClick={() => requestDeleteReport(caseId)}
                               disabled={deletingReportId === caseId}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-700 bg-red-50 rounded-lg border border-red-200 hover:bg-red-100 disabled:opacity-60"
+                              className="btn-danger btn-sm"
                             >
                               <FiTrash2 size={16} />
                               {deletingReportId === caseId ? "Duke fshirë..." : "Fshij raportin"}

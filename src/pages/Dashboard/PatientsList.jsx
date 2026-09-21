@@ -6,7 +6,6 @@ import {
   FiUsers,
   FiRefreshCw,
   FiUserPlus,
-  FiPhone,
   FiTrash2,
   FiUploadCloud,
 } from "react-icons/fi";
@@ -28,6 +27,7 @@ const PatientsList = () => {
   const [patients, setPatients] = useState([]);
   const [deletingPatientId, setDeletingPatientId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedIds, setSelectedIds] = useState([]);
   const [notif, setNotif] = useState({
     visible: false,
     type: "info",
@@ -95,8 +95,54 @@ const PatientsList = () => {
     const query = searchQuery.toLowerCase();
     const fullName = `${patient.firstName || ""} ${patient.lastName || ""}`.toLowerCase();
     const phone = (patient.phone || "").toLowerCase();
-    return fullName.includes(query) || phone.includes(query);
+    const id = String(patient.id || patient.patientId || patient.Id || "").toLowerCase();
+    return fullName.includes(query) || phone.includes(query) || id.includes(query);
   });
+
+  const patientRowId = (patient) => patient.id || patient.patientId || patient.Id;
+
+  const toggleSelected = (id) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const allVisibleIds = filteredPatients.map(patientRowId).filter(Boolean);
+  const allVisibleSelected = allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedIds.includes(id));
+
+  const toggleAllVisible = () => {
+    if (allVisibleSelected) {
+      setSelectedIds((prev) => prev.filter((id) => !allVisibleIds.includes(id)));
+    } else {
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...allVisibleIds])));
+    }
+  };
+
+  const requestDeleteSelected = async () => {
+    if (!selectedIds.length) return;
+    const ok = await confirm({
+      title: "Fshij pacientët e zgjedhur",
+      message: `Fshij ${selectedIds.length} pacientë? Të dhënat do të hiqen nga klinika.`,
+      confirmLabel: "Fshij",
+      cancelLabel: "Anulo",
+      variant: "danger",
+    });
+    if (!ok) return;
+    try {
+      for (const id of selectedIds) {
+        await deletePatient(id);
+      }
+      setSelectedIds([]);
+      setNotif({ visible: true, type: "success", message: "Pacientët e zgjedhur u fshinë." });
+      fetchPatients();
+    } catch (err) {
+      const serverMessage =
+        typeof err.response?.data === "string" ? err.response.data : err.response?.data?.message;
+      setNotif({
+        visible: true,
+        type: "error",
+        message: serverMessage || "Fshirja dështoi.",
+      });
+    }
+  };
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -148,7 +194,7 @@ const PatientsList = () => {
       <div className="page-shell">
         <PageHeader
           title="Pacientët"
-          subtitle="Shiko dhe menaxho të gjitha të dhënat e pacientëve në klinikën tuaj."
+          subtitle="Lista e pacientëve të klinikës."
           icon={FiUsers}
           actions={
             <>
@@ -196,8 +242,8 @@ const PatientsList = () => {
               }
               description={
                 searchQuery
-                  ? "Provoni një kërkim tjetër sipas emrit ose telefonit."
-                  : "Filloni duke regjistruar pacientin e parë në klinikë."
+                  ? "Provoni një kërkim tjetër sipas emrit, telefonit ose ID."
+                  : "Regjistroni pacientin e parë për të filluar radhën e sotme."
               }
               action={
                 !searchQuery && (
@@ -209,89 +255,100 @@ const PatientsList = () => {
             />
           ) : (
             <>
-              <div className="overflow-x-auto">
+              {selectedIds.length > 0 && (
+                <div className="bulk-bar">
+                  <span className="font-medium text-slate-800 tabular-nums">{selectedIds.length} të zgjedhur</span>
+                  <button type="button" className="btn-ghost btn-sm" onClick={() => setSelectedIds([])}>
+                    Pastro
+                  </button>
+                  {canDeletePatients && (
+                    <button type="button" className="btn-danger btn-sm" onClick={requestDeleteSelected}>
+                      Fshij të zgjedhurit
+                    </button>
+                  )}
+                </div>
+              )}
+              <div className="table-scroll">
                 <table className="w-full">
                   <thead>
                     <tr className="table-head-row">
-                      <th className="table-th">
-                        Emri i pacientit
+                      <th className="table-th w-8">
+                        <input
+                          type="checkbox"
+                          checked={allVisibleSelected}
+                          onChange={toggleAllVisible}
+                          aria-label="Zgjidh të gjithë"
+                        />
                       </th>
-                      <th className="table-th">
-                        Data e lindjes
-                      </th>
-                      <th className="table-th">
-                        Mosha
-                      </th>
-                      <th className="table-th">
-                        Gjinia
-                      </th>
-                      <th className="table-th">
-                        Telefoni
-                      </th>
-                      <th className="table-th">
-                        Shënime
-                      </th>
+                      <th className="table-th">Emri</th>
+                      <th className="table-th">ID</th>
+                      <th className="table-th">Lindja</th>
+                      <th className="table-th">Mosha</th>
+                      <th className="table-th">Gjinia</th>
+                      <th className="table-th">Telefoni</th>
+                      <th className="table-th">Shënime</th>
                       {canDeletePatients && <th className="table-th text-right">Veprime</th>}
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredPatients.map((patient) => (
+                    {filteredPatients.map((patient) => {
+                      const id = patientRowId(patient);
+                      return (
                       <tr
-                        key={patient.id || patient.patientId}
+                        key={id}
                         className="table-row"
                       >
-                        <td className="py-4 px-4">
+                        <td className="table-td">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.includes(id)}
+                            onChange={() => toggleSelected(id)}
+                            aria-label={`Zgjidh ${patient.firstName} ${patient.lastName}`}
+                          />
+                        </td>
+                        <td className="table-td">
                           <div className="font-medium text-slate-900">
                             {patient.firstName} {patient.lastName}
                           </div>
                         </td>
-                        <td className="py-4 px-4 text-slate-600">
+                        <td className="table-td">
+                          <span className="font-mono text-xs tabular-nums text-slate-500">{id || "—"}</span>
+                        </td>
+                        <td className="table-td tabular-nums text-slate-600">
                           {formatDate(patient.dateOfBirth)}
                         </td>
-                        <td className="py-4 px-4 text-slate-600">
-                          {calculateAge(patient.dateOfBirth)} vjet
+                        <td className="table-td tabular-nums text-slate-600">
+                          {calculateAge(patient.dateOfBirth)}
                         </td>
-                        <td className="py-4 px-4">
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                              getGenderLabel(patient.gender) === "Mashkull"
-                                ? "bg-blue-100 text-blue-800"
-                                : getGenderLabel(patient.gender) === "Femër"
-                                ? "bg-pink-100 text-pink-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
+                        <td className="table-td">
+                          <span className="badge-neutral">
                             {getGenderLabel(patient.gender)}
                           </span>
                         </td>
-                        <td className="py-4 px-4 text-slate-600">
-                          <div className="flex items-center gap-2">
-                            <FiPhone size={14} className="text-slate-400" />
-                            {patient.phone || "N/A"}
-                          </div>
+                        <td className="table-td tabular-nums text-slate-600">
+                          {patient.phone || "N/A"}
                         </td>
-                        <td className="py-4 px-4 text-slate-600">
+                        <td className="table-td text-slate-600">
                           <div className="max-w-xs truncate" title={patient.notes}>
-                            {patient.notes || "-"}
+                            {patient.notes || "—"}
                           </div>
                         </td>
                         {canDeletePatients && (
-                          <td className="py-4 px-4 text-right">
+                          <td className="table-td text-right">
                             <button
                               type="button"
                               onClick={() => requestDeletePatient(patient)}
-                              disabled={deletingPatientId === (patient.id || patient.patientId || patient.Id)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 disabled:opacity-60"
+                              disabled={deletingPatientId === id}
+                              className="btn-danger btn-sm"
                             >
                               <FiTrash2 size={14} />
-                              {deletingPatientId === (patient.id || patient.patientId || patient.Id)
-                                ? "Duke fshirë..."
-                                : "Fshij"}
+                              {deletingPatientId === id ? "Duke fshirë..." : "Fshij"}
                             </button>
                           </td>
                         )}
                       </tr>
-                    ))}
+                    );
+                    })}
                   </tbody>
                 </table>
               </div>

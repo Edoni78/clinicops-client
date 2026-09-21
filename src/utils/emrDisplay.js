@@ -65,12 +65,12 @@ export function getCaseStatusBadgeClass(status) {
     return "bg-emerald-50 text-emerald-800 border-emerald-200";
   }
   if (s.includes("progress") || s.includes("proces") || s.includes("active") || s.includes("aktiv")) {
-    return "bg-amber-50 text-amber-800 border-amber-200";
+    return "bg-sky-50 text-sky-800 border-sky-200";
   }
   if (s.includes("cancel") || s.includes("anul")) {
     return "bg-red-50 text-red-800 border-red-200";
   }
-  return "bg-slate-100 text-slate-700 border-slate-200";
+  return "bg-slate-50 text-slate-700 border-slate-200";
 }
 
 export function normalizeVital(v) {

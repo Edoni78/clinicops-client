@@ -51,19 +51,18 @@ const MENU_ICONS = {
 
 function NavItems({ items, onNavigate }) {
   return (
-    <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-      {items.map(({ label, icon: Icon, path }) => (
+    <nav className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto" aria-label="Navigimi kryesor">
+      {items.map(({ label, icon: Icon, path, tourId }) => (
         <NavLink
           key={`${path}-${label}`}
           to={path}
           end={path === "/dashboard"}
           onClick={onNavigate}
-          className={({ isActive }) =>
-            isActive ? "sidebar-link-active" : "sidebar-link-inactive"
-          }
+          data-tour={tourId || undefined}
+          className={({ isActive }) => (isActive ? "sidebar-link-active" : "sidebar-link-inactive")}
         >
-          <Icon size={18} className="shrink-0 opacity-90" />
-          {label}
+          <Icon size={16} className="shrink-0" strokeWidth={1.75} />
+          <span className="truncate">{label}</span>
         </NavLink>
       ))}
     </nav>
@@ -95,9 +94,7 @@ const Sidebar = ({ mobileOpen = false, onMobileClose }) => {
     user?.clinicName ??
     user?.ClinicName ??
     null;
-  const clinicLogoUrl = getLogoFullUrl(
-    clinicProfile?.logoUrl ?? clinicProfile?.LogoUrl
-  );
+  const clinicLogoUrl = getLogoFullUrl(clinicProfile?.logoUrl ?? clinicProfile?.LogoUrl);
 
   const items = useMemo(() => {
     const menu = getSidebarMenuItems({ roleLower, activePanel, hasClinic });
@@ -105,38 +102,40 @@ const Sidebar = ({ mobileOpen = false, onMobileClose }) => {
       label,
       path,
       icon: MENU_ICONS[key] || FiHome,
+      tourId: key === "clinicProfile" ? "clinic-profile" : key,
     }));
   }, [roleLower, activePanel, hasClinic]);
 
   const sidebarContent = (
     <>
-      <div className="px-5 py-5 border-b border-slate-100 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2.5 min-w-0">
+      <div className="px-3 py-3 border-b border-slate-200 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           {hasClinic ? (
             <>
               {clinicLogoUrl ? (
                 <img
                   src={clinicLogoUrl}
                   alt=""
-                  className="h-9 w-9 shrink-0 rounded-xl object-contain bg-slate-50 border border-slate-100"
+                  className="h-8 w-8 shrink-0 rounded-md object-contain bg-slate-50 border border-slate-200"
                 />
               ) : (
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-clinic-400 text-white font-bold text-xs shadow-sm">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-slate-900 text-white font-semibold text-[11px]">
                   {getClinicInitials(clinicDisplayName || "K")}
                 </span>
               )}
-              <span className="font-bold text-lg text-slate-900 tracking-tight truncate">
-                {clinicDisplayName || "Klinika"}
-              </span>
+              <div className="min-w-0">
+                <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Klinika</p>
+                <p className="text-sm font-semibold text-slate-900 truncate">
+                  {clinicDisplayName || "Klinika"}
+                </p>
+              </div>
             </>
           ) : (
             <>
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-clinic-400 text-white font-bold text-sm shadow-sm">
-                CO
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-slate-900 text-white font-semibold text-[11px]">
+                iK
               </span>
-              <span className="font-bold text-lg text-slate-900 tracking-tight truncate">
-                ClinicOps
-              </span>
+              <span className="text-sm font-semibold text-slate-900 truncate">iKlinika</span>
             </>
           )}
         </div>
@@ -144,45 +143,39 @@ const Sidebar = ({ mobileOpen = false, onMobileClose }) => {
           <button
             type="button"
             onClick={onMobileClose}
-            className="md:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100"
+            className="md:hidden p-1.5 rounded-md text-slate-500 hover:bg-slate-100"
             aria-label="Mbyll menunë"
           >
-            <FiX size={20} />
+            <FiX size={18} />
           </button>
         )}
       </div>
       <NavItems items={items} onNavigate={onMobileClose} />
-      <div className="px-4 py-4 border-t border-slate-100">
-        <p className="text-xs text-slate-400 text-center">Platformë për klinika</p>
-      </div>
     </>
   );
 
   return (
     <>
-      {/* Mobile overlay */}
       {mobileOpen && (
         <button
           type="button"
-          className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-[2px] md:hidden"
+          className="fixed inset-0 z-40 bg-slate-900/40 md:hidden"
           onClick={onMobileClose}
           aria-label="Mbyll menunë"
         />
       )}
 
-      {/* Mobile drawer */}
       <aside
         className={`
-          fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white border-r border-slate-200
-          flex flex-col shadow-sidebar transform transition-transform duration-200 ease-out md:hidden
+          fixed inset-y-0 left-0 z-50 w-60 max-w-[85vw] bg-white border-r border-slate-200
+          flex flex-col transform transition-transform duration-150 ease-out md:hidden
           ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
         `}
       >
         {sidebarContent}
       </aside>
 
-      {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-64 lg:w-72 bg-white border-r border-slate-200/80 flex-col shrink-0 shadow-sm">
+      <aside className="hidden md:flex w-56 lg:w-60 bg-white border-r border-slate-200 flex-col shrink-0">
         {sidebarContent}
       </aside>
     </>

@@ -14,43 +14,43 @@ const TOUR_STEPS = [
     target: "clinic-profile",
     title: "Profili i klinikës",
     body: "Filloni këtu: shtoni emrin, logon, adresën dhe preferencat e klinikës suaj.",
-    placement: "bottom",
+    placement: "right",
   },
   {
     target: "cases",
     title: "Rastet",
     body: "Menaxhoni vizitat — infermieri regjistron shenjat, mjeku konsulton dhe përfundon rastin.",
-    placement: "bottom",
+    placement: "right",
   },
   {
     target: "reports",
     title: "Raportet",
     body: "Pas përfundimit nga mjeku, infermieri mbyll rastin dhe mund të printohet raporti.",
-    placement: "bottom",
+    placement: "right",
   },
   {
     target: "patients",
     title: "Pacientët",
     body: "Regjistroni pacientë të rinj dhe hapni vizita të reja për klinikën.",
-    placement: "bottom",
+    placement: "right",
   },
   {
     target: "emrs",
     title: "EMRs",
     body: "Historia e plotë mjekësore e pacientit — konsultat, raportet dhe shenjat vitale.",
-    placement: "bottom",
+    placement: "right",
   },
   {
     target: "staff",
     title: "Stafi",
     body: "Shtoni mjekë, infermierë dhe laborantë që punojnë në klinikën tuaj.",
-    placement: "bottom",
+    placement: "right",
   },
   {
     target: "home",
     title: "Paneli kryesor",
     body: "Kthehuni këtu për një pasqyrë të shpejtë të aktivitetit të klinikës.",
-    placement: "bottom",
+    placement: "right",
   },
 ];
 
@@ -212,7 +212,7 @@ export default function ClinicAdminOnboardingTour() {
           style={{ top: tooltip.top, left: tooltip.left }}
         >
           <div
-            className={`rounded-2xl bg-white shadow-2xl border border-slate-200/90 p-5 ${
+            className={`rounded-md bg-white border border-slate-200 p-4 ${
               tooltip.placeBelow ? "mt-1" : "-translate-y-full -mt-1"
             }`}
           >
@@ -244,7 +244,7 @@ export default function ClinicAdminOnboardingTour() {
               <button
                 type="button"
                 onClick={goNext}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-clinic-500 text-white text-sm font-semibold hover:bg-clinic-600 shadow-sm"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-900 text-white text-sm font-medium hover:bg-slate-800"
               >
                 {isLast ? "Përfundo" : "Vazhdo"}
                 {!isLast && <FiArrowRight size={16} />}
@@ -256,7 +256,7 @@ export default function ClinicAdminOnboardingTour() {
 
       {!spotlight && (
         <div className="fixed inset-0 z-[202] flex items-center justify-center p-6 pointer-events-auto">
-          <div className="rounded-2xl bg-white p-6 max-w-sm shadow-2xl text-center">
+          <div className="rounded-md bg-white p-4 max-w-sm border border-slate-200 text-center">
             <p className="text-sm text-slate-600 mb-4">
               Hapni menunë (☰) në mobile për të parë navigimin, ose zgjeroni dritaren.
             </p>

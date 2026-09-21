@@ -67,18 +67,18 @@ export default function ConfirmModal({
         if (e.target === e.currentTarget && !loading) onClose?.();
       }}
     >
-      <div className="card w-full max-w-md shadow-card-lg border-slate-200/90 overflow-hidden animate-[landing-scale-in_0.2s_ease-out]">
-        <div className="flex items-start gap-4 p-6 sm:p-7">
+      <div className="card w-full max-w-md shadow-card-lg border-slate-200 overflow-hidden">
+        <div className="flex items-start gap-3 p-4">
           <span
-            className={`inline-flex shrink-0 items-center justify-center h-12 w-12 rounded-2xl ring-1 ${v.iconWrap}`}
+            className={`inline-flex shrink-0 items-center justify-center h-9 w-9 rounded-md ring-1 ${v.iconWrap}`}
             aria-hidden
           >
-            <Icon size={24} strokeWidth={2} />
+            <Icon size={18} strokeWidth={2} />
           </span>
           <div className="min-w-0 flex-1 pt-0.5">
             <h3
               id="confirm-modal-title"
-              className="text-lg font-semibold text-slate-900 tracking-tight"
+              className="text-sm font-semibold text-slate-900 tracking-tight"
             >
               {title}
             </h3>
@@ -97,7 +97,7 @@ export default function ConfirmModal({
           </button>
         </div>
 
-        <div className="flex flex-wrap-reverse sm:flex-row justify-end gap-2 px-6 sm:px-7 py-4 bg-slate-50/80 border-t border-slate-200/80">
+        <div className="flex flex-wrap-reverse sm:flex-row justify-end gap-2 px-4 py-3 bg-slate-50 border-t border-slate-200">
           <button
             type="button"
             className="btn-secondary btn-md w-full sm:w-auto"
