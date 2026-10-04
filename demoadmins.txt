@@ -1,0 +1,15 @@
+
+superadmin@iklinika.demo
+DemoAdmin123!
+
+admin@iklinika.demo
+DemoClinic123!
+
+doctor@iklinika.demo
+DemoDoctor123!
+
+nurse@iklinika.demo
+DemoNurse123!
+
+lab@iklinika.demo
+DemoLab123!

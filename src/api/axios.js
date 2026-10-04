@@ -1,48 +1,37 @@
-import axios from "axios";
+/**
+ * The demo no longer calls the previous HTTP API.
+ * A few screens still import this module for GET /api/Patient; those calls
+ * are served from Supabase. Any other path is rejected so the old backend
+ * cannot be contacted by accident.
+ */
+import { listPatients } from "../services/patientService";
 
-const api = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-  // Include credentials for CORS if needed
-  withCredentials: false,
-});
+function unsupported(method, url) {
+  const error = new Error(`This demo does not call the previous backend (${method} ${url}).`);
+  error.response = { status: 410, data: { message: error.message } };
+  return Promise.reject(error);
+}
 
-// Add authorization token to all requests
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      // Ensure token doesn't already have "Bearer " prefix
-      const cleanToken = token.startsWith("Bearer ") ? token.substring(7) : token;
-      config.headers.Authorization = `Bearer ${cleanToken}`;
+const api = {
+  get(url) {
+    const path = String(url || "");
+    if (path === "/api/Patient") {
+      return listPatients().then((data) => ({ data }));
     }
-    // Let the browser set Content-Type (with boundary) for FormData; otherwise 415
-    if (config.data instanceof FormData) {
-      delete config.headers["Content-Type"];
-    }
-    return config;
+    return unsupported("GET", path);
   },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Response interceptor to handle authentication errors
-api.interceptors.response.use(
-  (response) => {
-    return response;
+  post(url) {
+    return unsupported("POST", url);
   },
-  (error) => {
-    // Handle 401/403 errors - token expired or invalid
-    if (error.response?.status === 401 || error.response?.status === 403) {
-      // Optionally redirect to login or clear token
-      // localStorage.removeItem("accessToken");
-      // window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);
+  put(url) {
+    return unsupported("PUT", url);
+  },
+  patch(url) {
+    return unsupported("PATCH", url);
+  },
+  delete(url) {
+    return unsupported("DELETE", url);
+  },
+};
 
 export default api;

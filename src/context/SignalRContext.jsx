@@ -7,12 +7,7 @@ import React, {
   useRef,
   useMemo,
 } from "react";
-import * as signalR from "@microsoft/signalr";
-import {
-  createClinicHubConnection,
-  joinClinic,
-  joinPatientCase,
-} from "../services/signalr";
+import { supabase } from "../lib/supabaseClient";
 import { getClinicId } from "../utils/clinicId";
 import { useAuth } from "./AuthContext";
 
@@ -21,41 +16,33 @@ const SignalRContext = createContext(null);
 const CONNECT_RETRY_MS = 3000;
 const MAX_CONNECT_RETRIES = 5;
 
+function emit(handlers, eventName, ...args) {
+  const set = handlers.current[eventName];
+  if (!set) return;
+  set.forEach((handler) => {
+    try {
+      handler(...args);
+    } catch (err) {
+      console.warn(eventName, err);
+    }
+  });
+}
+
 export function SignalRProvider({ children }) {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [connection, setConnection] = useState(null);
   const [connectionState, setConnectionState] = useState("Disconnected");
   const [error, setError] = useState(null);
   const connectionRef = useRef(null);
+  const channelRef = useRef(null);
   const connectingRef = useRef(false);
   const connectRetriesRef = useRef(0);
   const connectRetryTimerRef = useRef(null);
-  const joinedCasesRef = useRef(new Set());
-
-  useEffect(() => {
-    connectionRef.current = connection;
-  }, [connection]);
-
-  const rejoinGroups = useCallback(async (conn) => {
-    try {
-      await joinClinic(conn, getClinicId());
-      const caseIds = [...joinedCasesRef.current];
-      await Promise.all(
-        caseIds.map((caseId) =>
-          joinPatientCase(conn, caseId).catch(() => {})
-        )
-      );
-    } catch (e) {
-      console.warn("SignalR group rejoin failed", e);
-    }
-  }, []);
-
-  const subscribe = useCallback((eventName, handler) => {
-    const conn = connectionRef.current;
-    if (!conn) return () => {};
-    conn.on(eventName, handler);
-    return () => conn.off(eventName, handler);
-  }, []);
+  const handlersRef = useRef({
+    VitalsUpdated: new Set(),
+    ReportUpdated: new Set(),
+    CaseStatusChanged: new Set(),
+  });
 
   const stopConnection = useCallback(async () => {
     if (connectRetryTimerRef.current) {
@@ -64,13 +51,14 @@ export function SignalRProvider({ children }) {
     }
     connectRetriesRef.current = 0;
     connectingRef.current = false;
-    const conn = connectionRef.current;
+    const channel = channelRef.current;
+    channelRef.current = null;
     connectionRef.current = null;
     setConnection(null);
     setConnectionState("Disconnected");
-    if (conn) {
+    if (channel) {
       try {
-        await conn.stop();
+        await supabase.removeChannel(channel);
       } catch {
         /* ignore */
       }
@@ -78,88 +66,102 @@ export function SignalRProvider({ children }) {
   }, []);
 
   const connect = useCallback(async () => {
-    const token = localStorage.getItem("accessToken");
-    if (!token || connectingRef.current) return;
+    if (!isAuthenticated || connectingRef.current) return;
+    if (channelRef.current) return;
 
-    const existing = connectionRef.current;
-    if (
-      existing &&
-      (existing.state === signalR.HubConnectionState.Connected ||
-        existing.state === signalR.HubConnectionState.Connecting ||
-        existing.state === signalR.HubConnectionState.Reconnecting)
-    ) {
-      return;
-    }
-
-    if (existing) {
-      try {
-        await existing.stop();
-      } catch {
-        /* ignore */
-      }
-      connectionRef.current = null;
-      setConnection(null);
-    }
+    const clinicId = getClinicId();
+    if (!clinicId) return;
 
     connectingRef.current = true;
     setConnectionState("Connecting");
     setError(null);
 
-    try {
-      const conn = await createClinicHubConnection();
-      await rejoinGroups(conn);
-
-      conn.onclose(() => {
-        setConnectionState("Disconnected");
-        if (connectionRef.current === conn) {
-          connectionRef.current = null;
-          setConnection(null);
+    const channel = supabase
+      .channel(`clinic-${clinicId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "patient_cases", filter: `clinic_id=eq.${clinicId}` },
+        (payload) => {
+          const next = payload.new || {};
+          const prev = payload.old || {};
+          if (next.id && next.status && next.status !== prev.status) {
+            emit(handlersRef, "CaseStatusChanged", next.id, next.status);
+          }
         }
-      });
-      conn.onreconnecting(() => setConnectionState("Connecting"));
-      conn.onreconnected(async () => {
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "case_vitals", filter: `clinic_id=eq.${clinicId}` },
+        (payload) => {
+          const row = payload.new || {};
+          emit(handlersRef, "VitalsUpdated", row.patient_case_id, {
+            weightKg: row.weight_kg,
+            systolicPressure: row.systolic_pressure,
+            diastolicPressure: row.diastolic_pressure,
+            temperatureC: row.temperature_c,
+            heartRate: row.heart_rate,
+            recordedAt: row.recorded_at,
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "medical_reports", filter: `clinic_id=eq.${clinicId}` },
+        (payload) => {
+          const row = payload.new || payload.old || {};
+          if (payload.eventType === "DELETE") {
+            emit(handlersRef, "ReportUpdated", row.patient_case_id, null);
+            return;
+          }
+          emit(handlersRef, "ReportUpdated", row.patient_case_id, {
+            anamneza: row.anamneza ?? "",
+            ekzaminimi: row.ekzaminimi ?? "",
+            diagnosis: row.diagnosis ?? "",
+            therapy: row.therapy ?? "",
+          });
+        }
+      );
+
+    channel.subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        const handle = { state: "Connected" };
+        channelRef.current = channel;
+        connectionRef.current = handle;
+        setConnection(handle);
         setConnectionState("Connected");
+        setError(null);
         connectRetriesRef.current = 0;
-        await rejoinGroups(conn);
-      });
-
-      connectionRef.current = conn;
-      setConnection(conn);
-      setConnectionState("Connected");
-      connectRetriesRef.current = 0;
-    } catch (err) {
-      setError(err?.message || "Failed to connect");
-      setConnectionState("Disconnected");
-
-      if (
-        isAuthenticated &&
-        connectRetriesRef.current < MAX_CONNECT_RETRIES
-      ) {
-        connectRetriesRef.current += 1;
-        connectRetryTimerRef.current = window.setTimeout(() => {
-          connectRetryTimerRef.current = null;
-          connectingRef.current = false;
-          connect();
-        }, CONNECT_RETRY_MS);
+        connectingRef.current = false;
         return;
       }
-    } finally {
-      if (!connectRetryTimerRef.current) {
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+        setConnectionState("Disconnected");
+        setConnection(null);
+        connectionRef.current = null;
+        if (channelRef.current === channel) channelRef.current = null;
         connectingRef.current = false;
+        if (status !== "CLOSED" && isAuthenticated && connectRetriesRef.current < MAX_CONNECT_RETRIES) {
+          connectRetriesRef.current += 1;
+          setError("Failed to connect");
+          connectRetryTimerRef.current = window.setTimeout(() => {
+            connectRetryTimerRef.current = null;
+            supabase.removeChannel(channel).catch(() => {});
+            connect();
+          }, CONNECT_RETRY_MS);
+        }
       }
-    }
-  }, [isAuthenticated, rejoinGroups]);
+    });
+  }, [isAuthenticated]);
 
-  const joinCase = useCallback(async (patientCaseId) => {
-    if (!patientCaseId) return;
-    joinedCasesRef.current.add(patientCaseId);
-    const conn = connectionRef.current;
-    if (!conn || conn.state !== signalR.HubConnectionState.Connected) return;
-    try {
-      await joinPatientCase(conn, patientCaseId);
-    } catch (e) {
-      console.warn("JoinPatientCase failed", e);
-    }
+  const subscribe = useCallback((eventName, handler) => {
+    const set = handlersRef.current[eventName];
+    if (!set) return () => {};
+    set.add(handler);
+    return () => set.delete(handler);
+  }, []);
+
+  const joinCase = useCallback(async () => {
+    // Clinic-wide realtime already delivers case events.
   }, []);
 
   const connectRef = useRef(connect);
@@ -167,28 +169,18 @@ export function SignalRProvider({ children }) {
 
   useEffect(() => {
     if (authLoading) return;
-
     if (!isAuthenticated) {
       stopConnection();
-      joinedCasesRef.current.clear();
-      return;
+      return undefined;
     }
-
     connectRef.current();
-
     return () => {
       stopConnection();
     };
   }, [isAuthenticated, authLoading, stopConnection]);
 
-  const onVitalsUpdated = useCallback(
-    (handler) => subscribe("VitalsUpdated", handler),
-    [subscribe]
-  );
-  const onReportUpdated = useCallback(
-    (handler) => subscribe("ReportUpdated", handler),
-    [subscribe]
-  );
+  const onVitalsUpdated = useCallback((handler) => subscribe("VitalsUpdated", handler), [subscribe]);
+  const onReportUpdated = useCallback((handler) => subscribe("ReportUpdated", handler), [subscribe]);
   const onCaseStatusChanged = useCallback(
     (handler) => subscribe("CaseStatusChanged", handler),
     [subscribe]
@@ -205,21 +197,10 @@ export function SignalRProvider({ children }) {
       onReportUpdated,
       onCaseStatusChanged,
     }),
-    [
-      connection,
-      connectionState,
-      error,
-      connect,
-      joinCase,
-      onVitalsUpdated,
-      onReportUpdated,
-      onCaseStatusChanged,
-    ]
+    [connection, connectionState, error, connect, joinCase, onVitalsUpdated, onReportUpdated, onCaseStatusChanged]
   );
 
-  return (
-    <SignalRContext.Provider value={value}>{children}</SignalRContext.Provider>
-  );
+  return <SignalRContext.Provider value={value}>{children}</SignalRContext.Provider>;
 }
 
 export const useSignalR = () => useContext(SignalRContext);
