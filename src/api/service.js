@@ -61,3 +61,9 @@ export async function deleteService(id, clinicId) {
   const config = clinicId ? { params: { clinicId } } : {};
   await api.delete(`/api/Service/${id}`, config);
 }
+
+
+
+
+
+
