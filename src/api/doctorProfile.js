@@ -1,5 +1,6 @@
 export {
   getDoctorProfile,
+  getDoctorSignoff,
   updateDoctorProfile,
   uploadDoctorSignature,
   uploadDoctorStamp,

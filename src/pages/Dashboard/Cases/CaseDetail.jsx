@@ -16,16 +16,17 @@ import {
 import { listServices } from "../../../api/service";
 import {
   getDoctorProfile,
+  getDoctorSignoff,
   getDoctorImageFullUrl,
 } from "../../../api/doctorProfile";
-import { downloadCaseReportPdfFromBackend } from "../../../utils/caseReportPdf";
+import {
+  downloadCaseReportPdfFromBackend,
+  printCaseReportPdfFromBackend,
+} from "../../../utils/caseReportPdf";
 import { useAuth } from "../../../context/AuthContext";
 import { useSignalR } from "../../../context/SignalRContext";
 import { CLINIC_MODE_SOLO_DOCTOR } from "../../../utils/clinicMode";
-import {
-  STATUS_FLOW,
-  normalizeCaseStatus,
-} from "./caseStatus";
+import { normalizeCaseStatus } from "./caseStatus";
 import {
   buildVitalsSubmitBody,
   parseVitalPreferences,
@@ -53,8 +54,6 @@ export default function CaseDetail() {
   const isDoctor = currentRole === "doctor";
   const isNurse = currentRole === "nurse";
   const isSoloDoctorClinic = clinicMode === CLINIC_MODE_SOLO_DOCTOR;
-  const showNurseSection = !isSoloDoctorClinic && !isDoctor && view !== "doctor";
-  const showDoctorSection = view !== "nurse";
   const { connection, joinCase, onVitalsUpdated, onReportUpdated, onCaseStatusChanged } =
     useSignalR();
 
@@ -89,6 +88,23 @@ export default function CaseDetail() {
   const [serviceSubmitting, setServiceSubmitting] = useState(false);
   const [protocolInput, setProtocolInput] = useState("");
   const [protocolSubmitting, setProtocolSubmitting] = useState(false);
+  const [signoffPreview, setSignoffPreview] = useState({ signature: "", stamp: "" });
+
+  const caseStatus = normalizeCaseStatus(
+    caseData ? (caseData.status ?? caseData.Status) : "Waiting"
+  );
+  const visitClosed =
+    caseStatus === "Finished" || caseStatus === "Mbyllur" || caseStatus === "Completed";
+  const nurseReviewsOutcome = (isNurse || view === "nurse") && visitClosed;
+  const showNurseSection = !isSoloDoctorClinic && !isDoctor && view !== "doctor";
+  const showDoctorSection = view !== "nurse" || nurseReviewsOutcome;
+  const canEditVitals =
+    (isNurse || view === "nurse") && caseStatus === "Waiting" && isAuthenticated;
+  const canEditReportAndStatus =
+    isAuthenticated &&
+    !visitClosed &&
+    (isDoctor || isSoloDoctorClinic || (view === "doctor" && !isNurse));
+  const canCloseCase = (isNurse || view === "nurse") && caseStatus === "Finished";
 
   const fetchCase = useCallback(async () => {
     if (!id) return;
@@ -207,6 +223,7 @@ export default function CaseDetail() {
   }, [
     id,
     connection,
+    isDoctor,
     joinCase,
     onVitalsUpdated,
     onReportUpdated,
@@ -214,12 +231,15 @@ export default function CaseDetail() {
   ]);
 
   useEffect(() => {
-    if (!showDoctorSection) return;
+    if (!showDoctorSection || !isDoctor) return;
     let cancelled = false;
     setDoctorProfileLoading(true);
     getDoctorProfile()
       .then((data) => {
-        if (!cancelled) setDoctorProfile(data || null);
+        if (!cancelled) {
+          setDoctorProfile(data || null);
+          setSignoffPreview({ signature: "", stamp: "" });
+        }
       })
       .catch(() => {
         if (!cancelled) setDoctorProfile(null);
@@ -230,7 +250,38 @@ export default function CaseDetail() {
     return () => {
       cancelled = true;
     };
-  }, [showDoctorSection]);
+  }, [showDoctorSection, isDoctor]);
+
+  useEffect(() => {
+    if (!showDoctorSection || isDoctor) return;
+    const assignedId = caseData?.assignedDoctorUserId ?? caseData?.AssignedDoctorUserId;
+    if (!assignedId) return;
+    let cancelled = false;
+    setDoctorProfileLoading(true);
+    getDoctorSignoff(assignedId)
+      .then((data) => {
+        if (cancelled) return;
+        setDoctorProfile(null);
+        setSignoffPreview({
+          signature: data?.signatureBase64 || "",
+          stamp: data?.stampBase64 || "",
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setSignoffPreview({ signature: "", stamp: "" });
+      })
+      .finally(() => {
+        if (!cancelled) setDoctorProfileLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    showDoctorSection,
+    isDoctor,
+    caseData?.assignedDoctorUserId,
+    caseData?.AssignedDoctorUserId,
+  ]);
 
   useEffect(() => {
     const sid = caseData?.serviceId ?? caseData?.ServiceId;
@@ -260,9 +311,6 @@ export default function CaseDetail() {
     setNotif({ visible: true, type, message });
   };
 
-  const rawStatus = caseData?.status ?? caseData?.Status;
-  const caseStatus = normalizeCaseStatus(rawStatus);
-
   const vitalPreferences = parseVitalPreferences(caseData);
   const protocolPreferences = parseProtocolPreferences(
     caseData?.protocolPreferences ?? caseData?.ProtocolPreferences ?? caseData
@@ -270,84 +318,72 @@ export default function CaseDetail() {
   const protocolNumber = getCaseProtocolNumber(caseData);
   const canEditProtocol =
     caseData && canEditProtocolOnCase(protocolPreferences, currentRole);
-  const caseFinished = caseStatus === "Finished" || caseStatus === "Mbyllur";
+  const caseFinished = visitClosed;
 
   const assertProtocolBeforeFinish = () => {
     if (!isProtocolRequired(protocolPreferences)) return true;
-    if (hasCaseProtocolNumber(caseData)) return true;
+    if (hasCaseProtocolNumber(caseData) || protocolInput.trim()) return true;
     showNotif("error", protocolMissingMessage());
     return false;
   };
 
-  const handleSaveProtocol = async (e) => {
-    e.preventDefault();
+  const persistProtocolIfNeeded = async () => {
+    if (!canEditProtocol || visitClosed) return;
     const value = protocolInput.trim();
-    if (!value) {
-      showNotif("error", "Shkruani numrin e protokollit.");
-      return;
-    }
+    if (!value || value === (protocolNumber || "").trim()) return;
     setProtocolSubmitting(true);
     try {
       const res = await updateCaseProtocol(id, value);
-      const saved =
-        res?.protocolNumber ?? res?.ProtocolNumber ?? value;
+      const saved = res?.protocolNumber ?? res?.ProtocolNumber ?? value;
       setCaseData((prev) =>
         prev ? { ...prev, protocolNumber: saved, ProtocolNumber: saved } : null
       );
       setProtocolInput(saved);
-      showNotif("success", "Numri i protokollit u ruajt.");
-    } catch (err) {
-      showNotif(
-        "error",
-        err.response?.data?.message ||
-          err.response?.data ||
-          "Dështoi ruajtja e numrit të protokollit."
-      );
     } finally {
       setProtocolSubmitting(false);
     }
   };
 
-  const handleSubmitVitals = async (e) => {
-    e.preventDefault();
-    const body = buildVitalsSubmitBody(vitals, vitalPreferences);
-    if (!body) {
-      showNotif(
-        "error",
-        "Plotësoni të paktën një shenjë vitale të aktivizuar, ose përdorni «Pa shenja vitale»."
-      );
-      return;
-    }
+  const sendCaseToDoctor = async ({ saveVitals }) => {
+    if (vitalsSubmitting || statusSubmitting) return;
     setVitalsSubmitting(true);
+    setStatusSubmitting(true);
     try {
-      const dto = await submitVitals(id, body);
-      setCaseData((prev) => (prev ? { ...prev, latestVitals: dto } : null));
-      setVitals({
-        weightKg: dto?.WeightKg ?? dto?.weightKg ?? "",
-        systolicPressure: dto?.SystolicPressure ?? dto?.systolicPressure ?? "",
-        diastolicPressure: dto?.DiastolicPressure ?? dto?.diastolicPressure ?? "",
-        temperatureC: dto?.TemperatureC ?? dto?.temperatureC ?? "",
-        heartRate: dto?.HeartRate ?? dto?.heartRate ?? "",
+      if (saveVitals) {
+        const body = buildVitalsSubmitBody(vitals, vitalPreferences);
+        if (!body) {
+          showNotif(
+            "error",
+            "Plotësoni të paktën një shenjë vitale, ose dërgoni pa shenja."
+          );
+          return;
+        }
+        const dto = await submitVitals(id, body);
+        setCaseData((prev) => (prev ? { ...prev, latestVitals: dto } : null));
+      }
+      await persistProtocolIfNeeded();
+      await updateCaseStatus(id, "InConsultation");
+      navigate("/dashboard/cases", {
+        state: { notice: "Pacienti u dërgua te mjeku.", noticeType: "success" },
       });
-      showNotif(
-        "success",
-        "Shenjat jetësore u ruajtën. Kur të jeni gati, klikoni «Vazhdo te mjeku»."
-      );
-    } catch (e) {
+    } catch (err) {
       showNotif(
         "error",
-        e.response?.data?.message || e.response?.data || "Dështoi ruajtja e shenjave jetësore."
+        err.response?.data?.message || err.response?.data || "Dështoi dërgimi te mjeku."
       );
     } finally {
       setVitalsSubmitting(false);
+      setStatusSubmitting(false);
     }
   };
 
+  const handleSubmitVitals = (e) => {
+    e.preventDefault();
+    sendCaseToDoctor({ saveVitals: true });
+  };
+
   const handleSkipVitals = () => {
-    showNotif(
-      "info",
-      "Nuk u ruajtën shenja vitale. Klikoni «Vazhdo te mjeku» kur të jeni gati."
-    );
+    sendCaseToDoctor({ saveVitals: false });
   };
 
   const handleSubmitReport = async (e) => {
@@ -356,19 +392,23 @@ export default function CaseDetail() {
       showNotif("error", "Diagnoza dhe terapia janë të detyrueshme.");
       return;
     }
+    if (!assertProtocolBeforeFinish()) return;
+    if (!isSoloDoctorClinic && caseStatus !== "InConsultation") {
+      showNotif("error", "Pacienti duhet të jetë në konsultim para se të përfundoni vizitën.");
+      return;
+    }
     setReportSubmitting(true);
+    setStatusSubmitting(true);
     try {
+      await persistProtocolIfNeeded();
       await submitReport(id, {
         anamneza: (report.anamneza || "").trim(),
         ekzaminimi: (report.ekzaminimi || "").trim(),
         diagnosis: report.diagnosis.trim(),
         therapy: report.therapy.trim(),
       });
+      let finished = false;
       if (isSoloDoctorClinic) {
-        if (!assertProtocolBeforeFinish()) return;
-        // SoloDoctor workflow: close the case immediately after report save.
-        // Try direct finish first; if backend enforces step flow, advance in sequence.
-        let finished = false;
         try {
           await updateCaseStatus(id, "Finished");
           finished = true;
@@ -382,69 +422,77 @@ export default function CaseDetail() {
             }
           }
           const latest = await getPatientCase(id);
-          const latestStatus = normalizeCaseStatus(latest?.status ?? latest?.Status);
-          finished = latestStatus === "Finished";
-        }
-
-        if (finished) {
-          setCaseData((prev) => (prev ? { ...prev, status: "Finished" } : prev));
-          showNotif("success", "Raporti u ruajt dhe rasti u mbyll automatikisht (SoloDoctor).");
-        } else {
-          showNotif("success", "Raporti u ruajt.");
+          finished = normalizeCaseStatus(latest?.status ?? latest?.Status) === "Finished";
         }
       } else {
-        showNotif("success", "Raporti u ruajt.");
+        await updateCaseStatus(id, "Finished");
+        finished = true;
       }
-    } catch (e) {
+      if (finished) {
+        navigate("/dashboard/cases", {
+          state: {
+            notice: isSoloDoctorClinic
+              ? "Raporti u ruajt dhe vizita u përfundua."
+              : "Vizitë e përfunduar. Infermieri e sheh te «Për mbyllje».",
+            noticeType: "success",
+          },
+        });
+        return;
+      }
+      showNotif("success", "Raporti u ruajt.");
+    } catch (err) {
       showNotif(
         "error",
-        e.response?.data?.message || e.response?.data || "Dështoi ruajtja e raportit."
+        err.response?.data?.message || err.response?.data || "Dështoi përfundimi i vizitës."
       );
     } finally {
       setReportSubmitting(false);
+      setStatusSubmitting(false);
     }
   };
 
-  const handleStatusChange = async (newStatus) => {
-    if (newStatus === "Finished" && !assertProtocolBeforeFinish()) return;
+  const handleCloseCase = async () => {
+    if (statusSubmitting) return;
     setStatusSubmitting(true);
     try {
-      await updateCaseStatus(id, newStatus);
-      setCaseData((prev) => (prev ? { ...prev, status: newStatus } : null));
-      if (newStatus === "Finished") {
-        navigate("/dashboard/cases");
-        return;
-      }
-      if (newStatus === "InConsultation" && (isNurse || view === "nurse")) {
-        showNotif("success", "Pacienti u dërgua te mjeku.");
-        navigate("/dashboard/cases");
-        return;
-      }
-      showNotif("success", `Statusi u përditësua në ${newStatus}.`);
-    } catch (e) {
+      await updateCaseStatus(id, "Mbyllur");
+      navigate("/dashboard/cases", {
+        state: { notice: "Rasti u mbyll.", noticeType: "success" },
+      });
+    } catch (err) {
       showNotif(
         "error",
-        e.response?.data?.message || e.response?.data || "Dështoi përditësimi i statusit."
+        err.response?.data?.message || err.response?.data || "Dështoi mbyllja e rastit."
       );
     } finally {
       setStatusSubmitting(false);
     }
   };
 
+  const pdfErrorMessage = (e, fallback) =>
+    e.response?.status === 404
+      ? "Rasti nuk u gjet ose nuk është në klinikën tuaj."
+      : e.response?.data?.message || e.message || fallback;
+
   const handleDownloadReportPdf = async () => {
     try {
       await downloadCaseReportPdfFromBackend(id);
       showNotif("success", "Raporti u shkarkua.");
     } catch (e) {
-      const msg = e.response?.status === 404
-        ? "Rasti nuk u gjet ose nuk është në klinikën tuaj."
-        : (e.response?.data?.message || e.message || "Dështoi shkarkimi i raportit.");
-      showNotif("error", msg);
+      showNotif("error", pdfErrorMessage(e, "Dështoi shkarkimi i raportit."));
     }
   };
 
-  const handleAttachService = async () => {
-    const serviceId = String(selectedServiceId || "").trim();
+  const handlePrintReportPdf = async () => {
+    try {
+      await printCaseReportPdfFromBackend(id);
+    } catch (e) {
+      showNotif("error", pdfErrorMessage(e, "Dështoi printimi i raportit."));
+    }
+  };
+
+  const handleAttachService = async (serviceIdArg) => {
+    const serviceId = String(serviceIdArg ?? selectedServiceId ?? "").trim();
     if (!serviceId) {
       showNotif("error", "Zgjidhni një shërbim.");
       return;
@@ -476,7 +524,6 @@ export default function CaseDetail() {
             null,
         };
       });
-      showNotif("success", "Shërbimi u lidh me rastin.");
     } catch (e) {
       showNotif(
         "error",
@@ -486,16 +533,6 @@ export default function CaseDetail() {
       setServiceSubmitting(false);
     }
   };
-
-  const canEditVitals =
-    (isNurse || view === "nurse") && caseStatus === "Waiting" && isAuthenticated;
-  const canEditReportAndStatus = isAuthenticated;
-  const allowedNextStatuses = caseData ? (STATUS_FLOW[caseStatus] || []) : [];
-  const nurseNextStatuses =
-    (isNurse || view === "nurse") && caseStatus === "Waiting"
-      ? allowedNextStatuses.filter((s) => s === "InConsultation")
-      : [];
-  const doctorNextStatuses = allowedNextStatuses.filter((s) => s === "Finished");
 
   if (loading && !caseData) {
     return (
@@ -555,8 +592,8 @@ export default function CaseDetail() {
     patient.dateOfBirth ?? patient.DateOfBirth ?? caseData.patientDateOfBirth ?? caseData.PatientDateOfBirth;
   const signaturePath = doctorProfile?.signatureUrl ?? doctorProfile?.SignatureUrl;
   const stampPath = doctorProfile?.stampUrl ?? doctorProfile?.StampUrl;
-  const signaturePreviewUrl = getDoctorImageFullUrl(signaturePath);
-  const stampPreviewUrl = getDoctorImageFullUrl(stampPath);
+  const signaturePreviewUrl = signoffPreview.signature || getDoctorImageFullUrl(signaturePath);
+  const stampPreviewUrl = signoffPreview.stamp || getDoctorImageFullUrl(stampPath);
   const assignedDoctorName =
     caseData?.assignedDoctorName ?? caseData?.AssignedDoctorName ?? "";
   const attachedServiceName = caseData?.serviceName ?? caseData?.ServiceName ?? "";
@@ -601,9 +638,45 @@ export default function CaseDetail() {
           setProtocolInput={setProtocolInput}
           canEdit={canEditProtocol}
           protocolSubmitting={protocolSubmitting}
-          onSave={handleSaveProtocol}
           caseFinished={caseFinished}
         />
+
+        {nurseReviewsOutcome && showDoctorSection && (
+          <DoctorSection
+            isSoloDoctorClinic={isSoloDoctorClinic}
+            latestVitals={latestVitals}
+            vitalPreferences={vitalPreferences}
+            statusSubmitting={statusSubmitting}
+            handleDownloadReportPdf={handleDownloadReportPdf}
+            handlePrintReportPdf={handlePrintReportPdf}
+            canCloseCase={canCloseCase}
+            onCloseCase={handleCloseCase}
+            patientDisplayName={patientDisplayName}
+            patientGender={patientGender}
+            patientPhone={patientPhone}
+            formatDateDisplay={formatDateDisplay}
+            patientDob={patientDob}
+            caseData={caseData}
+            canEditReportAndStatus={canEditReportAndStatus}
+            handleSubmitReport={handleSubmitReport}
+            report={report}
+            setReport={setReport}
+            reportSubmitting={reportSubmitting}
+            medicalReport={medicalReport}
+            doctorProfileLoading={doctorProfileLoading}
+            signaturePreviewUrl={signaturePreviewUrl}
+            stampPreviewUrl={stampPreviewUrl}
+            services={services}
+            servicesLoading={servicesLoading}
+            selectedServiceId={selectedServiceId}
+            setSelectedServiceId={setSelectedServiceId}
+            serviceSubmitting={serviceSubmitting}
+            handleAttachService={handleAttachService}
+            attachedServiceName={attachedServiceName}
+            attachedServicePrice={attachedServicePrice}
+            showRecordedVitals={false}
+          />
+        )}
 
         {showNurseSection && (
           <NurseSection
@@ -612,24 +685,23 @@ export default function CaseDetail() {
             setVitals={setVitals}
             handleSubmitVitals={handleSubmitVitals}
             handleSkipVitals={handleSkipVitals}
-            vitalsSubmitting={vitalsSubmitting}
+            vitalsSubmitting={vitalsSubmitting || statusSubmitting}
             latestVitals={latestVitals}
             vitalPreferences={vitalPreferences}
-            nurseNextStatuses={nurseNextStatuses}
-            statusSubmitting={statusSubmitting}
-            handleStatusChange={handleStatusChange}
+            caseStatus={caseStatus}
           />
         )}
 
-        {showDoctorSection && (
+        {!nurseReviewsOutcome && showDoctorSection && (
           <DoctorSection
             isSoloDoctorClinic={isSoloDoctorClinic}
             latestVitals={latestVitals}
             vitalPreferences={vitalPreferences}
-            doctorNextStatuses={doctorNextStatuses}
             statusSubmitting={statusSubmitting}
-            handleStatusChange={handleStatusChange}
             handleDownloadReportPdf={handleDownloadReportPdf}
+            handlePrintReportPdf={handlePrintReportPdf}
+            canCloseCase={canCloseCase}
+            onCloseCase={handleCloseCase}
             patientDisplayName={patientDisplayName}
             patientGender={patientGender}
             patientPhone={patientPhone}

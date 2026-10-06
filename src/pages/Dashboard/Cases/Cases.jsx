@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FiFolder, FiRefreshCw, FiTrash2, FiUploadCloud } from "react-icons/fi";
 import { getPatientCases, deletePatientCase, updateCaseStatus } from "../../../api/patientCase";
 import { useSignalR } from "../../../context/SignalRContext";
@@ -51,6 +51,7 @@ const CASE_DATE_PRESETS = [
 
 export default function Cases() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { role } = useAuth();
   const currentRole = String(role || "").toLowerCase();
   const isDoctor = currentRole === "doctor";
@@ -64,8 +65,8 @@ export default function Cases() {
   const [loading, setLoading] = useState(true);
   const [notif, setNotif] = useState({ visible: false, type: "info", message: "" });
   const { confirm, ConfirmDialog } = useConfirmModal();
-  /** Në vazhdim | përfunduar / mbyllur */
-  const [casesTab, setCasesTab] = useState("active");
+  /** Nurse queue is split by handoff. Other roles keep active / completed. */
+  const [casesTab, setCasesTab] = useState(isNurse ? "waiting" : "active");
   /** Preset date filter when no custom D/M/Y is set */
   const [casesQuickDate, setCasesQuickDate] = useState("");
   const [nameSearch, setNameSearch] = useState("");
@@ -73,6 +74,38 @@ export default function Cases() {
   const { connection, connectionState, onVitalsUpdated, onReportUpdated, onCaseStatusChanged } =
     useSignalR();
   const signalRRefreshTimerRef = React.useRef(null);
+
+  useEffect(() => {
+    const notice = location.state?.notice;
+    if (!notice) return;
+    setNotif({
+      visible: true,
+      type: location.state?.noticeType || "success",
+      message: notice,
+    });
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.state, location.pathname, navigate]);
+
+  const nurseCounts = useMemo(() => {
+    const counts = { waiting: 0, withDoctor: 0, toClose: 0, closed: 0 };
+    cases.forEach((c) => {
+      const status = normalizeCaseStatus(c.status ?? c.Status);
+      if (status === "Waiting") counts.waiting += 1;
+      else if (status === "InConsultation" || status === "InProgress") counts.withDoctor += 1;
+      else if (status === "Finished") counts.toClose += 1;
+      else if (status === "Mbyllur" || status === "Completed") counts.closed += 1;
+    });
+    return counts;
+  }, [cases]);
+
+  const statusTabs = isNurse
+    ? [
+        { value: "waiting", label: `Në pritje (${nurseCounts.waiting})` },
+        { value: "withDoctor", label: `Te mjeku (${nurseCounts.withDoctor})` },
+        { value: "toClose", label: `Për mbyllje (${nurseCounts.toClose})` },
+        { value: "closed", label: `Mbyllur (${nurseCounts.closed})` },
+      ]
+    : CASE_TABS;
 
   const handleDatePreset = (value) => {
     setCasesQuickDate(value);
@@ -88,9 +121,22 @@ export default function Cases() {
     return cases.filter((c) => {
       const status = normalizeCaseStatus(c.status ?? c.Status);
       if (isDoctor && status === "Waiting") return false;
-      const terminal = isTerminalCaseStatus(status);
-      if (casesTab === "active" && terminal) return false;
-      if (casesTab === "completed" && !terminal) return false;
+      if (isNurse) {
+        if (casesTab === "waiting" && status !== "Waiting") return false;
+        if (
+          casesTab === "withDoctor" &&
+          status !== "InConsultation" &&
+          status !== "InProgress"
+        ) {
+          return false;
+        }
+        if (casesTab === "toClose" && status !== "Finished") return false;
+        if (casesTab === "closed" && status !== "Mbyllur" && status !== "Completed") return false;
+      } else {
+        const terminal = isTerminalCaseStatus(status);
+        if (casesTab === "active" && terminal) return false;
+        if (casesTab === "completed" && !terminal) return false;
+      }
       if (!caseMatchesNameQuery(c, nameSearch)) return false;
       const created = c.createdAt ?? c.CreatedAt;
       if (customDate) return isSameCalendarDay(created, customDate);
@@ -98,7 +144,7 @@ export default function Cases() {
       if (casesQuickDate === "yesterday") return isYesterday(created);
       return true;
     });
-  }, [cases, casesTab, nameSearch, customDate, casesQuickDate, isDoctor]);
+  }, [cases, casesTab, nameSearch, customDate, casesQuickDate, isDoctor, isNurse]);
 
   const getCaseOpenPath = useCallback(
     (c) => {
@@ -173,8 +219,20 @@ export default function Cases() {
           type: "success",
           message: "Infermieri dërgoi një pacient për konsultim. Lista u përditësua.",
         });
-      } else if (!isDoctor && statusKey === "InConsultation") {
-        setNotif({ visible: true, type: "info", message: "Rasti u dërgua te mjeku." });
+      } else if (isNurse && statusKey === "InConsultation") {
+        setNotif({ visible: true, type: "info", message: "Pacienti u dërgua te mjeku." });
+      } else if (isNurse && statusKey === "Finished") {
+        setCasesTab("toClose");
+        setNotif({
+          visible: true,
+          type: "success",
+          message: "Mjeku përfundoi vizitën. Rasti është te «Për mbyllje».",
+        });
+      } else if (isNurse && statusKey === "Mbyllur") {
+        setCasesTab("waiting");
+        setNotif({ visible: true, type: "success", message: "Rasti u mbyll." });
+      } else if (isDoctor && statusKey === "Finished") {
+        setNotif({ visible: true, type: "success", message: "Vizitë e përfunduar." });
       } else {
         setNotif({ visible: true, type: "info", message: "Statusi i rastit u përditësua. Lista u rifreskua." });
       }
@@ -195,6 +253,7 @@ export default function Cases() {
     onReportUpdated,
     onCaseStatusChanged,
     isDoctor,
+    isNurse,
   ]);
 
   const handleContinueCase = async (c) => {
@@ -260,7 +319,11 @@ export default function Cases() {
 
       <PageHeader
         title="Rastet e pacientëve"
-        subtitle="Të gjitha rastet. Ndryshimet e statusit përditësohen në kohë reale."
+        subtitle={
+          isNurse
+            ? "Në pritje, te mjeku, pastaj «Për mbyllje» pasi mjeku përfundon vizitën."
+            : "Të gjitha rastet. Ndryshimet e statusit përditësohen në kohë reale."
+        }
         icon={FiFolder}
         actions={
           <>
@@ -311,7 +374,7 @@ export default function Cases() {
               searchValue={nameSearch}
               onSearchChange={setNameSearch}
               searchPlaceholder="Kërko sipas emrit të pacientit…"
-              statusTabs={CASE_TABS}
+              statusTabs={statusTabs}
               activeStatusTab={casesTab}
               onStatusTabChange={setCasesTab}
               datePresets={CASE_DATE_PRESETS}
@@ -334,9 +397,17 @@ export default function Cases() {
                         ? "Nuk ka raste për sot."
                         : casesQuickDate === "yesterday"
                           ? "Nuk ka raste për dje."
-                          : casesTab === "completed"
-                            ? "Nuk ka raste të përfunduar ose të mbyllur që përputhen me filtrat."
-                            : "Nuk ka raste në vazhdim që përputhen me filtrat."}
+                          : isNurse && casesTab === "waiting"
+                            ? "Nuk ka pacientë në pritje."
+                            : isNurse && casesTab === "withDoctor"
+                              ? "Nuk ka pacientë te mjeku."
+                              : isNurse && casesTab === "toClose"
+                                ? "Nuk ka vizita të përfunduara për mbyllje."
+                                : isNurse && casesTab === "closed"
+                                  ? "Nuk ka raste të mbyllura."
+                                  : casesTab === "completed"
+                                    ? "Nuk ka raste të përfunduar ose të mbyllur që përputhen me filtrat."
+                                    : "Nuk ka raste në vazhdim që përputhen me filtrat."}
                 </p>
               </div>
             ) : (
@@ -398,9 +469,19 @@ export default function Cases() {
                               )}
                               <Link
                                 to={getCaseOpenPath(c)}
-                                className="btn-secondary btn-sm"
+                                className={
+                                  isNurse &&
+                                  (normalizeCaseStatus(status) === "Waiting" ||
+                                    normalizeCaseStatus(status) === "Finished")
+                                    ? "btn-primary btn-sm"
+                                    : "btn-secondary btn-sm"
+                                }
                               >
-                                Hap
+                                {isNurse && normalizeCaseStatus(status) === "Finished"
+                                  ? "Mbyll"
+                                  : isNurse && normalizeCaseStatus(status) === "Waiting"
+                                    ? "Përgatit"
+                                    : "Hap"}
                               </Link>
                             </div>
                           </td>

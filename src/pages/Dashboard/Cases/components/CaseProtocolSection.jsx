@@ -1,5 +1,5 @@
 import React from "react";
-import { FiHash, FiSave } from "react-icons/fi";
+import { FiHash } from "react-icons/fi";
 import {
   isProtocolRequired,
   parseProtocolPreferences,
@@ -12,7 +12,6 @@ export default function CaseProtocolSection({
   setProtocolInput,
   canEdit,
   protocolSubmitting,
-  onSave,
   caseFinished,
 }) {
   const prefs = parseProtocolPreferences(protocolPreferences);
@@ -30,40 +29,31 @@ export default function CaseProtocolSection({
           Numri i protokollit
           {required && (
             <span className="text-[10px] font-semibold normal-case text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-              I detyrueshëm për mbyllje
+              Para përfundimit të vizitës
             </span>
           )}
         </h2>
       </div>
       <div className="px-5 py-4">
         {canEdit && !caseFinished ? (
-          <form onSubmit={onSave} className="flex flex-col sm:flex-row gap-3 sm:items-end">
-            <div className="flex-1 min-w-0">
-              <label htmlFor="case-protocol" className="label">
-                Numri i protokollit
-              </label>
-              <input
-                id="case-protocol"
-                type="text"
-                maxLength={100}
-                value={protocolInput}
-                onChange={(e) => setProtocolInput(e.target.value)}
-                className="input"
-                placeholder="p.sh. 2026/0142"
-              />
-              <p className="text-xs text-slate-500 mt-1.5">
-                Unik për klinikën. Mund të përdorni çdo format (shifra, shkronja, etj.).
-              </p>
-            </div>
-            <button
-              type="submit"
-              disabled={protocolSubmitting || !protocolInput.trim()}
-              className="btn-primary btn-md shrink-0"
-            >
-              <FiSave size={16} aria-hidden />
-              {protocolSubmitting ? "Duke ruajtur…" : "Ruaj numrin"}
-            </button>
-          </form>
+          <div className="flex-1 min-w-0">
+            <label htmlFor="case-protocol" className="label">
+              Numri i protokollit
+            </label>
+            <input
+              id="case-protocol"
+              type="text"
+              maxLength={100}
+              value={protocolInput}
+              onChange={(e) => setProtocolInput(e.target.value)}
+              className="input"
+              placeholder="p.sh. 2026/0142"
+              disabled={protocolSubmitting}
+            />
+            <p className="text-xs text-slate-500 mt-1.5">
+              Ruhet automatikisht kur dërgoni pacientin te mjeku ose përfundoni vizitën.
+            </p>
+          </div>
         ) : (
           <div>
             <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">
@@ -80,7 +70,7 @@ export default function CaseProtocolSection({
         )}
         {missing && (
           <p className="text-xs text-amber-700 mt-3 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
-            Vendosni numrin e protokollit para se të mbyllni rastin.
+            Vendosni numrin e protokollit para se të përfundoni vizitën.
           </p>
         )}
       </div>

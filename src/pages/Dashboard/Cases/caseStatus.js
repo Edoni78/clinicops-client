@@ -14,7 +14,7 @@ export function getCaseStatusLabel(status) {
 }
 
 /**
- * Flow: Waiting → InConsultation → Finished (mjeku) → Mbyllur (infermieri në raporte).
+ * Flow: Waiting → InConsultation (infermieri) → Finished (mjeku) → Mbyllur (infermieri).
  */
 export const STATUS_FLOW = {
   Waiting: ["InConsultation"],

@@ -482,7 +482,13 @@ export default function Reports() {
                     <tr key={caseId} className="table-row">
                       <td className="table-td">
                         <Link
-                          to={`/dashboard/cases/${caseId}`}
+                          to={
+                            isNurse
+                              ? `/dashboard/cases/${caseId}/nurse`
+                              : isDoctor
+                                ? `/dashboard/cases/${caseId}/doctor`
+                                : `/dashboard/cases/${caseId}`
+                          }
                           className="font-medium text-slate-900 hover:text-sky-700"
                         >
                           {firstName} {lastName}

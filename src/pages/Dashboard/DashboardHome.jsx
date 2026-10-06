@@ -69,8 +69,9 @@ const DashboardHome = () => {
       let active = 0;
       let today = 0;
       list.forEach((c) => {
-        const status = c.status ?? c.Status;
-        if (!isTerminalCaseStatus(status)) active += 1;
+        const status = normalizeCaseStatus(c.status ?? c.Status);
+        const closed = status === "Mbyllur" || status === "Completed";
+        if (roleLower === "nurse" ? !closed : !isTerminalCaseStatus(status)) active += 1;
         const created = c.createdAt ?? c.CreatedAt;
         if (isSameDay(created, nowIso)) today += 1;
       });
@@ -86,7 +87,7 @@ const DashboardHome = () => {
     } finally {
       setStatsLoading(false);
     }
-  }, []);
+  }, [roleLower]);
 
   useEffect(() => {
     loadDashboardStats();
@@ -191,7 +192,7 @@ const DashboardHome = () => {
     {
       key: "cases",
       label: "Raste aktive",
-      hint: "Jo të mbyllura",
+      hint: roleLower === "nurse" ? "Deri sa të mbyllen" : "Në vazhdim",
       value: stats.activeCases,
       link: "/dashboard/cases",
       icon: FiFolder,
@@ -289,10 +290,19 @@ const DashboardHome = () => {
                               {canOpenCases ? (
                                 <Link
                                   to={getCaseOpenPath(c)}
-                                  className="btn-secondary btn-sm"
+                                  className={
+                                    roleLower === "nurse" &&
+                                    (status === "Waiting" || status === "Finished")
+                                      ? "btn-primary btn-sm"
+                                      : "btn-secondary btn-sm"
+                                  }
                                   onClick={(e) => e.stopPropagation()}
                                 >
-                                  Hap
+                                  {roleLower === "nurse" && status === "Finished"
+                                    ? "Mbyll"
+                                    : roleLower === "nurse" && status === "Waiting"
+                                      ? "Përgatit"
+                                      : "Hap"}
                                 </Link>
                               ) : null}
                             </td>
