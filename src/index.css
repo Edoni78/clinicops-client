@@ -1,19 +1,19 @@
 :root {
-  --color-clinic-50: 240 249 255;
-  --color-clinic-100: 224 242 254;
-  --color-clinic-200: 186 230 253;
-  --color-clinic-300: 125 211 252;
-  --color-clinic-400: 56 189 248;
-  --color-clinic-500: 14 165 233;
-  --color-clinic-600: 2 132 199;
-  --color-clinic-700: 3 105 161;
-  --color-clinic-800: 7 89 133;
-  --color-clinic-900: 12 74 110;
-  --app-bg: #f8fafc;
+  --color-clinic-50: 239 246 252;
+  --color-clinic-100: 219 234 246;
+  --color-clinic-200: 186 214 233;
+  --color-clinic-300: 125 168 204;
+  --color-clinic-400: 46 111 163;
+  --color-clinic-500: 30 90 138;
+  --color-clinic-600: 23 72 115;
+  --color-clinic-700: 19 58 94;
+  --color-clinic-800: 16 45 74;
+  --color-clinic-900: 12 32 53;
+  --app-bg: #f3f5f7;
   --surface: #ffffff;
-  --border: #e2e8f0;
-  --text: #0f172a;
-  --muted: #64748b;
+  --border: #e4e8ed;
+  --text: #1a2332;
+  --muted: #5c6b7a;
 }
 
 @tailwind base;
@@ -22,17 +22,17 @@
 
 @layer base {
   html {
-    font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+    font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   body {
-    @apply bg-[#F8FAFC] text-slate-900 text-sm;
+    @apply bg-[#F3F5F7] text-slate-900 text-sm leading-normal;
   }
 
   ::selection {
-    @apply bg-sky-100 text-slate-900;
+    @apply bg-slate-200 text-slate-900;
   }
 }
 
@@ -42,7 +42,7 @@
   }
 
   .page-header {
-    @apply mb-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3;
+    @apply mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3;
   }
 
   .page-title {
@@ -66,7 +66,7 @@
   }
 
   .card-padded {
-    @apply card p-3 sm:p-4;
+    @apply card p-5 sm:p-6;
   }
 
   .btn {
@@ -118,8 +118,9 @@
 
   .input {
     @apply w-full px-3 py-1.5 border border-slate-200 rounded-md bg-white
-      text-sm text-slate-900 placeholder:text-slate-400
-      focus:outline-none focus:ring-1 focus:ring-sky-500/30 focus:border-sky-600
+      text-sm text-slate-900 placeholder:text-slate-400 leading-normal
+      focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400
+      disabled:bg-slate-50 disabled:text-slate-500
       transition-colors duration-100;
   }
 
@@ -139,6 +140,10 @@
     @apply block text-xs font-medium text-slate-700 mb-1;
   }
 
+  .field-hint {
+    @apply text-xs text-slate-500 mt-1 leading-snug;
+  }
+
   .table-shell {
     @apply card overflow-hidden;
   }
@@ -152,11 +157,11 @@
   }
 
   .table-th {
-    @apply text-left py-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500 bg-slate-50;
+    @apply text-left py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 bg-slate-50;
   }
 
   .table-td {
-    @apply py-2 px-3 text-sm text-slate-700;
+    @apply py-3 px-4 text-sm text-slate-700;
   }
 
   .table-row {
@@ -268,8 +273,7 @@
   }
 
   .sidebar-link-active {
-    @apply sidebar-link bg-slate-50 text-slate-900 font-semibold border-slate-200
-      border-l-2 border-l-sky-600 pl-[calc(0.625rem-1px)];
+    @apply sidebar-link bg-slate-100 text-slate-900 font-semibold;
   }
 
   .sidebar-link-inactive {
@@ -319,15 +323,19 @@
   }
 
   .dashboard-main {
-    @apply flex-1 p-3 sm:p-4 overflow-y-auto bg-[#F8FAFC];
+    @apply flex-1 p-4 sm:p-6 overflow-y-auto bg-[#F3F5F7];
   }
 
   .dashboard-bg {
-    @apply min-h-screen bg-[#F8FAFC];
+    @apply min-h-screen bg-[#F3F5F7];
   }
 
   .dashboard-content-bg {
-    background: #f8fafc;
+    background: #f3f5f7;
+  }
+
+  .nav-section-label {
+    @apply px-2.5 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400;
   }
 
   .bulk-bar {
@@ -351,34 +359,6 @@
   .scrollbar-none::-webkit-scrollbar {
     display: none;
   }
-}
-
-html[data-density="comfortable"] .table-td {
-  @apply py-3 px-4;
-}
-
-html[data-density="comfortable"] .table-th {
-  @apply py-2.5 px-4;
-}
-
-html[data-density="comfortable"] .dashboard-main {
-  @apply p-4 sm:p-6;
-}
-
-html[data-density="comfortable"] .page-header {
-  @apply mb-6;
-}
-
-html[data-density="comfortable"] .card-padded {
-  @apply p-5 sm:p-6;
-}
-
-html[data-density="compact"] .table-td {
-  @apply py-1.5 px-3 text-xs;
-}
-
-html[data-density="compact"] .page-title {
-  @apply text-sm sm:text-base;
 }
 
 @keyframes slide-in {

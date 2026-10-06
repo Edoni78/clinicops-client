@@ -18,9 +18,15 @@ export default function ListFiltersBar({
   onCustomDateChange,
   resultCount,
   resultLabel = "rezultat",
+  selectValue = "",
+  selectOptions,
+  onSelectChange,
+  selectAriaLabel = "Filtro",
+  selectPlaceholder = "Të gjithë",
 }) {
   const hasStatus = Array.isArray(statusTabs) && statusTabs.length > 0;
   const hasDate = Array.isArray(datePresets) && datePresets.length > 0;
+  const hasSelect = Array.isArray(selectOptions) && selectOptions.length > 0 && onSelectChange;
 
   return (
     <div className="p-3 border-b border-slate-200 space-y-2 bg-slate-50">
@@ -35,7 +41,7 @@ export default function ListFiltersBar({
         />
       </div>
 
-      {(hasStatus || hasDate) && (
+      {(hasStatus || hasDate || hasSelect) && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
           {hasStatus && (
             <div className="flex flex-wrap gap-1.5">
@@ -50,6 +56,22 @@ export default function ListFiltersBar({
                 </button>
               ))}
             </div>
+          )}
+
+          {hasSelect && (
+            <select
+              value={selectValue}
+              onChange={(e) => onSelectChange(e.target.value)}
+              className="input py-1.5 w-auto min-w-[12rem] max-w-full"
+              aria-label={selectAriaLabel}
+            >
+              <option value="">{selectPlaceholder}</option>
+              {selectOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
           )}
 
           {hasDate && (
@@ -87,7 +109,7 @@ export default function ListFiltersBar({
         </div>
       )}
 
-      {!hasStatus && !hasDate && typeof resultCount === "number" && (
+      {!hasStatus && !hasDate && !hasSelect && typeof resultCount === "number" && (
         <p className="text-xs text-slate-500">
           {resultCount} {resultLabel}
           {resultCount !== 1 ? "e" : ""}

@@ -22,13 +22,18 @@ export function getClinicUserEmail(user) {
 }
 
 const ROLE_LABELS = {
-  Doctor: "Mjek",
-  Nurse: "Infermier",
-  LabTechnician: "Teknikian laboratori",
-  ClinicAdmin: "Administrator",
+  doctor: "Mjek",
+  nurse: "Infermier",
+  labtechnician: "Teknik laboratori",
+  labtech: "Teknik laboratori",
+  lab: "Teknik laboratori",
+  clinicadmin: "Administrator",
+  admin: "Administrator",
+  superadmin: "Superadmin",
 };
 
 export function getClinicUserRoleLabel(role) {
   if (!role) return "—";
-  return ROLE_LABELS[role] ?? role;
+  const key = String(role).toLowerCase().replace(/[\s_-]/g, "");
+  return ROLE_LABELS[key] ?? String(role);
 }

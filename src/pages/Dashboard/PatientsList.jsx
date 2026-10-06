@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import api from "../../api/axios";
 import Notification from "../../components/ui/Notification";
 import { useConfirmModal } from "../../components/ui/ConfirmModal";
@@ -17,6 +17,11 @@ import ListFiltersBar from "../../components/ui/ListFiltersBar";
 import { useAuth } from "../../context/AuthContext";
 import { deletePatient } from "../../api/patient";
 import { isClinicAdminRole } from "../../utils/dashboardMenu";
+import {
+  doctorFilterOptions,
+  patientDoctorLabel,
+  patientMatchesDoctorFilter,
+} from "../../utils/patientDoctors";
 
 const PatientsList = () => {
   const { role } = useAuth();
@@ -27,6 +32,7 @@ const PatientsList = () => {
   const [patients, setPatients] = useState([]);
   const [deletingPatientId, setDeletingPatientId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [doctorFilter, setDoctorFilter] = useState("");
   const [selectedIds, setSelectedIds] = useState([]);
   const [notif, setNotif] = useState({
     visible: false,
@@ -91,12 +97,15 @@ const PatientsList = () => {
     }
   };
 
+  const doctorOptions = useMemo(() => doctorFilterOptions(patients), [patients]);
+
   const filteredPatients = patients.filter((patient) => {
     const query = searchQuery.toLowerCase();
     const fullName = `${patient.firstName || ""} ${patient.lastName || ""}`.toLowerCase();
     const phone = (patient.phone || "").toLowerCase();
     const id = String(patient.id || patient.patientId || patient.Id || "").toLowerCase();
-    return fullName.includes(query) || phone.includes(query) || id.includes(query);
+    const matchesQuery = fullName.includes(query) || phone.includes(query) || id.includes(query);
+    return matchesQuery && patientMatchesDoctorFilter(patient, doctorFilter);
   });
 
   const patientRowId = (patient) => patient.id || patient.patientId || patient.Id;
@@ -226,6 +235,11 @@ const PatientsList = () => {
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
             searchPlaceholder="Kërko sipas emrit ose telefonit…"
+            selectValue={doctorFilter}
+            onSelectChange={setDoctorFilter}
+            selectOptions={doctorOptions}
+            selectAriaLabel="Filtro sipas mjekut"
+            selectPlaceholder="Të gjithë mjekët"
             resultCount={filteredPatients.length}
             resultLabel="pacient"
           />
@@ -236,17 +250,17 @@ const PatientsList = () => {
             <EmptyState
               icon={FiUsers}
               title={
-                searchQuery
+                searchQuery || doctorFilter
                   ? "Nuk u gjet asnjë pacient"
                   : "Ende nuk ka pacientë të regjistruar"
               }
               description={
-                searchQuery
-                  ? "Provoni një kërkim tjetër sipas emrit, telefonit ose ID."
+                searchQuery || doctorFilter
+                  ? "Provoni një kërkim tjetër, ose hiqni filtrin e mjekut."
                   : "Regjistroni pacientin e parë për të filluar radhën e sotme."
               }
               action={
-                !searchQuery && (
+                !searchQuery && !doctorFilter && (
                   <Link to="/dashboard/patients" className="btn-primary btn-md">
                     Regjistro pacientin e parë
                   </Link>
@@ -281,11 +295,11 @@ const PatientsList = () => {
                         />
                       </th>
                       <th className="table-th">Emri</th>
-                      <th className="table-th">ID</th>
                       <th className="table-th">Lindja</th>
                       <th className="table-th">Mosha</th>
                       <th className="table-th">Gjinia</th>
                       <th className="table-th">Telefoni</th>
+                      <th className="table-th">Mjeku</th>
                       <th className="table-th">Shënime</th>
                       {canDeletePatients && <th className="table-th text-right">Veprime</th>}
                     </tr>
@@ -311,9 +325,6 @@ const PatientsList = () => {
                             {patient.firstName} {patient.lastName}
                           </div>
                         </td>
-                        <td className="table-td">
-                          <span className="font-mono text-xs tabular-nums text-slate-500">{id || "—"}</span>
-                        </td>
                         <td className="table-td tabular-nums text-slate-600">
                           {formatDate(patient.dateOfBirth)}
                         </td>
@@ -327,6 +338,11 @@ const PatientsList = () => {
                         </td>
                         <td className="table-td tabular-nums text-slate-600">
                           {patient.phone || "N/A"}
+                        </td>
+                        <td className="table-td">
+                          <span className="line-clamp-2" title={patientDoctorLabel(patient)}>
+                            {patientDoctorLabel(patient)}
+                          </span>
                         </td>
                         <td className="table-td text-slate-600">
                           <div className="max-w-xs truncate" title={patient.notes}>

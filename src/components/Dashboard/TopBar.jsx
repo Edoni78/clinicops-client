@@ -4,9 +4,9 @@ import { FiRefreshCw, FiLogOut, FiMenu, FiSearch } from "react-icons/fi";
 import { getJwtPayload } from "../../utils/jwt";
 import { useAuth } from "../../context/AuthContext";
 import { useDashboardPanel } from "../../context/DashboardPanelContext";
-import { useUiDensity } from "../../context/UiDensityContext";
 import { getClinicProfile, getLogoFullUrl } from "../../api/clinic";
 import { getSearchShortcutLabel } from "../ui/CommandPalette";
+import { getClinicUserDisplayName, getClinicUserRoleLabel } from "../../utils/clinicUserDisplay";
 
 function getClinicInitials(name) {
   if (!name || !name.trim()) return "?";
@@ -19,10 +19,9 @@ function getClinicInitials(name) {
 
 const Topbar = ({ onOpenMobileNav, onOpenSearch }) => {
   const payload = getJwtPayload();
-  const { user, logout } = useAuth();
+  const { user, role, logout } = useAuth();
   const navigate = useNavigate();
   const { requiresPanel, clearActivePanel } = useDashboardPanel();
-  const { density, toggleDensity } = useUiDensity();
   const hasClinic = !!(user?.clinicId ?? user?.ClinicId);
   const [clinicProfile, setClinicProfile] = useState(null);
   const shortcut = getSearchShortcutLabel();
@@ -94,17 +93,16 @@ const Topbar = ({ onOpenMobileNav, onOpenSearch }) => {
           <kbd className="kbd hidden sm:inline-flex">{shortcut}</kbd>
         </button>
 
-        <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-          <button
-            type="button"
-            onClick={toggleDensity}
-            className="topnav-action-ghost"
-            title={density === "compact" ? "Kaloni në pamje të rehatshme" : "Kaloni në pamje kompakte"}
-            aria-pressed={density === "compact"}
-          >
-            {density === "compact" ? "Kompakte" : "E rehatshme"}
-          </button>
+        <div className="hidden sm:block min-w-0 text-right shrink-0 max-w-[11rem]">
+          <p className="text-xs font-medium text-slate-900 truncate">
+            {getClinicUserDisplayName(user)}
+          </p>
+          <p className="text-[10px] uppercase tracking-wider text-slate-400">
+            {getClinicUserRoleLabel(role)}
+          </p>
+        </div>
 
+        <div className="flex items-center gap-1.5 shrink-0 ml-auto">
           {requiresPanel && (
             <button
               type="button"

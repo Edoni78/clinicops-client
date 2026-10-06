@@ -102,6 +102,62 @@ const SUPERADMIN_MENU = pick(
   MENU.staff
 );
 
+const MENU_SECTIONS = {
+  nurse: [
+    { label: "Puna e ditës", keys: ["home", "cases", "reports"] },
+    { label: "Pacientët", keys: ["patients", "patientsList", "emrs"] },
+  ],
+  doctor: [
+    { label: "Konsultimet", keys: ["home", "cases", "reports"] },
+    { label: "Kartela", keys: ["emrs", "history", "patientsList"] },
+    { label: "Profili", keys: ["doctorProfile"] },
+  ],
+  labtechnician: [
+    { label: "Laboratori", keys: ["home", "laboratory", "cases", "emrs"] },
+  ],
+  clinicadmin: [
+    { label: "Puna e ditës", keys: ["home", "cases", "reports"] },
+    { label: "Pacientët", keys: ["patients", "patientsList", "emrs", "history"] },
+    { label: "Klinika", keys: ["laboratory", "services", "payments"] },
+    { label: "Administrimi", keys: ["staff", "auditLogs", "clinicProfile"] },
+  ],
+  superadmin: [
+    { label: "Puna e ditës", keys: ["home", "cases", "reports"] },
+    { label: "Pacientët", keys: ["patients", "patientsList", "emrs"] },
+    { label: "Klinika", keys: ["laboratory", "services", "payments", "staff", "applies"] },
+  ],
+};
+
+function sectionRole(role, activePanel) {
+  if (role !== "superadmin") return role;
+  if (activePanel === PANEL_DOCTOR) return "doctor";
+  if (activePanel === PANEL_NURSE) return "nurse";
+  return "superadmin";
+}
+
+/**
+ * Same items as the role menu, grouped for the sidebar.
+ * Items that do not match a group stay visible at the end.
+ */
+export function getSidebarSections({ roleLower, activePanel, hasClinic }) {
+  const items = getSidebarMenuItems({ roleLower, activePanel, hasClinic });
+  const role = sectionRole(normalizeRole(roleLower), activePanel);
+  const sections = MENU_SECTIONS[role] || [{ label: null, keys: items.map((item) => item.key) }];
+  const used = new Set();
+  const grouped = sections
+    .map((section) => {
+      const sectionItems = section.keys
+        .map((key) => items.find((item) => item.key === key))
+        .filter(Boolean);
+      sectionItems.forEach((item) => used.add(item.key));
+      return { label: section.label, items: sectionItems };
+    })
+    .filter((section) => section.items.length > 0);
+  const rest = items.filter((item) => !used.has(item.key));
+  if (rest.length) grouped.push({ label: null, items: rest });
+  return grouped;
+}
+
 /**
  * Sidebar items by role.
  * Doctor: cases + reports only. Clinic admin: full clinic menu. Superadmin: + applies.
