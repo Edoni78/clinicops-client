@@ -20,7 +20,8 @@ import { useAuth } from "../../context/AuthContext";
 import { useDashboardPanel } from "../../context/DashboardPanelContext";
 import { getClinicProfile, getLogoFullUrl } from "../../api/clinic";
 import { getJwtPayload } from "../../utils/jwt";
-import { getSidebarMenuItems } from "../../utils/dashboardMenu";
+import { getSidebarSections } from "../../utils/dashboardMenu";
+import { getClinicUserDisplayName, getClinicUserRoleLabel } from "../../utils/clinicUserDisplay";
 
 function getClinicInitials(name) {
   if (!name || !name.trim()) return "?";
@@ -49,28 +50,33 @@ const MENU_ICONS = {
   doctorProfile: FiUserCheck,
 };
 
-function NavItems({ items, onNavigate }) {
+function NavItems({ sections, onNavigate }) {
   return (
-    <nav className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto" aria-label="Navigimi kryesor">
-      {items.map(({ label, icon: Icon, path, tourId }) => (
-        <NavLink
-          key={`${path}-${label}`}
-          to={path}
-          end={path === "/dashboard"}
-          onClick={onNavigate}
-          data-tour={tourId || undefined}
-          className={({ isActive }) => (isActive ? "sidebar-link-active" : "sidebar-link-inactive")}
-        >
-          <Icon size={16} className="shrink-0" strokeWidth={1.75} />
-          <span className="truncate">{label}</span>
-        </NavLink>
+    <nav className="flex-1 px-2 py-1 space-y-0.5 overflow-y-auto" aria-label="Navigimi kryesor">
+      {sections.map((section) => (
+        <div key={section.label || "rest"}>
+          {section.label ? <p className="nav-section-label">{section.label}</p> : null}
+          {section.items.map(({ label, icon: Icon, path, tourId }) => (
+            <NavLink
+              key={`${path}-${label}`}
+              to={path}
+              end={path === "/dashboard"}
+              onClick={onNavigate}
+              data-tour={tourId || undefined}
+              className={({ isActive }) => (isActive ? "sidebar-link-active" : "sidebar-link-inactive")}
+            >
+              <Icon size={16} className="shrink-0" strokeWidth={1.75} />
+              <span className="truncate">{label}</span>
+            </NavLink>
+          ))}
+        </div>
       ))}
     </nav>
   );
 }
 
 const Sidebar = ({ mobileOpen = false, onMobileClose }) => {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const { activePanel, roleLower } = useDashboardPanel();
   const hasClinic = !!(user?.clinicId ?? user?.ClinicId);
   const [clinicProfile, setClinicProfile] = useState(null);
@@ -96,15 +102,20 @@ const Sidebar = ({ mobileOpen = false, onMobileClose }) => {
     null;
   const clinicLogoUrl = getLogoFullUrl(clinicProfile?.logoUrl ?? clinicProfile?.LogoUrl);
 
-  const items = useMemo(() => {
-    const menu = getSidebarMenuItems({ roleLower, activePanel, hasClinic });
-    return menu.map(({ key, label, path }) => ({
-      label,
-      path,
-      icon: MENU_ICONS[key] || FiHome,
-      tourId: key === "clinicProfile" ? "clinic-profile" : key,
+  const sections = useMemo(() => {
+    return getSidebarSections({ roleLower, activePanel, hasClinic }).map((section) => ({
+      label: section.label,
+      items: section.items.map(({ key, label, path }) => ({
+        label,
+        path,
+        icon: MENU_ICONS[key] || FiHome,
+        tourId: key === "clinicProfile" ? "clinic-profile" : key,
+      })),
     }));
   }, [roleLower, activePanel, hasClinic]);
+
+  const staffName = getClinicUserDisplayName(user);
+  const staffRole = getClinicUserRoleLabel(role);
 
   const sidebarContent = (
     <>
@@ -150,7 +161,11 @@ const Sidebar = ({ mobileOpen = false, onMobileClose }) => {
           </button>
         )}
       </div>
-      <NavItems items={items} onNavigate={onMobileClose} />
+      <NavItems sections={sections} onNavigate={onMobileClose} />
+      <div className="mt-auto border-t border-slate-200 px-3 py-3">
+        <p className="text-sm font-medium text-slate-900 truncate">{staffName}</p>
+        <p className="text-[11px] text-slate-500 mt-0.5">{staffRole}</p>
+      </div>
     </>
   );
 

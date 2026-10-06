@@ -29,7 +29,7 @@ export async function getPatientEmr(patientId, doctorView = false) {
   const { data: cases, error: caseError } = await supabase
     .from("patient_cases")
     .select(`
-      id, status, notes, created_at,
+      id, status, notes, created_at, assigned_doctor_user_id,
       doctor:profiles!patient_cases_assigned_doctor_user_id_fkey (display_name),
       medical_reports (anamneza, ekzaminimi, diagnosis, therapy, created_at),
       case_vitals (weight_kg, systolic_pressure, diastolic_pressure, temperature_c, heart_rate, recorded_at)
@@ -37,6 +37,14 @@ export async function getPatientEmr(patientId, doctorView = false) {
     .eq("patient_id", patientId)
     .order("created_at", { ascending: false });
   throwIfError(caseError, "Nuk u ngarkua EMR.");
+
+  let caseRows = cases || [];
+  if (profile.role === "Doctor") {
+    caseRows = caseRows.filter((item) => item.assigned_doctor_user_id === profile.id);
+    if (!caseRows.length) {
+      throw apiError("Nuk keni qasje në historinë e këtij pacienti.", 403);
+    }
+  }
 
   const name = `${patient.first_name || ""} ${patient.last_name || ""}`.trim();
   await recordAudit({
@@ -65,7 +73,7 @@ export async function getPatientEmr(patientId, doctorView = false) {
     gender: patient.gender,
     phone: patient.phone,
     dateOfBirth: patient.date_of_birth,
-    history: (cases || []).map((item) => {
+    history: caseRows.map((item) => {
       const report = asOne(item.medical_reports);
       const doctor = asOne(item.doctor);
       const vitals = Array.isArray(item.case_vitals)

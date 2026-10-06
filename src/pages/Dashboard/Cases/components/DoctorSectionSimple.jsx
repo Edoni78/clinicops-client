@@ -3,8 +3,7 @@ import { FiActivity, FiCheck, FiDownload, FiFileText, FiImage, FiLock, FiPrinter
 import VitalsReadonlyGrid from "../../../../components/vitals/VitalsReadonlyGrid";
 import { hasRecordedVitals } from "../../../../utils/vitalPreferences";
 
-const inputClass =
-  "w-full px-3 py-2 border border-slate-300 rounded-md text-sm text-slate-900 bg-white focus:ring-2 focus:ring-clinic-400/30 focus:border-clinic-400 outline-none";
+const inputClass = "input";
 
 export default function DoctorSectionSimple(props) {
   const {
@@ -44,10 +43,10 @@ export default function DoctorSectionSimple(props) {
   const visitBusy = reportSubmitting || statusSubmitting || serviceSubmitting;
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden mb-6">
-      <div className="px-5 py-3 border-b border-slate-200 bg-slate-50/80 border-l-4 border-l-slate-700">
-        <h2 className="text-sm font-semibold text-slate-900 uppercase tracking-wide flex items-center gap-2">
-          <FiFileText className="text-slate-700" size={16} aria-hidden />
+    <div className="card overflow-hidden mb-6">
+      <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
+        <h2 className="text-xs font-semibold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+          <FiFileText className="text-slate-500" size={15} aria-hidden />
           Mjeku
         </h2>
       </div>
@@ -73,7 +72,7 @@ export default function DoctorSectionSimple(props) {
             <button
               type="button"
               onClick={handlePrintReportPdf}
-              className="inline-flex items-center gap-2 px-3 py-2 bg-white text-slate-800 text-sm font-medium rounded-md border border-slate-300 hover:border-clinic-400/50 transition-colors"
+              className="btn-secondary btn-sm"
             >
               <FiPrinter size={16} aria-hidden />
               Printo
@@ -81,7 +80,7 @@ export default function DoctorSectionSimple(props) {
             <button
               type="button"
               onClick={handleDownloadReportPdf}
-              className="inline-flex items-center gap-2 px-3 py-2 bg-white text-slate-800 text-sm font-medium rounded-md border border-slate-300 hover:border-clinic-400/50 transition-colors"
+              className="btn-secondary btn-sm"
             >
               <FiDownload size={16} aria-hidden />
               PDF
@@ -91,7 +90,7 @@ export default function DoctorSectionSimple(props) {
                 type="button"
                 disabled={statusSubmitting}
                 onClick={onCloseCase}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-clinic-600 text-white text-sm font-semibold rounded-md hover:bg-clinic-700 disabled:opacity-50 transition-colors"
+                className="btn-primary btn-sm"
               >
                 <FiLock size={16} aria-hidden />
                 {statusSubmitting ? "Duke mbyllur…" : "Mbyll rastin"}
@@ -220,7 +219,7 @@ export default function DoctorSectionSimple(props) {
                   <button
                     type="submit"
                     disabled={visitBusy}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-clinic-400 text-white text-sm font-semibold rounded-md hover:bg-clinic-500 disabled:opacity-50"
+                    className="btn-primary btn-md"
                   >
                     {reportSubmitting || statusSubmitting ? (
                       <span className="animate-pulse">Duke përfunduar…</span>

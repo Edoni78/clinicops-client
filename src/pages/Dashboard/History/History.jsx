@@ -11,6 +11,12 @@ import {
 import api from "../../../api/axios";
 import { getPatientEmr } from "../../../api/emr";
 import { useAuth } from "../../../context/AuthContext";
+import {
+  doctorFilterOptions,
+  patientAssignedToDoctor,
+  patientDoctorLabel,
+  patientMatchesDoctorFilter,
+} from "../../../utils/patientDoctors";
 import { isClinicAdminRole, normalizeRole } from "../../../utils/dashboardMenu";
 import Notification from "../../../components/ui/Notification";
 import PageHeader from "../../../components/ui/PageHeader";
@@ -106,7 +112,8 @@ function calcAge(dateOfBirth) {
 }
 
 export default function History() {
-  const { role } = useAuth();
+  const { role, user } = useAuth();
+  const myId = user?.id ?? user?.Id ?? "";
   const roleLower = String(role || "").toLowerCase();
   const roleKey = normalizeRole(roleLower);
   const isDoctor = roleKey === "doctor";
@@ -115,6 +122,7 @@ export default function History() {
   const [patients, setPatients] = useState([]);
   const [loadingList, setLoadingList] = useState(true);
   const [search, setSearch] = useState("");
+  const [doctorFilter, setDoctorFilter] = useState("");
   const [expandedPatientId, setExpandedPatientId] = useState(null);
   const [expandedConsultIds, setExpandedConsultIds] = useState(() => new Set());
   const [emrByPatient, setEmrByPatient] = useState({});
@@ -197,21 +205,31 @@ export default function History() {
     });
   };
 
+  const scopedPatients = useMemo(() => {
+    if (!isDoctor) return patients;
+    return patients.filter((patient) => patientAssignedToDoctor(patient, myId));
+  }, [patients, isDoctor, myId]);
+
+  const doctorOptions = useMemo(
+    () => doctorFilterOptions(scopedPatients),
+    [scopedPatients]
+  );
+
   const filteredPatients = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return patients;
-    return patients.filter((p) => {
+    return scopedPatients.filter((p) => {
       const name = patientDisplayName(p).toLowerCase();
       const phone = String(p.phone ?? p.Phone ?? "").toLowerCase();
-      return name.includes(q) || phone.includes(q);
+      const matchesQuery = !q || name.includes(q) || phone.includes(q);
+      return matchesQuery && patientMatchesDoctorFilter(p, doctorFilter);
     });
-  }, [patients, search]);
+  }, [scopedPatients, search, doctorFilter]);
 
   if (!canAccess) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const colCount = 6;
+  const colCount = 7;
 
   return (
     <div className="page-shell max-w-6xl">
@@ -224,7 +242,11 @@ export default function History() {
 
       <PageHeader
         title="Historia"
-        subtitle="Shikoni historinë klinike të pacientëve — vetëm lexim. Klikoni një rresht për të hapur vizitat."
+        subtitle={
+          isDoctor
+            ? "Vetëm pacientët e caktuar te ju. Klikoni një rresht për vizitat tuaja."
+            : "Historia klinike e klinikës. Filtroni sipas mjekut dhe hapni një rresht për vizitat."
+        }
         icon={FiClock}
         actions={
           <button
@@ -244,6 +266,11 @@ export default function History() {
           searchValue={search}
           onSearchChange={setSearch}
           searchPlaceholder="Kërko sipas emrit ose telefonit…"
+          selectValue={doctorFilter}
+          onSelectChange={setDoctorFilter}
+          selectOptions={isDoctor ? [] : doctorOptions}
+          selectAriaLabel="Filtro sipas mjekut"
+          selectPlaceholder="Të gjithë mjekët"
           resultCount={filteredPatients.length}
           resultLabel="pacient"
         />
@@ -253,11 +280,13 @@ export default function History() {
         ) : filteredPatients.length === 0 ? (
           <EmptyState
             icon={FiUser}
-            title={search ? "Nuk u gjet asnjë pacient" : "Ende nuk ka pacientë"}
+            title={search || doctorFilter ? "Nuk u gjet asnjë pacient" : "Ende nuk ka pacientë"}
             description={
-              search
-                ? "Provoni një kërkim tjetër."
-                : "Historia shfaqet pasi të regjistrohen pacientët në klinikë."
+              search || doctorFilter
+                ? "Provoni një kërkim tjetër, ose hiqni filtrin e mjekut."
+                : isDoctor
+                  ? "Këtu shfaqen vetëm pacientët e caktuar te ju."
+                  : "Historia shfaqet pasi të regjistrohen pacientët në klinikë."
             }
           />
         ) : (
@@ -271,6 +300,7 @@ export default function History() {
                   <th className="table-th">Mosha</th>
                   <th className="table-th">Gjinia</th>
                   <th className="table-th">Telefoni</th>
+                  <th className="table-th">Mjeku</th>
                 </tr>
               </thead>
               <tbody>
@@ -340,6 +370,9 @@ export default function History() {
                             <FiPhone size={14} className="text-slate-400 shrink-0" />
                             {patient.phone ?? patient.Phone ?? "—"}
                           </span>
+                        </td>
+                        <td className="table-td">
+                          {patientDoctorLabel(patient)}
                         </td>
                       </tr>
 

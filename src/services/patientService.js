@@ -2,7 +2,25 @@ import { supabase } from "../lib/supabaseClient";
 import { apiError, throwIfError } from "../lib/apiError";
 import { requireProfile, resolveClinicId } from "../lib/sessionUser";
 
+function collectDoctors(cases) {
+  const ordered = [...(cases || [])].sort(
+    (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)
+  );
+  const seen = new Set();
+  const doctors = [];
+  for (const row of ordered) {
+    const id = row.assigned_doctor_user_id;
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    const doctor = Array.isArray(row.doctor) ? row.doctor[0] : row.doctor;
+    const name = String(doctor?.display_name || "").trim() || "Mjek";
+    doctors.push({ id, name });
+  }
+  return doctors;
+}
+
 function mapPatient(row) {
+  const doctors = collectDoctors(row.patient_cases);
   return {
     id: row.id,
     patientId: row.id,
@@ -14,6 +32,8 @@ function mapPatient(row) {
     phone: row.phone,
     notes: row.notes,
     createdAt: row.created_at,
+    doctors,
+    doctorNames: doctors.map((doctor) => doctor.name).join(", "),
   };
 }
 
@@ -21,7 +41,13 @@ export async function listPatients(clinicId) {
   const scoped = await resolveClinicId(clinicId);
   const { data, error } = await supabase
     .from("patients")
-    .select("id, clinic_id, first_name, last_name, date_of_birth, gender, phone, notes, created_at")
+    .select(`
+      id, clinic_id, first_name, last_name, date_of_birth, gender, phone, notes, created_at,
+      patient_cases (
+        assigned_doctor_user_id, created_at,
+        doctor:profiles!patient_cases_assigned_doctor_user_id_fkey (display_name)
+      )
+    `)
     .eq("clinic_id", scoped)
     .is("deleted_at", null)
     .order("created_at", { ascending: false });

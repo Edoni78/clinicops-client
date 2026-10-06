@@ -32,9 +32,11 @@ import {
   resolveDoctorName,
   getPatientInitials,
 } from "../../../utils/emrDisplay";
+import { patientAssignedToDoctor } from "../../../utils/patientDoctors";
 
 export default function EMRs() {
-  const { role } = useAuth();
+  const { role, user } = useAuth();
+  const myId = user?.id ?? user?.Id ?? "";
   const roleLower = String(role || "").toLowerCase();
   const isDoctor = roleLower === "doctor";
   const canDeleteReports = isDoctor || isClinicAdminRole(roleLower) || roleLower === "superadmin";
@@ -102,13 +104,16 @@ export default function EMRs() {
 
   const filteredPatients = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return patients;
-    return patients.filter((p) => {
+    const scoped = isDoctor
+      ? patients.filter((patient) => patientAssignedToDoctor(patient, myId))
+      : patients;
+    if (!q) return scoped;
+    return scoped.filter((p) => {
       const name = `${p.firstName || ""} ${p.lastName || ""}`.toLowerCase();
       const phone = String(p.phone || "").toLowerCase();
       return name.includes(q) || phone.includes(q);
     });
-  }, [patients, search]);
+  }, [patients, search, isDoctor, myId]);
 
   const selectedPatient = useMemo(
     () => patients.find((p) => (p.id ?? p.patientId ?? p.Id) === selectedPatientId) || null,

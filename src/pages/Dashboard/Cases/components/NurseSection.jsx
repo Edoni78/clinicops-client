@@ -6,9 +6,6 @@ import {
   hasAnyVitalPreferenceEnabled,
 } from "../../../../utils/vitalPreferences";
 
-const inputClass =
-  "w-full px-3 py-2 border border-slate-300 rounded-md text-sm text-slate-900 bg-white focus:ring-2 focus:ring-clinic-400/30 focus:border-clinic-400 outline-none";
-
 export default function NurseSection({
   canEditVitals,
   vitals,
@@ -25,27 +22,27 @@ export default function NurseSection({
   const busy = vitalsSubmitting;
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden mb-6">
-      <div className="px-5 py-3 border-b border-slate-200 bg-slate-50/80 border-l-4 border-l-clinic-400">
-        <h2 className="text-sm font-semibold text-slate-900 uppercase tracking-wide flex items-center gap-2">
-          <FiActivity className="text-clinic-400" size={16} aria-hidden />
+    <div className="card overflow-hidden mb-6">
+      <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
+        <h2 className="text-xs font-semibold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+          <FiActivity className="text-slate-500" size={15} aria-hidden />
           Infermieri
         </h2>
       </div>
 
       <div className="p-5 space-y-5">
         {caseStatus === "InConsultation" && (
-          <p className="text-sm text-slate-700 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-sm text-slate-700 rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5">
             Pacienti është te mjeku. Kur vizita përfundon, rasti shfaqet te «Për mbyllje».
           </p>
         )}
         {caseStatus === "Finished" && (
-          <p className="text-sm text-slate-700 rounded-lg border border-sky-200 bg-sky-50 px-4 py-3">
+          <p className="text-sm text-indigo-950 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2.5">
             Mjeku përfundoi vizitën. Raporti është këtu — printoni dhe mbyllni rastin.
           </p>
         )}
         {caseStatus === "Mbyllur" && (
-          <p className="text-sm text-slate-700 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-sm text-slate-700 rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5">
             Rasti është i mbyllur.
           </p>
         )}
@@ -57,7 +54,7 @@ export default function NurseSection({
 
           {!vitalsEnabled ? (
             <div className="space-y-3">
-              <p className="text-sm text-slate-600 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+              <p className="text-sm text-slate-600 rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5">
                 Klinika nuk përdor regjistrimin e shenjave vitale.
               </p>
               {canEditVitals && (
@@ -65,7 +62,7 @@ export default function NurseSection({
                   type="button"
                   disabled={busy}
                   onClick={handleSkipVitals}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-clinic-600 text-white text-sm font-semibold rounded-md hover:bg-clinic-700 disabled:opacity-50 transition-colors shadow-sm"
+                  className="btn-primary btn-md"
                 >
                   {busy ? "Duke dërguar…" : "Dërgo te mjeku"}
                 </button>
@@ -88,7 +85,7 @@ export default function NurseSection({
                       min="0"
                       value={vitals.weightKg}
                       onChange={(e) => setVitals((p) => ({ ...p, weightKg: e.target.value }))}
-                      className={inputClass}
+                      className="input"
                     />
                   </div>
                 )}
@@ -105,7 +102,7 @@ export default function NurseSection({
                         onChange={(e) =>
                           setVitals((p) => ({ ...p, systolicPressure: e.target.value }))
                         }
-                        className={inputClass}
+                        className="input"
                         placeholder="Sistolike"
                         aria-label="Sistolike (mmHg)"
                       />
@@ -116,7 +113,7 @@ export default function NurseSection({
                         onChange={(e) =>
                           setVitals((p) => ({ ...p, diastolicPressure: e.target.value }))
                         }
-                        className={inputClass}
+                        className="input"
                         placeholder="Diastolike"
                         aria-label="Diastolike (mmHg)"
                       />
@@ -133,7 +130,7 @@ export default function NurseSection({
                       step="0.1"
                       value={vitals.temperatureC}
                       onChange={(e) => setVitals((p) => ({ ...p, temperatureC: e.target.value }))}
-                      className={inputClass}
+                      className="input"
                     />
                   </div>
                 )}
@@ -147,7 +144,7 @@ export default function NurseSection({
                       min="0"
                       value={vitals.heartRate}
                       onChange={(e) => setVitals((p) => ({ ...p, heartRate: e.target.value }))}
-                      className={inputClass}
+                      className="input"
                     />
                   </div>
                 )}
@@ -156,7 +153,7 @@ export default function NurseSection({
                 <button
                   type="submit"
                   disabled={busy}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-clinic-600 text-white text-sm font-semibold rounded-md hover:bg-clinic-700 disabled:opacity-50 transition-colors shadow-sm"
+                  className="btn-primary btn-md"
                 >
                   {busy ? "Duke dërguar…" : "Dërgo te mjeku"}
                 </button>
@@ -165,7 +162,7 @@ export default function NurseSection({
                     type="button"
                     disabled={busy}
                     onClick={handleSkipVitals}
-                    className="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 text-sm font-medium rounded-md hover:bg-slate-50 disabled:opacity-50 transition-colors"
+                    className="btn-secondary btn-md"
                   >
                     <FiSkipForward size={16} />
                     Dërgo pa shenja

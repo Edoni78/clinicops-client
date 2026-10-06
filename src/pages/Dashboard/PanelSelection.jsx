@@ -14,19 +14,19 @@ const cards = [
   {
     panel: PANEL_NURSE,
     title: "Paneli i infermierit",
-    subtitle: "Pacientët, rastet, shenjat jetësore, laboratori",
+    subtitle: "Pritja, dërgimi te mjeku dhe mbyllja e vizitës",
     icon: FiActivity,
   },
   {
     panel: PANEL_DOCTOR,
     title: "Paneli i mjekut",
-    subtitle: "Rastet, raportet, profili i mjekut, laboratori",
+    subtitle: "Konsultimet, raportet dhe kartela e pacientit",
     icon: FiFileText,
   },
   {
     panel: PANEL_SUPERADMIN,
     title: "Paneli i super administratorit",
-    subtitle: "Aplikimet, stafi, shërbimet, menaxhim i plotë",
+    subtitle: "Aplikimet, stafi, shërbimet dhe klinika",
     icon: FiShield,
   },
 ];

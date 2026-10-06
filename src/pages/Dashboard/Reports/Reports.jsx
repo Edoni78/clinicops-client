@@ -99,7 +99,8 @@ function resolveDoctorNameFromCase(c, fallbackDisplayName) {
 }
 
 export default function Reports() {
-  const { role } = useAuth();
+  const { role, user } = useAuth();
+  const myId = user?.id ?? user?.Id ?? "";
   const roleLower = String(role || "").toLowerCase();
   const canDeleteReports =
     isClinicAdminRole(roleLower) || roleLower === "doctor" || roleLower === "superadmin";
@@ -267,6 +268,7 @@ export default function Reports() {
     return reports.filter((r) => {
       const caseId = r.id ?? r.Id;
       if (deletedReportCaseIds.includes(caseId)) return false;
+      if (isDoctor && (r.assignedDoctorUserId ?? r.AssignedDoctorUserId) !== myId) return false;
       const status = r.status ?? r.Status;
       const sk = normalizeCaseStatus(status);
       if (reportStatusTab === "pendingClose" && !isAwaitingNurseCloseStatus(sk)) return false;
@@ -279,7 +281,7 @@ export default function Reports() {
       if (dateFilter === "week") return isInThisWeek(updated);
       return true;
     });
-  }, [reports, deletedReportCaseIds, reportStatusTab, nameSearch, customDate, dateFilter]);
+  }, [reports, deletedReportCaseIds, reportStatusTab, nameSearch, customDate, dateFilter, isDoctor, myId]);
 
   const pdfErrorMessage = (e, fallback) =>
     e.response?.status === 404

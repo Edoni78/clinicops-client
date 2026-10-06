@@ -180,6 +180,37 @@ const DashboardHome = () => {
     return `/dashboard/cases/${caseId}/nurse`;
   };
 
+  const desk =
+    roleLower === "nurse"
+      ? {
+          title: "Radha e infermierisë",
+          subtitle: "Përgatitni pacientët në pritje, ndiqni kush është te mjeku, dhe mbyllni vizitat e përfunduara.",
+          queue: "Radha e sotme",
+        }
+      : roleLower === "doctor"
+        ? {
+            title: "Konsultimet e sotme",
+            subtitle: "Pacientët e ditës. Hapni vizitën kur infermieri e ka dërguar te ju.",
+            queue: "Radha e sotme",
+          }
+        : roleLower === "labtechnician"
+          ? {
+              title: "Laboratori",
+              subtitle: "Rastet e ditës. Rezultatet ngarkohen te Laboratori.",
+              queue: "Rastet e sotme",
+            }
+          : roleLower === "clinicadmin"
+            ? {
+                title: "Paneli i klinikës",
+                subtitle: "Radha e ditës dhe ngarkesa e stafit.",
+                queue: "Radha e sotme",
+              }
+            : {
+                title: "Paneli",
+                subtitle: "Radha e rasteve të ditës.",
+                queue: "Radha e sotme",
+              };
+
   const statCards = [
     {
       key: "patients",
@@ -215,15 +246,15 @@ const DashboardHome = () => {
   return (
     <div className="page-shell">
       <PageHeader
-        title="Sot / Radha"
-        subtitle="Radha e rasteve të ditës dhe konteksti i pacientit aktiv."
+        title={desk.title}
+        subtitle={desk.subtitle}
         meta={latestUpdated ? formatUpdatedBy(latestUpdated) : null}
       />
 
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.85fr)_minmax(280px,1fr)] gap-3 items-start">
         <section className="table-shell min-h-[28rem]">
           <div className="px-3 py-2 border-b border-slate-200 flex items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold text-slate-900">Radha e sotme</h2>
+            <h2 className="text-sm font-semibold text-slate-900">{desk.queue}</h2>
             <span className="text-xs text-slate-500 tabular-nums">{todayQueue.length} raste</span>
           </div>
 
@@ -274,7 +305,13 @@ const DashboardHome = () => {
                         return (
                           <tr
                             key={id}
-                            className={`table-row cursor-pointer ${active ? "bg-sky-50/70" : ""}`}
+                            className={`table-row cursor-pointer ${
+                              active
+                                ? "bg-slate-100"
+                                : roleLower === "nurse" && status === "Finished"
+                                  ? "bg-indigo-50/70"
+                                  : ""
+                            }`}
                             onClick={() => setSelectedId(id)}
                           >
                             <td className="table-td">

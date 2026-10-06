@@ -67,7 +67,7 @@ export default function LabResultsSection({
             <li key={lab.id} className="flex flex-wrap items-center justify-between gap-2 py-2 px-3 rounded-lg bg-slate-50 border border-slate-200">
               <span className="flex items-center gap-2 text-slate-800"><FiFile className="text-amber-600" />{lab.fileName ?? lab.FileName ?? "lab-result.pdf"}</span>
               <span className="text-xs text-slate-500">{lab.uploadedAt ?? lab.UploadedAt ? new Date(lab.uploadedAt ?? lab.UploadedAt).toLocaleString("sq-AL") : ""}</span>
-              <button type="button" onClick={() => downloadLabResultFile(lab.downloadUrl ?? lab.DownloadUrl, lab.fileName ?? lab.FileName ?? "lab-result.pdf")} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors border border-slate-200">
+              <button type="button" onClick={() => downloadLabResultFile(lab.downloadUrl ?? lab.DownloadUrl, lab.fileName ?? lab.FileName ?? "lab-result.pdf")} className="btn-secondary btn-sm">
                 <FiDownload size={16} />
                 Shkarko
               </button>
