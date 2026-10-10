@@ -231,7 +231,7 @@ export default function DoctorSectionSimple(props) {
                   </button>
                   <p className="text-xs text-slate-500">
                     {isSoloDoctorClinic
-                      ? "Diagnoza dhe terapia ruhen dhe vizita përfundon."
+                      ? "Diagnoza dhe terapia ruhen, pastaj rasti mbyllet dhe shfaqet te Raportet."
                       : "Diagnoza dhe terapia ruhen, pastaj rasti shfaqet te infermieri për mbyllje."}
                   </p>
                 </div>

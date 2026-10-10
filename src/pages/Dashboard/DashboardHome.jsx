@@ -12,6 +12,7 @@ import {
   FiChevronRight,
 } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
+import { CLINIC_MODE_SOLO_DOCTOR } from "../../utils/clinicMode";
 import { useDashboardPanel } from "../../context/DashboardPanelContext";
 import { getSidebarMenuItems } from "../../utils/dashboardMenu";
 import api from "../../api/axios";
@@ -46,7 +47,7 @@ function doctorOf(c) {
 }
 
 const DashboardHome = () => {
-  const { user, role } = useAuth();
+  const { user, role, clinicMode } = useAuth();
   const { activePanel } = useDashboardPanel();
   const roleLower = String(role || "").toLowerCase();
   const hasClinic = !!(user?.clinicId ?? user?.ClinicId);
@@ -138,7 +139,7 @@ const DashboardHome = () => {
     },
   ];
   const allowedPaths = new Set(
-    getSidebarMenuItems({ roleLower, activePanel, hasClinic }).map((i) => i.path)
+    getSidebarMenuItems({ roleLower, activePanel, hasClinic, clinicMode }).map((i) => i.path)
   );
   const visibleQuickActions = quickActions.filter((a) => allowedPaths.has(a.link));
   const canOpenCases = allowedPaths.has("/dashboard/cases");
@@ -171,7 +172,9 @@ const DashboardHome = () => {
   const getCaseOpenPath = (c) => {
     const caseId = caseIdOf(c);
     if (!caseId) return "/dashboard/cases";
-    if (roleLower === "doctor") return `/dashboard/cases/${caseId}/doctor`;
+    if (roleLower === "doctor" || clinicMode === CLINIC_MODE_SOLO_DOCTOR) {
+      return `/dashboard/cases/${caseId}/doctor`;
+    }
     if (roleLower === "nurse") return `/dashboard/cases/${caseId}/nurse`;
     const status = String(c?.status ?? c?.Status ?? "").trim().toLowerCase();
     if (["inconsultation", "completed", "finished"].includes(status)) {

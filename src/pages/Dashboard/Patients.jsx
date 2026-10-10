@@ -20,6 +20,7 @@ import { getClinicUserDisplayName } from "../../utils/clinicUserDisplay";
 import { listPatients, registerPatient, openPatientCase } from "../../api/patient";
 import { useAuth } from "../../context/AuthContext";
 import { isClinicAdminRole } from "../../utils/dashboardMenu";
+import { CLINIC_MODE_SOLO_DOCTOR } from "../../utils/clinicMode";
 
 const EMPTY_FORM = {
   firstName: "",
@@ -68,10 +69,10 @@ function getGenderLabel(gender) {
   return gender || "—";
 }
 
-function navigateAfterCase(navigate, data) {
+function navigateAfterCase(navigate, data, soloDoctor) {
   const caseId = data?.patientCaseId ?? data?.PatientCaseId;
   if (caseId) {
-    navigate(`/dashboard/cases/${caseId}/nurse`);
+    navigate(`/dashboard/cases/${caseId}/${soloDoctor ? "doctor" : "nurse"}`);
   } else {
     navigate("/dashboard/cases");
   }
@@ -79,8 +80,10 @@ function navigateAfterCase(navigate, data) {
 
 const Patients = () => {
   const navigate = useNavigate();
-  const { role } = useAuth();
+  const { role, clinicMode, user } = useAuth();
   const canImportPatients = isClinicAdminRole(role);
+  const isSoloDoctorClinic = clinicMode === CLINIC_MODE_SOLO_DOCTOR;
+  const selfId = user?.id ?? user?.Id ?? "";
   const [formData, setFormData] = useState({ ...EMPTY_FORM });
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [patients, setPatients] = useState([]);
@@ -151,6 +154,27 @@ const Patients = () => {
     };
   }, []);
 
+  const doctorChoices = useMemo(() => {
+    if (!isSoloDoctorClinic || !selfId) return doctors;
+    const alreadyListed = doctors.some((doctor) => (doctor?.id ?? doctor?.Id) === selfId);
+    if (alreadyListed) return doctors;
+    return [
+      {
+        id: selfId,
+        displayName: user?.displayName || user?.email || "Unë",
+        role: "ClinicAdmin",
+      },
+      ...doctors,
+    ];
+  }, [doctors, isSoloDoctorClinic, selfId, user]);
+
+  useEffect(() => {
+    if (!isSoloDoctorClinic || !selfId) return;
+    setFormData((prev) =>
+      prev.assignedDoctorUserId ? prev : { ...prev, assignedDoctorUserId: selfId }
+    );
+  }, [isSoloDoctorClinic, selfId]);
+
   const filteredPatients = useMemo(() => {
     const q = patientSearch.trim().toLowerCase();
     const sorted = [...patients].sort((a, b) =>
@@ -206,7 +230,8 @@ const Patients = () => {
 
   const handleSubmitNew = async (e) => {
     e.preventDefault();
-    if (!formData.assignedDoctorUserId) {
+    const assignedDoctorUserId = formData.assignedDoctorUserId || (isSoloDoctorClinic ? selfId : "");
+    if (!assignedDoctorUserId) {
       setNotif({
         visible: true,
         type: "warning",
@@ -226,11 +251,11 @@ const Patients = () => {
         gender: formData.gender,
         phone: formData.phone,
         notes: formData.notes,
-        assignedDoctorUserId: formData.assignedDoctorUserId,
+        assignedDoctorUserId,
       });
       selectNewPatient();
       await fetchPatients();
-      navigateAfterCase(navigate, data);
+      navigateAfterCase(navigate, data, isSoloDoctorClinic);
     } catch (err) {
       showError(err, "Regjistrimi i pacientit dështoi. Ju lutemi provoni përsëri.");
     } finally {
@@ -241,7 +266,8 @@ const Patients = () => {
   const handleSubmitExisting = async (e) => {
     e.preventDefault();
     if (!selectedPatient) return;
-    if (!formData.assignedDoctorUserId) {
+    const assignedDoctorUserId = formData.assignedDoctorUserId || (isSoloDoctorClinic ? selfId : "");
+    if (!assignedDoctorUserId) {
       setNotif({
         visible: true,
         type: "warning",
@@ -253,12 +279,12 @@ const Patients = () => {
     setLoading(true);
     try {
       const data = await openPatientCase(getPatientId(selectedPatient), {
-        assignedDoctorUserId: formData.assignedDoctorUserId,
+        assignedDoctorUserId,
         notes: formData.notes,
       });
       selectNewPatient();
       await fetchPatients();
-      navigateAfterCase(navigate, data);
+      navigateAfterCase(navigate, data, isSoloDoctorClinic);
     } catch (err) {
       showError(err, "Hapja e rastit dështoi. Ju lutemi provoni përsëri.");
     } finally {
@@ -282,17 +308,17 @@ const Patients = () => {
           value={formData.assignedDoctorUserId}
           onChange={handleChange}
           required
-          disabled={doctorsLoading || doctors.length === 0}
+          disabled={doctorsLoading || doctorChoices.length === 0}
           className="input-with-icon"
         >
           <option value="">
             {doctorsLoading
               ? "Duke ngarkuar mjekët…"
-              : doctors.length === 0
+              : doctorChoices.length === 0
                 ? "Nuk ka mjekë të disponueshëm"
                 : "Zgjidhni mjekun"}
           </option>
-          {doctors.map((doctor) => {
+          {doctorChoices.map((doctor) => {
             const id = doctor?.id ?? doctor?.Id;
             return (
               <option key={id} value={id}>
@@ -306,9 +332,11 @@ const Patients = () => {
         <p className="mt-1 text-sm text-red-600">{doctorsError}</p>
       ) : (
         <p className="mt-1 text-sm text-slate-500">
-          {selectedPatient
-            ? "Zgjidhni mjekun për vizitën e sotme."
-            : "Pacienti do t'i caktohet mjekut të zgjedhur."}
+          {isSoloDoctorClinic
+            ? "Në ordinancën solo, vizita caktohet te ju."
+            : selectedPatient
+              ? "Zgjidhni mjekun për vizitën e sotme."
+              : "Pacienti do t'i caktohet mjekut të zgjedhur."}
         </p>
       )}
     </div>

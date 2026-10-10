@@ -22,6 +22,8 @@ import {
   getDoctorImageFullUrl,
 } from "../../../api/doctorProfile";
 import { useAuth } from "../../../context/AuthContext";
+import { CLINIC_MODE_SOLO_DOCTOR } from "../../../utils/clinicMode";
+import { isClinicAdminRole } from "../../../utils/dashboardMenu";
 
 const ALLOWED_IMAGE_TYPES = "image/jpeg,image/png,image/gif,image/webp";
 
@@ -83,8 +85,10 @@ function ImageAssetCard({ label, imageUrl, emptyText }) {
 
 export default function DoctorProfile() {
   const navigate = useNavigate();
-  const { role } = useAuth();
-  const isDoctor = role && String(role).toLowerCase() === "doctor";
+  const { role, clinicMode } = useAuth();
+  const isDoctor =
+    (role && String(role).toLowerCase() === "doctor") ||
+    (isClinicAdminRole(role) && clinicMode === CLINIC_MODE_SOLO_DOCTOR);
 
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);

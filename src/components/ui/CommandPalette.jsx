@@ -35,7 +35,7 @@ function caseName(c) {
 
 export default function CommandPalette({ open, onClose }) {
   const navigate = useNavigate();
-  const { user, role } = useAuth();
+  const { user, role, clinicMode } = useAuth();
   const { activePanel, roleLower } = useDashboardPanel();
   const hasClinic = !!(user?.clinicId ?? user?.ClinicId);
   const inputRef = useRef(null);
@@ -46,8 +46,13 @@ export default function CommandPalette({ open, onClose }) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const menuItems = useMemo(
-    () => getSidebarMenuItems({ roleLower: roleLower || String(role || "").toLowerCase(), activePanel, hasClinic }),
-    [roleLower, role, activePanel, hasClinic]
+    () => getSidebarMenuItems({
+      roleLower: roleLower || String(role || "").toLowerCase(),
+      activePanel,
+      hasClinic,
+      clinicMode,
+    }),
+    [roleLower, role, activePanel, hasClinic, clinicMode]
   );
   const allowedPaths = useMemo(() => new Set(menuItems.map((i) => i.path)), [menuItems]);
   const canPatients = allowedPaths.has("/dashboard/patients-list") || allowedPaths.has("/dashboard/patients");
@@ -123,7 +128,7 @@ export default function CommandPalette({ open, onClose }) {
             const id = caseId(c);
             const roleL = String(role || "").toLowerCase();
             let path = `/dashboard/cases/${id}`;
-            if (roleL === "doctor") path = `/dashboard/cases/${id}/doctor`;
+            if (roleL === "doctor" || clinicMode === "SoloDoctor") path = `/dashboard/cases/${id}/doctor`;
             else if (roleL === "nurse") path = `/dashboard/cases/${id}/nurse`;
             items.push({
               type: "case",

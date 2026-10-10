@@ -2,17 +2,14 @@ import { jsPDF } from "jspdf";
 import { getCaseReportPdf } from "../api/patientCase";
 import { getGenderLabel } from "./emrDisplay";
 
-const MARGIN = 12;
-const FOOTER_GAP = 14;
-const INK = [23, 32, 51];
-const LABEL = [32, 43, 60];
-const BLUE = [17, 135, 207];
-const LINE = [19, 133, 199];
-const TITLE = [18, 25, 42];
-const SECTION = [7, 89, 155];
-const BAR = [214, 235, 248];
-const DIVIDER = [52, 149, 209];
-const WATERMARK_OPACITY = 0.045;
+const MARGIN = 22;
+const FOOTER_GAP = 18;
+const SECTION_GAP = 6;
+const INK = [38, 38, 38];
+const MUTED = [120, 120, 120];
+const HAIRLINE = [214, 214, 214];
+const RULE = [70, 70, 70];
+const WATERMARK_OPACITY = 0.035;
 
 function clean(value) {
   if (value == null) return "";
@@ -216,12 +213,6 @@ function contentBottom(pageHeight) {
   return pageHeight - FOOTER_GAP;
 }
 
-function splitClinicName(name) {
-  const parts = clean(name).split(/\s+/).filter(Boolean);
-  if (parts.length <= 1) return { lead: "", main: parts[0] || "" };
-  return { lead: parts[0], main: parts.slice(1).join(" ") };
-}
-
 function drawWatermark(doc, ctx) {
   if (!ctx.logo || ctx.watermarked.has(ctx.page)) return;
   const size = imageSize(doc, ctx.logo, 125, 125);
@@ -250,168 +241,145 @@ function ensure(doc, ctx, needed) {
 
 function drawHeader(doc, ctx, data) {
   const top = MARGIN;
-  const logo = drawReportImage(doc, data.clinic.logoBase64, MARGIN, top, 23, 23);
-  const nameX = MARGIN + (logo ? logo.w + 3 : 0);
-  const contacts = [data.clinic.address, data.clinic.phone, data.clinic.email].filter(Boolean);
-  const contactW = contacts.length ? 62 : 0;
-  const contactX = ctx.pageWidth - MARGIN - contactW;
-  const nameMax = Math.max(36, contactX - nameX - 4);
-  const parts = splitClinicName(data.clinic.name);
-  let nameBottom = top;
-
-  doc.setTextColor(...BLUE);
+  const logo = drawReportImage(doc, data.clinic.logoBase64, MARGIN, top, 16, 16);
+  const nameX = MARGIN + (logo ? logo.w + 4 : 0);
+  const contactW = 70;
+  const contactRight = ctx.pageWidth - MARGIN;
+  const nameMax = Math.max(42, contactRight - contactW - nameX - 6);
   doc.setFont("helvetica", "bold");
-  if (parts.lead) {
-    doc.setFontSize(16);
-    doc.text(doc.splitTextToSize(parts.lead, nameMax)[0], nameX, top + 8);
-    doc.setFontSize(parts.main.length > 18 ? 16 : 20);
-    const main = doc.splitTextToSize(parts.main, nameMax).slice(0, 2);
-    doc.text(main, nameX, top + 16);
-    nameBottom = top + 16 + main.length * 6;
-  } else if (parts.main) {
-    doc.setFontSize(18);
-    const lines = doc.splitTextToSize(parts.main, nameMax).slice(0, 2);
-    doc.text(lines, nameX, top + 12);
-    nameBottom = top + 12 + lines.length * 7;
-  }
+  doc.setFontSize(13);
+  doc.setTextColor(...INK);
+  const nameLines = data.clinic.name
+    ? doc.splitTextToSize(data.clinic.name, nameMax).slice(0, 2)
+    : [];
+  if (nameLines.length) doc.text(nameLines, nameX, top + 5.5);
 
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  let contactY = top + 5;
+  doc.setFontSize(8.5);
+  doc.setTextColor(...MUTED);
+  const contacts = [data.clinic.address, data.clinic.phone, data.clinic.email].filter(Boolean);
+  let contactY = top + 4.2;
   contacts.forEach((line) => {
-    doc.setFillColor(...BLUE);
-    doc.circle(contactX + 1.1, contactY - 0.9, 0.7, "F");
-    doc.setTextColor(...INK);
-    const wrapped = doc.splitTextToSize(line, contactW - 5).slice(0, 2);
-    doc.text(wrapped, contactX + 4, contactY);
-    contactY += wrapped.length * 3.5 + 1.4;
+    doc.splitTextToSize(line, contactW).slice(0, 2).forEach((part) => {
+      doc.text(part, contactRight, contactY, { align: "right" });
+      contactY += 3.7;
+    });
+    contactY += 0.4;
   });
 
-  const headerBottom = Math.max(top + 25, nameBottom + 2, contactY + 1, logo ? top + logo.h : top);
-  doc.setDrawColor(...LINE);
-  doc.setLineWidth(0.45);
+  const headerBottom = Math.max(
+    top + (logo ? logo.h : 0),
+    top + 5.5 + Math.max(nameLines.length, 1) * 5.2,
+    contactY
+  ) + 2.5;
+  doc.setDrawColor(...HAIRLINE);
+  doc.setLineWidth(0.3);
   doc.line(MARGIN, headerBottom, ctx.pageWidth - MARGIN, headerBottom);
-  ctx.y = headerBottom + 7;
+  ctx.y = headerBottom + 11;
 }
 
 function drawTitle(doc, ctx, data) {
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(17);
-  doc.setTextColor(...TITLE);
-  doc.text("RAPORT MJEKËSOR", ctx.pageWidth / 2, ctx.y, { align: "center" });
-  ctx.y += 6;
+  doc.setFontSize(13);
+  doc.setTextColor(...INK);
+  doc.text("RAPORT SPECIALISTIK", ctx.pageWidth / 2, ctx.y, { align: "center" });
+  ctx.y += 5.5;
 
   const bits = [];
-  if (data.meta.date) bits.push(["Data:", data.meta.date]);
-  if (data.meta.time) bits.push(["Ora:", data.meta.time]);
-  if (data.meta.protocol) bits.push(["Nr. raportit:", data.meta.protocol]);
-  if (!bits.length) {
-    ctx.y += 2;
-    return;
+  if (data.meta.date) bits.push(data.meta.date);
+  if (data.meta.time) bits.push(data.meta.time);
+  if (data.meta.protocol) bits.push(`Nr. ${data.meta.protocol}`);
+  if (bits.length) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...MUTED);
+    doc.text(bits.join("    ·    "), ctx.pageWidth / 2, ctx.y, { align: "center" });
+    ctx.y += 5;
   }
-
-  doc.setFontSize(9);
-  const gap = 5;
-  const dividerW = 4;
-  const widths = bits.map(([label, value]) => {
-    doc.setFont("helvetica", "normal");
-    const labelW = doc.getTextWidth(`${label} `);
-    doc.setFont("helvetica", "bold");
-    return labelW + doc.getTextWidth(value);
-  });
-  const total = widths.reduce((sum, width) => sum + width, 0) + (bits.length - 1) * (gap * 2 + dividerW);
-  let x = (ctx.pageWidth - total) / 2;
-  bits.forEach(([label, value], index) => {
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...INK);
-    doc.text(`${label} `, x, ctx.y);
-    x += doc.getTextWidth(`${label} `);
-    doc.setFont("helvetica", "bold");
-    doc.text(value, x, ctx.y);
-    x += doc.getTextWidth(value);
-    if (index < bits.length - 1) {
-      x += gap;
-      doc.setDrawColor(128, 144, 163);
-      doc.setLineWidth(0.25);
-      doc.line(x, ctx.y - 3, x, ctx.y + 0.6);
-      x += dividerW + gap;
-    }
-  });
   ctx.y += 7;
 }
 
 function drawHeading(doc, ctx, title) {
-  ensure(doc, ctx, 12);
-  const width = ctx.pageWidth - MARGIN * 2;
-  doc.setFillColor(...BAR);
-  doc.rect(MARGIN, ctx.y - 3.4, width, 6.4, "F");
+  ensure(doc, ctx, 18);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(8.5);
-  doc.setTextColor(...SECTION);
-  doc.text(title, MARGIN + 3, ctx.y);
-  ctx.y += 5.2;
+  doc.setFontSize(10.5);
+  doc.setTextColor(...INK);
+  doc.text(title, MARGIN, ctx.y);
+  ctx.y += 2;
+  doc.setDrawColor(...HAIRLINE);
+  doc.setLineWidth(0.25);
+  doc.line(MARGIN, ctx.y, ctx.pageWidth - MARGIN, ctx.y);
+  ctx.y += 4.5;
 }
 
 function drawProse(doc, ctx, text) {
-  const width = ctx.pageWidth - MARGIN * 2 - 6;
-  const lineH = 4.6;
+  const width = ctx.pageWidth - MARGIN * 2;
+  const lineH = 4.8;
   const paragraphs = String(text).replace(/\r\n/g, "\n").split("\n");
   paragraphs.forEach((paragraph) => {
     if (!paragraph.trim()) {
       ensure(doc, ctx, 3);
-      ctx.y += 2;
+      ctx.y += 2.2;
       return;
     }
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(...INK);
+    doc.setFontSize(10.5);
     doc.splitTextToSize(paragraph, width).forEach((line) => {
       ensure(doc, ctx, lineH);
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
+      doc.setFontSize(10.5);
       doc.setTextColor(...INK);
-      doc.text(line, MARGIN + 3, ctx.y);
+      doc.text(line, MARGIN, ctx.y);
       ctx.y += lineH;
     });
   });
-  ctx.y += 3.5;
+  ctx.y += SECTION_GAP;
 }
 
-function paintLabeled(doc, x, y, pair, width) {
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(...LABEL);
-  const label = `${pair[0]}: `;
-  doc.text(label, x, y);
-  const labelW = doc.getTextWidth(label);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...INK);
-  const value = doc.splitTextToSize(String(pair[1]), Math.max(16, width - labelW));
-  doc.text(value[0] || "", x + labelW, y);
-}
-
-function drawSplit(doc, ctx, leftPairs, rightPairs, { divider = false } = {}) {
+function drawSplit(doc, ctx, leftPairs, rightPairs) {
   const left = leftPairs.filter((pair) => clean(pair[1]));
   const right = rightPairs.filter((pair) => clean(pair[1]));
   if (!left.length && !right.length) return;
   const rows = Math.max(left.length, right.length);
-  const rowH = 5.4;
-  ensure(doc, ctx, rows * rowH);
-  const mid = ctx.pageWidth / 2;
-  const leftX = MARGIN + 3;
-  const rightX = mid + 4;
-  const colW = mid - MARGIN - 8;
-  if (divider && left.length && right.length) {
-    doc.setDrawColor(...DIVIDER);
-    doc.setLineWidth(0.3);
-    doc.line(mid, ctx.y - 3.2, mid, ctx.y - 3.2 + rows * rowH);
-  }
-  for (let index = 0; index < rows; index += 1) {
-    if (left[index]) paintLabeled(doc, leftX, ctx.y, left[index], colW);
-    if (right[index]) paintLabeled(doc, rightX, ctx.y, right[index], colW);
-    ctx.y += rowH;
-  }
-  ctx.y += 2.5;
+  const gap = 12;
+  const colW = (ctx.pageWidth - MARGIN * 2 - gap) / 2;
+  const rightX = MARGIN + colW + gap;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10.5);
+  const measured = Array.from({ length: rows }, (_, index) => {
+    const pack = (pair) => {
+      if (!pair) return [];
+      return doc.splitTextToSize(String(pair[1]), colW).slice(0, 3);
+    };
+    const leftLines = pack(left[index]);
+    const rightLines = pack(right[index]);
+    const rowH = 5 + Math.max(leftLines.length, rightLines.length, 1) * 4.5;
+    return { leftLines, rightLines, rowH };
+  });
+  ensure(doc, ctx, measured.reduce((sum, row) => sum + row.rowH, 0) + 2);
+
+  const paint = (pair, lines, x, y) => {
+    if (!pair) return;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...MUTED);
+    doc.text(String(pair[0]), x, y);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10.5);
+    doc.setTextColor(...INK);
+    doc.text(lines, x, y + 4.6);
+  };
+
+  measured.forEach((row, index) => {
+    paint(left[index], row.leftLines, MARGIN, ctx.y);
+    paint(right[index], row.rightLines, rightX, ctx.y);
+    ctx.y += row.rowH;
+  });
+
+  doc.setDrawColor(...HAIRLINE);
+  doc.setLineWidth(0.2);
+  doc.line(MARGIN, ctx.y, ctx.pageWidth - MARGIN, ctx.y);
+  ctx.y += SECTION_GAP;
 }
 
 function drawTextSection(doc, ctx, title, text) {
@@ -435,7 +403,6 @@ function drawVitals(doc, ctx, rows) {
       ["Pulsi", byLabel.Pulsi],
       ["Pesha", byLabel.Pesha],
     ],
-    { divider: true }
   );
 }
 
@@ -445,51 +412,73 @@ function drawLabs(doc, ctx, names) {
 }
 
 function drawSignoff(doc, ctx, data) {
-  const signature = imageSize(doc, data.signoff.signatureBase64, 40, 18);
-  const stamp = imageSize(doc, data.signoff.stampBase64, 32, 32);
   const name = data.signoff.name;
-  if (!signature && !stamp && !name) return;
-
-  const blockH = Math.max(36, stamp ? stamp.h + 4 : 0, signature ? 28 : 18);
-  if (ctx.y > MARGIN + 1) ctx.y += 4;
-  if (ctx.y + blockH > contentBottom(ctx.pageHeight)) continuePage(doc, ctx);
-  const top = ctx.y;
-  const bottom = top + blockH;
-
-  if (stamp) {
-    drawReportImage(doc, data.signoff.stampBase64, MARGIN + 8, bottom - stamp.h, 32, 32);
-  }
-
-  const columnW = 55;
-  const columnX = ctx.pageWidth - MARGIN - 10 - columnW;
-  const center = columnX + columnW / 2;
-  let y = bottom - (signature ? signature.h + 14 : 12);
+  const signature = imageSize(doc, data.signoff.signatureBase64, 48, 16);
+  const stamp = imageSize(doc, data.signoff.stampBase64, 32, 28);
+  const gap = 16;
+  const colW = (ctx.pageWidth - MARGIN * 2 - gap) / 2;
+  const rightX = MARGIN + colW + gap;
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
+  doc.setFontSize(10.5);
+  const nameLines = name
+    ? doc.splitTextToSize(name, colW - 2).slice(0, 2)
+    : [];
+  const nameH = nameLines.length ? nameLines.length * 4.6 : 0;
+  const sigH = signature ? signature.h + 3 : 8;
+  const stampH = stamp ? stamp.h + 3 : 20;
+  const inner = Math.max(stampH, 5 + nameH + sigH);
+  const blockH = 8 + inner + 8;
+
+  if (ctx.y > MARGIN + 1) ctx.y += 8;
+  if (ctx.y + blockH > contentBottom(ctx.pageHeight)) continuePage(doc, ctx);
+
+  const top = ctx.y;
+  const lineY = top + 5 + inner;
+  const lineW = Math.min(colW - 2, 68);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
   doc.setTextColor(...INK);
-  doc.text("Mjeku përgjegjës", center, y, { align: "center" });
-  y += 4.5;
-  if (name) {
-    doc.setFontSize(9.5);
-    const lines = doc.splitTextToSize(name, columnW);
-    doc.text(lines.slice(0, 2), center, y, { align: "center" });
-    y += lines.slice(0, 2).length * 4.2;
+  doc.text("Mjeku përgjegjës", MARGIN, top + 4);
+
+  if (nameLines.length) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10.5);
+    doc.setTextColor(...INK);
+    doc.text(nameLines, MARGIN, top + 10);
   }
   if (signature) {
     drawReportImage(
       doc,
       data.signoff.signatureBase64,
-      center - signature.w / 2,
-      y,
-      40,
-      18
+      MARGIN,
+      lineY - signature.h - 2,
+      48,
+      16
     );
-    y += signature.h - 1;
   }
-  doc.setDrawColor(39, 54, 74);
+  if (stamp) {
+    drawReportImage(
+      doc,
+      data.signoff.stampBase64,
+      rightX,
+      lineY - stamp.h - 2,
+      32,
+      28
+    );
+  }
+
+  doc.setDrawColor(...RULE);
   doc.setLineWidth(0.3);
-  doc.line(center - 24, y, center + 24, y);
-  ctx.y = bottom + 2;
+  doc.line(MARGIN, lineY, MARGIN + lineW, lineY);
+  doc.line(rightX, lineY, rightX + lineW, lineY);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...MUTED);
+  doc.text("Nënshkrimi", MARGIN, lineY + 4.4);
+  doc.text("Vula", rightX, lineY + 4.4);
+  ctx.y = lineY + 8;
 }
 
 function drawFooter(doc, ctx, data) {
@@ -497,11 +486,11 @@ function drawFooter(doc, ctx, data) {
   for (let page = 1; page <= pageCount; page += 1) {
     doc.setPage(page);
     const y = ctx.pageHeight - 8;
-    doc.setDrawColor(...LINE);
-    doc.setLineWidth(0.35);
+    doc.setDrawColor(...HAIRLINE);
+    doc.setLineWidth(0.25);
     doc.line(MARGIN, y - 4, ctx.pageWidth - MARGIN, y - 4);
-    doc.setFontSize(7.5);
-    doc.setTextColor(38, 50, 69);
+    doc.setFontSize(8);
+    doc.setTextColor(...MUTED);
     const pageLabel = `Faqe ${page} / ${pageCount}`;
     const pageW = doc.getTextWidth(pageLabel);
     const parts = [data.clinic.name, data.clinic.address, data.clinic.phone, data.clinic.email].filter(Boolean);
@@ -567,7 +556,6 @@ export function createCaseReportPdfDocument(caseData, clinicHeader = null, docto
         ["Mjeku", data.visit.doctor],
         ["Shërbimi", data.visit.service],
       ],
-      { divider: true }
     );
   }
 

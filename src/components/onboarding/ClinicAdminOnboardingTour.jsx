@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { FiArrowRight, FiX } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
+import { CLINIC_MODE_SOLO_DOCTOR } from "../../utils/clinicMode";
 import { useDashboardPanel } from "../../context/DashboardPanelContext";
 import { isClinicAdminRole } from "../../utils/dashboardMenu";
 import {
@@ -74,7 +75,7 @@ function getUserAndClinicIds(user) {
 
 export default function ClinicAdminOnboardingTour() {
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, clinicMode } = useAuth();
   const { roleLower, initialized } = useDashboardPanel();
   const { userId, clinicId } = getUserAndClinicIds(user);
   const hasClinic = !!clinicId;
@@ -85,8 +86,13 @@ export default function ClinicAdminOnboardingTour() {
   const [tooltip, setTooltip] = useState(null);
 
   const steps = useMemo(
-    () => TOUR_STEPS.filter((s) => s.target !== "clinic-profile" || hasClinic),
-    [hasClinic]
+    () =>
+      TOUR_STEPS.filter((s) => {
+        if (s.target === "clinic-profile" && !hasClinic) return false;
+        if (s.target === "staff" && clinicMode === CLINIC_MODE_SOLO_DOCTOR) return false;
+        return true;
+      }),
+    [hasClinic, clinicMode]
   );
 
   const finish = useCallback(() => {

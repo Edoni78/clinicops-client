@@ -11,7 +11,7 @@ import { isDashboardPathAllowed } from "../../utils/dashboardMenu";
 
 function DashboardLayoutInner() {
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, clinicMode } = useAuth();
   const { requiresPanel, activePanel, initialized, roleLower } = useDashboardPanel();
   const isPanelRoute = location.pathname === "/dashboard/panel";
   const hasClinic = !!(user?.clinicId ?? user?.ClinicId);
@@ -46,7 +46,7 @@ function DashboardLayoutInner() {
     return <Navigate to="/dashboard/panel" replace />;
   }
 
-  const menuCtx = { roleLower, activePanel, hasClinic };
+  const menuCtx = { roleLower, activePanel, hasClinic, clinicMode };
   if (!isPanelRoute && !isDashboardPathAllowed(location.pathname, menuCtx)) {
     return <Navigate to="/dashboard" replace />;
   }

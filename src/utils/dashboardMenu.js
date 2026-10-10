@@ -1,4 +1,5 @@
 import { PANEL_NURSE, PANEL_DOCTOR, PANEL_SUPERADMIN } from "./dashboardPanels";
+import { CLINIC_MODE_SOLO_DOCTOR } from "./clinicMode";
 
 export const MENU = {
   home: { key: "home", label: "Paneli", path: "/dashboard" },
@@ -59,7 +60,7 @@ const NURSE_MENU = pick(
 
 const LAB_TECHNICIAN_MENU = pick(MENU.home, MENU.emrs, MENU.laboratory, MENU.cases);
 
-const CLINIC_ADMIN_MENU = (hasClinic) =>
+const CLINIC_ADMIN_MENU = (hasClinic, soloDoctor) =>
   pick(
     MENU.home,
     MENU.emrs,
@@ -68,11 +69,12 @@ const CLINIC_ADMIN_MENU = (hasClinic) =>
     MENU.patientsList,
     MENU.cases,
     MENU.reports,
-    MENU.laboratory,
+    soloDoctor ? null : MENU.laboratory,
     MENU.services,
     MENU.payments,
-    MENU.staff,
+    soloDoctor ? null : MENU.staff,
     MENU.auditLogs,
+    soloDoctor ? MENU.doctorProfile : null,
     hasClinic ? MENU.clinicProfile : null
   );
 
@@ -119,7 +121,7 @@ const MENU_SECTIONS = {
     { label: "Puna e ditës", keys: ["home", "cases", "reports"] },
     { label: "Pacientët", keys: ["patients", "patientsList", "emrs", "history"] },
     { label: "Klinika", keys: ["laboratory", "services", "payments"] },
-    { label: "Administrimi", keys: ["staff", "auditLogs", "clinicProfile"] },
+    { label: "Administrimi", keys: ["staff", "auditLogs", "doctorProfile", "clinicProfile"] },
   ],
   superadmin: [
     { label: "Puna e ditës", keys: ["home", "cases", "reports"] },
@@ -139,8 +141,8 @@ function sectionRole(role, activePanel) {
  * Same items as the role menu, grouped for the sidebar.
  * Items that do not match a group stay visible at the end.
  */
-export function getSidebarSections({ roleLower, activePanel, hasClinic }) {
-  const items = getSidebarMenuItems({ roleLower, activePanel, hasClinic });
+export function getSidebarSections({ roleLower, activePanel, hasClinic, clinicMode }) {
+  const items = getSidebarMenuItems({ roleLower, activePanel, hasClinic, clinicMode });
   const role = sectionRole(normalizeRole(roleLower), activePanel);
   const sections = MENU_SECTIONS[role] || [{ label: null, keys: items.map((item) => item.key) }];
   const used = new Set();
@@ -162,8 +164,9 @@ export function getSidebarSections({ roleLower, activePanel, hasClinic }) {
  * Sidebar items by role.
  * Doctor: cases + reports only. Clinic admin: full clinic menu. Superadmin: + applies.
  */
-export function getSidebarMenuItems({ roleLower, activePanel, hasClinic }) {
+export function getSidebarMenuItems({ roleLower, activePanel, hasClinic, clinicMode }) {
   const role = normalizeRole(roleLower);
+  const soloDoctor = clinicMode === CLINIC_MODE_SOLO_DOCTOR;
 
   if (role === "doctor") return DOCTOR_MENU;
 
@@ -171,7 +174,7 @@ export function getSidebarMenuItems({ roleLower, activePanel, hasClinic }) {
 
   if (role === "labtechnician") return LAB_TECHNICIAN_MENU;
 
-  if (role === "clinicadmin") return CLINIC_ADMIN_MENU(hasClinic);
+  if (role === "clinicadmin") return CLINIC_ADMIN_MENU(hasClinic, soloDoctor);
 
   if (role === "superadmin") {
     if (activePanel === PANEL_SUPERADMIN) return SUPERADMIN_MENU;

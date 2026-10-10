@@ -76,7 +76,7 @@ function NavItems({ sections, onNavigate }) {
 }
 
 const Sidebar = ({ mobileOpen = false, onMobileClose }) => {
-  const { user, role } = useAuth();
+  const { user, role, clinicMode } = useAuth();
   const { activePanel, roleLower } = useDashboardPanel();
   const hasClinic = !!(user?.clinicId ?? user?.ClinicId);
   const [clinicProfile, setClinicProfile] = useState(null);
@@ -103,7 +103,7 @@ const Sidebar = ({ mobileOpen = false, onMobileClose }) => {
   const clinicLogoUrl = getLogoFullUrl(clinicProfile?.logoUrl ?? clinicProfile?.LogoUrl);
 
   const sections = useMemo(() => {
-    return getSidebarSections({ roleLower, activePanel, hasClinic }).map((section) => ({
+    return getSidebarSections({ roleLower, activePanel, hasClinic, clinicMode }).map((section) => ({
       label: section.label,
       items: section.items.map(({ key, label, path }) => ({
         label,
@@ -112,7 +112,7 @@ const Sidebar = ({ mobileOpen = false, onMobileClose }) => {
         tourId: key === "clinicProfile" ? "clinic-profile" : key,
       })),
     }));
-  }, [roleLower, activePanel, hasClinic]);
+  }, [roleLower, activePanel, hasClinic, clinicMode]);
 
   const staffName = getClinicUserDisplayName(user);
   const staffRole = getClinicUserRoleLabel(role);

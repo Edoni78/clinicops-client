@@ -15,8 +15,19 @@ function mapDoctor(profile, assets) {
 
 async function requireDoctor() {
   const profile = await requireProfile();
-  if (profile.role !== "Doctor") {
+  const clinicMode = profile.clinics?.clinic_mode ?? profile.clinics?.clinicMode;
+  const soloAdmin = profile.role === "ClinicAdmin" && clinicMode === "SoloDoctor";
+  if (profile.role !== "Doctor" && !soloAdmin) {
     throw apiError("Vetëm mjeku mund të hapë këtë profil.", 403);
+  }
+  const { data: existing } = await supabase
+    .from("doctor_profiles")
+    .select("user_id")
+    .eq("user_id", profile.id)
+    .maybeSingle();
+  if (!existing) {
+    const { error } = await supabase.from("doctor_profiles").insert({ user_id: profile.id });
+    throwIfError(error, "Profili i mjekut nuk u krijua.");
   }
   return profile;
 }

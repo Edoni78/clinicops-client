@@ -20,6 +20,7 @@ import {
 import { normalizeCaseStatus } from "./caseStatus";
 import { getClinicId } from "../../../utils/clinicId";
 import { isClinicAdminRole } from "../../../utils/dashboardMenu";
+import { CLINIC_MODE_SOLO_DOCTOR } from "../../../utils/clinicMode";
 import StatusBadge from "../../../components/ui/StatusBadge";
 import { formatUpdatedBy } from "../../../utils/relativeTime";
 
@@ -52,8 +53,9 @@ const CASE_DATE_PRESETS = [
 export default function Cases() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { role } = useAuth();
+  const { role, clinicMode } = useAuth();
   const currentRole = String(role || "").toLowerCase();
+  const isSoloDoctorClinic = clinicMode === CLINIC_MODE_SOLO_DOCTOR;
   const isDoctor = currentRole === "doctor";
   const isNurse = currentRole === "nurse";
   const canDeleteCases =
@@ -150,7 +152,7 @@ export default function Cases() {
     (c) => {
       const caseId = c?.id ?? c?.Id;
       if (!caseId) return "/dashboard/cases";
-      if (isDoctor) return `/dashboard/cases/${caseId}/doctor`;
+      if (isDoctor || isSoloDoctorClinic) return `/dashboard/cases/${caseId}/doctor`;
       if (isNurse) return `/dashboard/cases/${caseId}/nurse`;
       const status = String(c?.status ?? c?.Status ?? "").trim().toLowerCase();
       if (["inconsultation", "completed", "finished"].includes(status)) {
@@ -158,7 +160,7 @@ export default function Cases() {
       }
       return `/dashboard/cases/${caseId}/nurse`;
     },
-    [isDoctor, isNurse]
+    [isDoctor, isNurse, isSoloDoctorClinic]
   );
 
   const fetchCases = useCallback(async (silent = false) => {

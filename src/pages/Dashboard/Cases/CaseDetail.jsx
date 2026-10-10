@@ -26,6 +26,7 @@ import {
 import { useAuth } from "../../../context/AuthContext";
 import { useSignalR } from "../../../context/SignalRContext";
 import { CLINIC_MODE_SOLO_DOCTOR } from "../../../utils/clinicMode";
+import { isClinicAdminRole } from "../../../utils/dashboardMenu";
 import { normalizeCaseStatus } from "./caseStatus";
 import {
   buildVitalsSubmitBody,
@@ -54,6 +55,8 @@ export default function CaseDetail() {
   const isDoctor = currentRole === "doctor";
   const isNurse = currentRole === "nurse";
   const isSoloDoctorClinic = clinicMode === CLINIC_MODE_SOLO_DOCTOR;
+  const isSoloClinicAdmin = isSoloDoctorClinic && isClinicAdminRole(currentRole);
+  const canUseOwnDoctorProfile = isDoctor || isSoloClinicAdmin;
   const { connection, joinCase, onVitalsUpdated, onReportUpdated, onCaseStatusChanged } =
     useSignalR();
 
@@ -97,14 +100,15 @@ export default function CaseDetail() {
     caseStatus === "Finished" || caseStatus === "Mbyllur" || caseStatus === "Completed";
   const nurseReviewsOutcome = (isNurse || view === "nurse") && visitClosed;
   const showNurseSection = !isSoloDoctorClinic && !isDoctor && view !== "doctor";
-  const showDoctorSection = view !== "nurse" || nurseReviewsOutcome;
+  const showDoctorSection = isSoloDoctorClinic || view !== "nurse" || nurseReviewsOutcome;
   const canEditVitals =
     (isNurse || view === "nurse") && caseStatus === "Waiting" && isAuthenticated;
   const canEditReportAndStatus =
     isAuthenticated &&
     !visitClosed &&
     (isDoctor || isSoloDoctorClinic || (view === "doctor" && !isNurse));
-  const canCloseCase = (isNurse || view === "nurse") && caseStatus === "Finished";
+  const canCloseCase =
+    caseStatus === "Finished" && (isNurse || view === "nurse" || isSoloDoctorClinic);
 
   const fetchCase = useCallback(async () => {
     if (!id) return;
@@ -231,7 +235,7 @@ export default function CaseDetail() {
   ]);
 
   useEffect(() => {
-    if (!showDoctorSection || !isDoctor) return;
+    if (!showDoctorSection || !canUseOwnDoctorProfile) return;
     let cancelled = false;
     setDoctorProfileLoading(true);
     getDoctorProfile()
@@ -250,10 +254,10 @@ export default function CaseDetail() {
     return () => {
       cancelled = true;
     };
-  }, [showDoctorSection, isDoctor]);
+  }, [showDoctorSection, canUseOwnDoctorProfile]);
 
   useEffect(() => {
-    if (!showDoctorSection || isDoctor) return;
+    if (!showDoctorSection || canUseOwnDoctorProfile) return;
     const assignedId = caseData?.assignedDoctorUserId ?? caseData?.AssignedDoctorUserId;
     if (!assignedId) return;
     let cancelled = false;
@@ -278,7 +282,7 @@ export default function CaseDetail() {
     };
   }, [
     showDoctorSection,
-    isDoctor,
+    canUseOwnDoctorProfile,
     caseData?.assignedDoctorUserId,
     caseData?.AssignedDoctorUserId,
   ]);
@@ -424,6 +428,13 @@ export default function CaseDetail() {
           const latest = await getPatientCase(id);
           finished = normalizeCaseStatus(latest?.status ?? latest?.Status) === "Finished";
         }
+        if (finished) {
+          try {
+            await updateCaseStatus(id, "Mbyllur");
+          } catch {
+            // The visit report is saved. Closing can still be done from Raportet.
+          }
+        }
       } else {
         await updateCaseStatus(id, "Finished");
         finished = true;
@@ -432,7 +443,7 @@ export default function CaseDetail() {
         navigate("/dashboard/cases", {
           state: {
             notice: isSoloDoctorClinic
-              ? "Raporti u ruajt dhe vizita u përfundua."
+              ? "Raporti u ruajt dhe rasti u mbyll."
               : "Vizitë e përfunduar. Infermieri e sheh te «Për mbyllje».",
             noticeType: "success",
           },
